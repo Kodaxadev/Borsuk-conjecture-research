@@ -6,56 +6,81 @@
       "kind": "repository-document",
       "path": "borsuk_n10_k4_reproduction/README.md",
       "revision_pin": "research-workspace-hardening",
-      "allowed_claim_ids": ["n10-k4-coloring-reproduction"]
+      "allowed_claim_ids": [
+        "n10-k4-coloring-reproduction"
+      ]
     },
     {
       "id": "SRC-N11-K4",
       "kind": "repository-document",
       "path": "borsuk_11_k4_candidate/PROOF.md",
       "revision_pin": "research-workspace-hardening",
-      "allowed_claim_ids": ["n11-k4-candidate"]
+      "allowed_claim_ids": [
+        "n11-k4-candidate"
+      ]
     },
     {
       "id": "SRC-N11-K8",
       "kind": "repository-document",
       "path": "borsuk_11_k8_candidate/PROOF.md",
       "revision_pin": "research-workspace-hardening",
-      "allowed_claim_ids": ["n11-k8-candidate"]
+      "allowed_claim_ids": [
+        "n11-k8-candidate"
+      ]
     },
     {
       "id": "SRC-K6-ROOT",
       "kind": "repository-document",
       "path": "borsuk_11_k6_attack_surface/ATTACK_SURFACE.md",
       "revision_pin": "research-workspace-hardening",
-      "allowed_claim_ids": ["n11-k6-trim-attack-surface"]
+      "allowed_claim_ids": [
+        "n11-k6-trim-attack-surface"
+      ]
     },
     {
       "id": "SRC-K6-UNSAT",
       "kind": "repository-document",
       "path": "borsuk_11_k6_trim_unsat_certificate/README.md",
       "revision_pin": "research-workspace-hardening",
-      "allowed_claim_ids": ["n11-k6-trim-unsat"]
+      "allowed_claim_ids": [
+        "n11-k6-trim-unsat"
+      ]
     },
     {
       "id": "SRC-K6-BRANCH",
       "kind": "repository-document",
       "path": "borsuk_11_k6_branch_search/README.md",
       "revision_pin": "research-workspace-hardening",
-      "allowed_claim_ids": ["n11-k6-branch-search-scaffold"]
+      "allowed_claim_ids": [
+        "n11-k6-branch-search-scaffold"
+      ]
     },
     {
       "id": "SRC-K6-FOUR-BASE",
       "kind": "repository-document",
       "path": "borsuk_11_k6_four_base_reduction/PROOF.md",
       "revision_pin": "research-workspace-hardening",
-      "allowed_claim_ids": ["n11-k6-four-base-reduction"]
+      "allowed_claim_ids": [
+        "n11-k6-four-base-reduction"
+      ]
     },
     {
       "id": "SRC-K6-TARGET",
       "kind": "repository-document",
       "path": "docs/PROJECT-STATUS.md",
       "revision_pin": "research-workspace-hardening",
-      "allowed_claim_ids": ["n11-k6-full"]
+      "allowed_claim_ids": [
+        "n11-k6-full"
+      ]
+    },
+    {
+      "id": "SRC-K6-Q00-UNSAT",
+      "kind": "repository-document",
+      "path": "borsuk_11_k6_four_base_reduction/certificates/q00/README.md",
+      "revision_pin": "1849ef7ce8d54a3bd4c15362f84b0496ace5fced",
+      "allowed_claim_ids": [
+        "n11-k6-q00-trim-unsat"
+      ]
     }
   ]
 }

@@ -253,6 +253,61 @@
         }
       ],
       "limitations": "This verifies deterministic instance generation and model-checking infrastructure only. It does not resolve q00 or any of the 58 canonical trim types; every case remains UNKNOWN until certificate-backed evidence is stored and checked."
+    },
+    {
+      "id": "E-K6-Q00-UNSAT",
+      "claim_id": "n11-k6-q00-trim-unsat",
+      "type": "UNSAT_CERTIFICATE",
+      "epistemic_class": "COMPUTATIONAL",
+      "verification_state": "CERTIFICATE_CHECKED",
+      "paths": [
+        "borsuk_11_k6_four_base_reduction/certificates/q00/README.md",
+        "borsuk_11_k6_four_base_reduction/certificates/q00/certificate-result.json",
+        ".github/workflows/q00-proof-certificate-bundle.yml"
+      ],
+      "commands": [
+        "gh run download 30827345819 -n q00-proof-certificate",
+        "gunzip -c q00.drat.gz > q00.drat && drat-trim q00_12color.cnf q00.drat -v"
+      ],
+      "environment": {
+        "solver": "Kissat 4.0.0",
+        "checker": "drat-trim revision 2e3b2dc0ecf938addbd779d42877b6ed69d9a985",
+        "proof_format": "binary DRAT",
+        "runner": "GitHub Actions ubuntu-24.04"
+      },
+      "source_revision": "1849ef7ce8d54a3bd4c15362f84b0496ace5fced",
+      "clean_room_verifier": true,
+      "artifact_hashes": [
+        {
+          "artifact": "q00 compact CNF",
+          "sha256": "36da8f78ae376b370f119d1fa16a58f6504607d949ac8315648fdbda52450299"
+        },
+        {
+          "artifact": "q00 variable map",
+          "sha256": "5f94c619b6a5996c54f269a88de5bfaff042e4c855ea8543869b84009c7dae45"
+        },
+        {
+          "artifact": "q00 binary DRAT proof",
+          "sha256": "59bf62a00d0c63b5ced7967c33421d953af5b96e423cc93dc862e595d08561b5"
+        },
+        {
+          "artifact": "drat-trim checker binary",
+          "sha256": "92f0aa9575ed519d66a99b8b1b3dde6ece4618ae4c202a3a4b200265dda0aa7a"
+        },
+        {
+          "artifact": "proof-producing workflow artifact",
+          "sha256": "e75f4a6571a22bef7f686ec6f91037f17598fecf19872d1c085113f706be2351"
+        },
+        {
+          "artifact": "final certificate bundle artifact",
+          "sha256": "3131aacfd28b3959b1205067c6cff2dd34403fa4029bb70702ffc63b2a2e0a54"
+        },
+        {
+          "artifact": "final certificate metadata artifact",
+          "sha256": "16e5510f997d21380653b641e6e02a62e13e5bf0ec769b43e9446463bc87faa9"
+        }
+      ],
+      "limitations": "This certificate proves UNSAT only for the q00 universal trim CNF. It does not settle a legal diameter-6 instance, q00 refinement, or the full theorem; the Actions proof artifact expires on 2026-11-01 unless archived durably."
     }
   ]
 }

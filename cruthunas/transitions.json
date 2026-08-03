@@ -4,71 +4,426 @@
     {
       "claim_id": "n10-k4-coloring-reproduction",
       "records": [
-        {"id": "T-N10-K4-0-1", "from_gate": 0, "to_gate": 1, "date": "2026-08-02", "actor": "repository-bootstrap", "reason": "Register claim in the Cruthúnas ledger.", "evidence_ids": [], "source_revision": "research-workspace-hardening", "bootstrap_import": true},
-        {"id": "T-N10-K4-1-2", "from_gate": 1, "to_gate": 2, "date": "2026-08-02", "actor": "repository-bootstrap", "reason": "Record exact scope, source boundary, limitations, and repository status.", "evidence_ids": [], "source_revision": "research-workspace-hardening", "bootstrap_import": true},
-        {"id": "T-N10-K4-2-3", "from_gate": 2, "to_gate": 3, "date": "2026-08-02", "actor": "repository-bootstrap", "reason": "Link typed reproduction evidence and deterministic verification command.", "evidence_ids": ["E-N10-K4-REPRO"], "source_revision": "research-workspace-hardening", "bootstrap_import": true},
-        {"id": "T-N10-K4-3-4", "from_gate": 3, "to_gate": 4, "date": "2026-08-02", "actor": "repository-bootstrap", "reason": "Register successful internal reproduction within the package scope.", "evidence_ids": ["E-N10-K4-REPRO"], "source_revision": "research-workspace-hardening", "bootstrap_import": true}
+        {
+          "id": "T-N10-K4-0-1",
+          "from_gate": 0,
+          "to_gate": 1,
+          "date": "2026-08-02",
+          "actor": "repository-bootstrap",
+          "reason": "Register claim in the Cruthúnas ledger.",
+          "evidence_ids": [],
+          "source_revision": "research-workspace-hardening",
+          "bootstrap_import": true
+        },
+        {
+          "id": "T-N10-K4-1-2",
+          "from_gate": 1,
+          "to_gate": 2,
+          "date": "2026-08-02",
+          "actor": "repository-bootstrap",
+          "reason": "Record exact scope, source boundary, limitations, and repository status.",
+          "evidence_ids": [],
+          "source_revision": "research-workspace-hardening",
+          "bootstrap_import": true
+        },
+        {
+          "id": "T-N10-K4-2-3",
+          "from_gate": 2,
+          "to_gate": 3,
+          "date": "2026-08-02",
+          "actor": "repository-bootstrap",
+          "reason": "Link typed reproduction evidence and deterministic verification command.",
+          "evidence_ids": [
+            "E-N10-K4-REPRO"
+          ],
+          "source_revision": "research-workspace-hardening",
+          "bootstrap_import": true
+        },
+        {
+          "id": "T-N10-K4-3-4",
+          "from_gate": 3,
+          "to_gate": 4,
+          "date": "2026-08-02",
+          "actor": "repository-bootstrap",
+          "reason": "Register successful internal reproduction within the package scope.",
+          "evidence_ids": [
+            "E-N10-K4-REPRO"
+          ],
+          "source_revision": "research-workspace-hardening",
+          "bootstrap_import": true
+        }
       ]
     },
     {
       "claim_id": "n11-k4-candidate",
       "records": [
-        {"id": "T-N11-K4-0-1", "from_gate": 0, "to_gate": 1, "date": "2026-08-02", "actor": "repository-bootstrap", "reason": "Register claim in the Cruthúnas ledger.", "evidence_ids": [], "source_revision": "research-workspace-hardening", "bootstrap_import": true},
-        {"id": "T-N11-K4-1-2", "from_gate": 1, "to_gate": 2, "date": "2026-08-02", "actor": "repository-bootstrap", "reason": "Record diameter-4 scope and candidate-proof boundary.", "evidence_ids": [], "source_revision": "research-workspace-hardening", "bootstrap_import": true},
-        {"id": "T-N11-K4-2-3", "from_gate": 2, "to_gate": 3, "date": "2026-08-02", "actor": "repository-bootstrap", "reason": "Link proof package, witness, and independent verifiers.", "evidence_ids": ["E-N11-K4-CANDIDATE"], "source_revision": "research-workspace-hardening", "bootstrap_import": true},
-        {"id": "T-N11-K4-3-4", "from_gate": 3, "to_gate": 4, "date": "2026-08-02", "actor": "repository-bootstrap", "reason": "Register successful internal checks without external-review promotion.", "evidence_ids": ["E-N11-K4-CANDIDATE"], "source_revision": "research-workspace-hardening", "bootstrap_import": true}
+        {
+          "id": "T-N11-K4-0-1",
+          "from_gate": 0,
+          "to_gate": 1,
+          "date": "2026-08-02",
+          "actor": "repository-bootstrap",
+          "reason": "Register claim in the Cruthúnas ledger.",
+          "evidence_ids": [],
+          "source_revision": "research-workspace-hardening",
+          "bootstrap_import": true
+        },
+        {
+          "id": "T-N11-K4-1-2",
+          "from_gate": 1,
+          "to_gate": 2,
+          "date": "2026-08-02",
+          "actor": "repository-bootstrap",
+          "reason": "Record diameter-4 scope and candidate-proof boundary.",
+          "evidence_ids": [],
+          "source_revision": "research-workspace-hardening",
+          "bootstrap_import": true
+        },
+        {
+          "id": "T-N11-K4-2-3",
+          "from_gate": 2,
+          "to_gate": 3,
+          "date": "2026-08-02",
+          "actor": "repository-bootstrap",
+          "reason": "Link proof package, witness, and independent verifiers.",
+          "evidence_ids": [
+            "E-N11-K4-CANDIDATE"
+          ],
+          "source_revision": "research-workspace-hardening",
+          "bootstrap_import": true
+        },
+        {
+          "id": "T-N11-K4-3-4",
+          "from_gate": 3,
+          "to_gate": 4,
+          "date": "2026-08-02",
+          "actor": "repository-bootstrap",
+          "reason": "Register successful internal checks without external-review promotion.",
+          "evidence_ids": [
+            "E-N11-K4-CANDIDATE"
+          ],
+          "source_revision": "research-workspace-hardening",
+          "bootstrap_import": true
+        }
       ]
     },
     {
       "claim_id": "n11-k8-candidate",
       "records": [
-        {"id": "T-N11-K8-0-1", "from_gate": 0, "to_gate": 1, "date": "2026-08-02", "actor": "repository-bootstrap", "reason": "Register claim in the Cruthúnas ledger.", "evidence_ids": [], "source_revision": "research-workspace-hardening", "bootstrap_import": true},
-        {"id": "T-N11-K8-1-2", "from_gate": 1, "to_gate": 2, "date": "2026-08-02", "actor": "repository-bootstrap", "reason": "Record diameter-8 scope and candidate-proof boundary.", "evidence_ids": [], "source_revision": "research-workspace-hardening", "bootstrap_import": true},
-        {"id": "T-N11-K8-2-3", "from_gate": 2, "to_gate": 3, "date": "2026-08-02", "actor": "repository-bootstrap", "reason": "Link proof package, coloring witness, graph hash, and independent verifiers.", "evidence_ids": ["E-N11-K8-CANDIDATE"], "source_revision": "research-workspace-hardening", "bootstrap_import": true},
-        {"id": "T-N11-K8-3-4", "from_gate": 3, "to_gate": 4, "date": "2026-08-02", "actor": "repository-bootstrap", "reason": "Register successful internal checks without external-review promotion.", "evidence_ids": ["E-N11-K8-CANDIDATE"], "source_revision": "research-workspace-hardening", "bootstrap_import": true}
+        {
+          "id": "T-N11-K8-0-1",
+          "from_gate": 0,
+          "to_gate": 1,
+          "date": "2026-08-02",
+          "actor": "repository-bootstrap",
+          "reason": "Register claim in the Cruthúnas ledger.",
+          "evidence_ids": [],
+          "source_revision": "research-workspace-hardening",
+          "bootstrap_import": true
+        },
+        {
+          "id": "T-N11-K8-1-2",
+          "from_gate": 1,
+          "to_gate": 2,
+          "date": "2026-08-02",
+          "actor": "repository-bootstrap",
+          "reason": "Record diameter-8 scope and candidate-proof boundary.",
+          "evidence_ids": [],
+          "source_revision": "research-workspace-hardening",
+          "bootstrap_import": true
+        },
+        {
+          "id": "T-N11-K8-2-3",
+          "from_gate": 2,
+          "to_gate": 3,
+          "date": "2026-08-02",
+          "actor": "repository-bootstrap",
+          "reason": "Link proof package, coloring witness, graph hash, and independent verifiers.",
+          "evidence_ids": [
+            "E-N11-K8-CANDIDATE"
+          ],
+          "source_revision": "research-workspace-hardening",
+          "bootstrap_import": true
+        },
+        {
+          "id": "T-N11-K8-3-4",
+          "from_gate": 3,
+          "to_gate": 4,
+          "date": "2026-08-02",
+          "actor": "repository-bootstrap",
+          "reason": "Register successful internal checks without external-review promotion.",
+          "evidence_ids": [
+            "E-N11-K8-CANDIDATE"
+          ],
+          "source_revision": "research-workspace-hardening",
+          "bootstrap_import": true
+        }
       ]
     },
     {
       "claim_id": "n11-k6-trim-attack-surface",
       "records": [
-        {"id": "T-K6-ROOT-0-1", "from_gate": 0, "to_gate": 1, "date": "2026-08-02", "actor": "repository-bootstrap", "reason": "Register claim in the Cruthúnas ledger.", "evidence_ids": [], "source_revision": "research-workspace-hardening", "bootstrap_import": true},
-        {"id": "T-K6-ROOT-1-2", "from_gate": 1, "to_gate": 2, "date": "2026-08-02", "actor": "repository-bootstrap", "reason": "Record the universal-cover scope and non-theorem limitation.", "evidence_ids": [], "source_revision": "research-workspace-hardening", "bootstrap_import": true},
-        {"id": "T-K6-ROOT-2-3", "from_gate": 2, "to_gate": 3, "date": "2026-08-02", "actor": "repository-bootstrap", "reason": "Link graph generators, hashes, and independent verification.", "evidence_ids": ["E-K6-ROOT-ATTACK"], "source_revision": "research-workspace-hardening", "bootstrap_import": true},
-        {"id": "T-K6-ROOT-3-4", "from_gate": 3, "to_gate": 4, "date": "2026-08-02", "actor": "repository-bootstrap", "reason": "Register reproduced root attack surface without theorem promotion.", "evidence_ids": ["E-K6-ROOT-ATTACK"], "source_revision": "research-workspace-hardening", "bootstrap_import": true}
+        {
+          "id": "T-K6-ROOT-0-1",
+          "from_gate": 0,
+          "to_gate": 1,
+          "date": "2026-08-02",
+          "actor": "repository-bootstrap",
+          "reason": "Register claim in the Cruthúnas ledger.",
+          "evidence_ids": [],
+          "source_revision": "research-workspace-hardening",
+          "bootstrap_import": true
+        },
+        {
+          "id": "T-K6-ROOT-1-2",
+          "from_gate": 1,
+          "to_gate": 2,
+          "date": "2026-08-02",
+          "actor": "repository-bootstrap",
+          "reason": "Record the universal-cover scope and non-theorem limitation.",
+          "evidence_ids": [],
+          "source_revision": "research-workspace-hardening",
+          "bootstrap_import": true
+        },
+        {
+          "id": "T-K6-ROOT-2-3",
+          "from_gate": 2,
+          "to_gate": 3,
+          "date": "2026-08-02",
+          "actor": "repository-bootstrap",
+          "reason": "Link graph generators, hashes, and independent verification.",
+          "evidence_ids": [
+            "E-K6-ROOT-ATTACK"
+          ],
+          "source_revision": "research-workspace-hardening",
+          "bootstrap_import": true
+        },
+        {
+          "id": "T-K6-ROOT-3-4",
+          "from_gate": 3,
+          "to_gate": 4,
+          "date": "2026-08-02",
+          "actor": "repository-bootstrap",
+          "reason": "Register reproduced root attack surface without theorem promotion.",
+          "evidence_ids": [
+            "E-K6-ROOT-ATTACK"
+          ],
+          "source_revision": "research-workspace-hardening",
+          "bootstrap_import": true
+        }
       ]
     },
     {
       "claim_id": "n11-k6-trim-unsat",
       "records": [
-        {"id": "T-K6-UNSAT-0-1", "from_gate": 0, "to_gate": 1, "date": "2026-08-02", "actor": "repository-bootstrap", "reason": "Register claim in the Cruthúnas ledger.", "evidence_ids": [], "source_revision": "research-workspace-hardening", "bootstrap_import": true},
-        {"id": "T-K6-UNSAT-1-2", "from_gate": 1, "to_gate": 2, "date": "2026-08-02", "actor": "repository-bootstrap", "reason": "Record the exact graph-coloring scope and non-implication for legal diameter-6 sets.", "evidence_ids": [], "source_revision": "research-workspace-hardening", "bootstrap_import": true},
-        {"id": "T-K6-UNSAT-2-3", "from_gate": 2, "to_gate": 3, "date": "2026-08-02", "actor": "repository-bootstrap", "reason": "Link CNF, proof trace, checker, and verification output.", "evidence_ids": ["E-K6-ROOT-UNSAT"], "source_revision": "research-workspace-hardening", "bootstrap_import": true},
-        {"id": "T-K6-UNSAT-3-4", "from_gate": 3, "to_gate": 4, "date": "2026-08-02", "actor": "repository-bootstrap", "reason": "Register independently checked UNSAT certificate as a scoped obstruction.", "evidence_ids": ["E-K6-ROOT-UNSAT"], "source_revision": "research-workspace-hardening", "bootstrap_import": true}
+        {
+          "id": "T-K6-UNSAT-0-1",
+          "from_gate": 0,
+          "to_gate": 1,
+          "date": "2026-08-02",
+          "actor": "repository-bootstrap",
+          "reason": "Register claim in the Cruthúnas ledger.",
+          "evidence_ids": [],
+          "source_revision": "research-workspace-hardening",
+          "bootstrap_import": true
+        },
+        {
+          "id": "T-K6-UNSAT-1-2",
+          "from_gate": 1,
+          "to_gate": 2,
+          "date": "2026-08-02",
+          "actor": "repository-bootstrap",
+          "reason": "Record the exact graph-coloring scope and non-implication for legal diameter-6 sets.",
+          "evidence_ids": [],
+          "source_revision": "research-workspace-hardening",
+          "bootstrap_import": true
+        },
+        {
+          "id": "T-K6-UNSAT-2-3",
+          "from_gate": 2,
+          "to_gate": 3,
+          "date": "2026-08-02",
+          "actor": "repository-bootstrap",
+          "reason": "Link CNF, proof trace, checker, and verification output.",
+          "evidence_ids": [
+            "E-K6-ROOT-UNSAT"
+          ],
+          "source_revision": "research-workspace-hardening",
+          "bootstrap_import": true
+        },
+        {
+          "id": "T-K6-UNSAT-3-4",
+          "from_gate": 3,
+          "to_gate": 4,
+          "date": "2026-08-02",
+          "actor": "repository-bootstrap",
+          "reason": "Register independently checked UNSAT certificate as a scoped obstruction.",
+          "evidence_ids": [
+            "E-K6-ROOT-UNSAT"
+          ],
+          "source_revision": "research-workspace-hardening",
+          "bootstrap_import": true
+        }
       ]
     },
     {
       "claim_id": "n11-k6-branch-search-scaffold",
       "records": [
-        {"id": "T-K6-BRANCH-0-1", "from_gate": 0, "to_gate": 1, "date": "2026-08-02", "actor": "repository-bootstrap", "reason": "Register claim in the Cruthúnas ledger.", "evidence_ids": [], "source_revision": "research-workspace-hardening", "bootstrap_import": true},
-        {"id": "T-K6-BRANCH-1-2", "from_gate": 1, "to_gate": 2, "date": "2026-08-02", "actor": "repository-bootstrap", "reason": "Record infrastructure scope and unresolved-leaf boundary.", "evidence_ids": [], "source_revision": "research-workspace-hardening", "bootstrap_import": true},
-        {"id": "T-K6-BRANCH-2-3", "from_gate": 2, "to_gate": 3, "date": "2026-08-02", "actor": "repository-bootstrap", "reason": "Link root generation, graph relations, manifest, and independent verification.", "evidence_ids": ["E-K6-BRANCH-SCAFFOLD"], "source_revision": "research-workspace-hardening", "bootstrap_import": true},
-        {"id": "T-K6-BRANCH-3-4", "from_gate": 3, "to_gate": 4, "date": "2026-08-02", "actor": "repository-bootstrap", "reason": "Register checked search infrastructure while retaining UNKNOWN descendants.", "evidence_ids": ["E-K6-BRANCH-SCAFFOLD"], "source_revision": "research-workspace-hardening", "bootstrap_import": true}
+        {
+          "id": "T-K6-BRANCH-0-1",
+          "from_gate": 0,
+          "to_gate": 1,
+          "date": "2026-08-02",
+          "actor": "repository-bootstrap",
+          "reason": "Register claim in the Cruthúnas ledger.",
+          "evidence_ids": [],
+          "source_revision": "research-workspace-hardening",
+          "bootstrap_import": true
+        },
+        {
+          "id": "T-K6-BRANCH-1-2",
+          "from_gate": 1,
+          "to_gate": 2,
+          "date": "2026-08-02",
+          "actor": "repository-bootstrap",
+          "reason": "Record infrastructure scope and unresolved-leaf boundary.",
+          "evidence_ids": [],
+          "source_revision": "research-workspace-hardening",
+          "bootstrap_import": true
+        },
+        {
+          "id": "T-K6-BRANCH-2-3",
+          "from_gate": 2,
+          "to_gate": 3,
+          "date": "2026-08-02",
+          "actor": "repository-bootstrap",
+          "reason": "Link root generation, graph relations, manifest, and independent verification.",
+          "evidence_ids": [
+            "E-K6-BRANCH-SCAFFOLD"
+          ],
+          "source_revision": "research-workspace-hardening",
+          "bootstrap_import": true
+        },
+        {
+          "id": "T-K6-BRANCH-3-4",
+          "from_gate": 3,
+          "to_gate": 4,
+          "date": "2026-08-02",
+          "actor": "repository-bootstrap",
+          "reason": "Register checked search infrastructure while retaining UNKNOWN descendants.",
+          "evidence_ids": [
+            "E-K6-BRANCH-SCAFFOLD"
+          ],
+          "source_revision": "research-workspace-hardening",
+          "bootstrap_import": true
+        }
       ]
     },
     {
       "claim_id": "n11-k6-four-base-reduction",
       "records": [
-        {"id": "T-K6-FOUR-BASE-0-1", "from_gate": 0, "to_gate": 1, "date": "2026-08-02", "actor": "repository-bootstrap", "reason": "Register claim in the Cruthúnas ledger.", "evidence_ids": [], "source_revision": "research-workspace-hardening", "bootstrap_import": true},
-        {"id": "T-K6-FOUR-BASE-1-2", "from_gate": 1, "to_gate": 2, "date": "2026-08-02", "actor": "repository-bootstrap", "reason": "Record exhaustive-reduction scope and UNKNOWN case boundary.", "evidence_ids": [], "source_revision": "research-workspace-hardening", "bootstrap_import": true},
-        {"id": "T-K6-FOUR-BASE-2-3", "from_gate": 2, "to_gate": 3, "date": "2026-08-02", "actor": "repository-bootstrap", "reason": "Link proof, generators, independent verification, case status, and canonical hashes.", "evidence_ids": ["E-K6-FOUR-BASE"], "source_revision": "research-workspace-hardening", "bootstrap_import": true},
-        {"id": "T-K6-FOUR-BASE-3-4", "from_gate": 3, "to_gate": 4, "date": "2026-08-02", "actor": "repository-bootstrap", "reason": "Register checked reduction without claiming any of the 58 cases resolved.", "evidence_ids": ["E-K6-FOUR-BASE"], "source_revision": "research-workspace-hardening", "bootstrap_import": true}
+        {
+          "id": "T-K6-FOUR-BASE-0-1",
+          "from_gate": 0,
+          "to_gate": 1,
+          "date": "2026-08-02",
+          "actor": "repository-bootstrap",
+          "reason": "Register claim in the Cruthúnas ledger.",
+          "evidence_ids": [],
+          "source_revision": "research-workspace-hardening",
+          "bootstrap_import": true
+        },
+        {
+          "id": "T-K6-FOUR-BASE-1-2",
+          "from_gate": 1,
+          "to_gate": 2,
+          "date": "2026-08-02",
+          "actor": "repository-bootstrap",
+          "reason": "Record exhaustive-reduction scope and UNKNOWN case boundary.",
+          "evidence_ids": [],
+          "source_revision": "research-workspace-hardening",
+          "bootstrap_import": true
+        },
+        {
+          "id": "T-K6-FOUR-BASE-2-3",
+          "from_gate": 2,
+          "to_gate": 3,
+          "date": "2026-08-02",
+          "actor": "repository-bootstrap",
+          "reason": "Link proof, generators, independent verification, case status, and canonical hashes.",
+          "evidence_ids": [
+            "E-K6-FOUR-BASE"
+          ],
+          "source_revision": "research-workspace-hardening",
+          "bootstrap_import": true
+        },
+        {
+          "id": "T-K6-FOUR-BASE-3-4",
+          "from_gate": 3,
+          "to_gate": 4,
+          "date": "2026-08-02",
+          "actor": "repository-bootstrap",
+          "reason": "Register checked reduction without claiming any of the 58 cases resolved.",
+          "evidence_ids": [
+            "E-K6-FOUR-BASE"
+          ],
+          "source_revision": "research-workspace-hardening",
+          "bootstrap_import": true
+        }
       ]
     },
     {
       "claim_id": "n11-k6-full",
       "records": [
-        {"id": "T-K6-FULL-0-1", "from_gate": 0, "to_gate": 1, "date": "2026-08-02", "actor": "repository-bootstrap", "reason": "Register the active theorem target.", "evidence_ids": [], "source_revision": "research-workspace-hardening", "bootstrap_import": true},
-        {"id": "T-K6-FULL-1-2", "from_gate": 1, "to_gate": 2, "date": "2026-08-02", "actor": "repository-bootstrap", "reason": "Record exact theorem scope, dependencies, and unresolved status.", "evidence_ids": [], "source_revision": "research-workspace-hardening", "bootstrap_import": true}
+        {
+          "id": "T-K6-FULL-0-1",
+          "from_gate": 0,
+          "to_gate": 1,
+          "date": "2026-08-02",
+          "actor": "repository-bootstrap",
+          "reason": "Register the active theorem target.",
+          "evidence_ids": [],
+          "source_revision": "research-workspace-hardening",
+          "bootstrap_import": true
+        },
+        {
+          "id": "T-K6-FULL-1-2",
+          "from_gate": 1,
+          "to_gate": 2,
+          "date": "2026-08-02",
+          "actor": "repository-bootstrap",
+          "reason": "Record exact theorem scope, dependencies, and unresolved status.",
+          "evidence_ids": [],
+          "source_revision": "research-workspace-hardening",
+          "bootstrap_import": true
+        }
+      ]
+    },
+    {
+      "claim_id": "n11-k6-q00-trim-unsat",
+      "records": [
+        {
+          "id": "T-K6-Q00-0-1",
+          "from_gate": 0,
+          "to_gate": 1,
+          "date": "2026-08-03",
+          "actor": "openai-gpt-5.6-thinking",
+          "reason": "Register the scoped q00 universal-trim UNSAT claim prospectively.",
+          "evidence_ids": [],
+          "source_revision": "1849ef7ce8d54a3bd4c15362f84b0496ace5fced",
+          "bootstrap_import": false
+        },
+        {
+          "id": "T-K6-Q00-1-2",
+          "from_gate": 1,
+          "to_gate": 2,
+          "date": "2026-08-03",
+          "actor": "openai-gpt-5.6-thinking",
+          "reason": "Record exact q00 trim scope, artifact boundary, refinement requirement, and theorem non-implication.",
+          "evidence_ids": [],
+          "source_revision": "1849ef7ce8d54a3bd4c15362f84b0496ace5fced",
+          "bootstrap_import": false
+        }
       ]
     }
   ]
