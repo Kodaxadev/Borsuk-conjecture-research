@@ -5,16 +5,26 @@ on:
   pull_request:
 
 jobs:
-  check-packages:
+  verify-lightweight-artifacts:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Confirm required package directories
-        run: |
-          test -d borsuk_11_k4_candidate
-          test -d borsuk_11_k6_attack_surface
-          test -d borsuk_11_k6_trim_unsat_certificate
-          test -d borsuk_11_k8_candidate
-          test -d borsuk_n10_k4_reproduction
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate registry and run independent verifiers
+        run: make verify
+
+      - name: Print research status
+        if: always()
+        run: make status
