@@ -34,6 +34,8 @@ verify-fast: validate
 	cd borsuk_11_k6_four_base_reduction && $(PYTHON) generate_cases.py
 	cd borsuk_11_k6_four_base_reduction && $(NODE) verify_independent.js
 	cd borsuk_11_k6_four_base_reduction && $(PYTHON) verify_status.py
+	cd borsuk_11_k6_four_base_reduction && $(PYTHON) build_instance.py q00 --metadata-only >/dev/null
+	cd borsuk_11_k6_four_base_reduction && $(PYTHON) verify_sat_lane.py
 
 verify-k6-certificate:
 	@set -eu; \
@@ -53,3 +55,4 @@ docs:
 	@echo "  - docs/VERIFICATION.md"
 	@echo "  - docs/PROJECT-STATUS.md"
 	@echo "  - docs/K6-EXECUTION-PLAN.md"
+	@echo "  - borsuk_11_k6_four_base_reduction/SAT-WORKFLOW.md"
