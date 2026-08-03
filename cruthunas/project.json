@@ -8,8 +8,10 @@
   "claim_registry": "research/claims.json",
   "ledger": "cruthunas/ledger.json",
   "evidence_registry": "cruthunas/evidence.json",
+  "observation_registry": "cruthunas/observations.json",
   "transition_registry": "cruthunas/transitions.json",
   "source_registry": "cruthunas/sources.json",
+  "observation_schema": "cruthunas/schemas/observation.schema.json",
   "transaction_schema": "cruthunas/schemas/transaction.schema.json",
   "transaction_plans": [
     "cruthunas/transactions/n11-k6-gate-2-to-3.blocked.json"
@@ -32,6 +34,7 @@
     "require_acyclic_claim_dependencies": true,
     "require_source_boundaries": true,
     "require_typed_evidence": true,
+    "require_non_evidentiary_observation_separation": true,
     "require_contiguous_transitions": true,
     "require_gate_3_to_4_registration": true,
     "require_artifact_paths": true,
