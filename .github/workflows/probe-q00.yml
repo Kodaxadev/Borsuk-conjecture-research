@@ -1,0 +1,220 @@
+name: probe-four-base-case
+
+on:
+  workflow_dispatch:
+    inputs:
+      case_id:
+        description: Canonical trim type q00 through q57
+        required: true
+        default: q00
+      limit_seconds:
+        description: Wall-clock solver limit in seconds, at most 900
+        required: true
+        default: '180'
+      produce_proof:
+        description: Generate a proof trace; use only for an intended UNSAT run
+        required: true
+        type: boolean
+        default: false
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  exact-solver-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CASE_ID: ${{ inputs.case_id }}
+      LIMIT_SECONDS: ${{ inputs.limit_seconds }}
+      PRODUCE_PROOF: ${{ inputs.produce_proof }}
+      CRUTHUNAS_CLAIM_ID: n11-k6-four-base-reduction
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate Cruthúnas governance
+        run: |
+          python scripts/cruthunas.py check --all
+          python scripts/cruthunas.py adapters check
+          python scripts/validate_cruthunas_transactions.py
+
+      - name: Validate requested inputs
+        run: |
+          case "$CASE_ID" in
+            q[0-5][0-9]) ;;
+            *) echo "invalid case id: $CASE_ID" >&2; exit 2 ;;
+          esac
+          numeric="${CASE_ID#q}"
+          if [ "$((10#$numeric))" -gt 57 ]; then
+            echo "case id outside q00-q57: $CASE_ID" >&2
+            exit 2
+          fi
+          case "$LIMIT_SECONDS" in
+            ''|*[!0-9]*) echo "limit must be an integer" >&2; exit 2 ;;
+          esac
+          if [ "$LIMIT_SECONDS" -lt 1 ] || [ "$LIMIT_SECONDS" -gt 900 ]; then
+            echo "limit must be between 1 and 900 seconds" >&2
+            exit 2
+          fi
+          case "$PRODUCE_PROOF" in
+            true|false) ;;
+            *) echo "produce_proof must be true or false" >&2; exit 2 ;;
+          esac
+
+      - name: Generate deterministic CNF
+        working-directory: borsuk_11_k6_four_base_reduction
+        run: |
+          python build_instance.py "$CASE_ID" --output-dir "work/$CASE_ID"
+
+      - name: Build pinned Kissat 4.0.0
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 \
+            'https://zenodo.org/records/13081405/files/arminbiere/kissat-rel-4.0.0.zip?download=1' \
+            --output /tmp/kissat-rel-4.0.0.zip
+          echo '89801fadc6d7a2ee1519a9cccf0c9029  /tmp/kissat-rel-4.0.0.zip' | md5sum --check --strict
+          rm -rf /tmp/kissat-source
+          mkdir /tmp/kissat-source
+          unzip -q /tmp/kissat-rel-4.0.0.zip -d /tmp/kissat-source
+          configure_path="$(find /tmp/kissat-source -type f -name configure | head -n 1)"
+          test -n "$configure_path"
+          source_dir="$(dirname "$configure_path")"
+          cd "$source_dir"
+          ./configure
+          make -j2
+          test -x build/kissat
+          cp build/kissat /tmp/kissat-4.0.0
+          /tmp/kissat-4.0.0 --version | tee "$GITHUB_WORKSPACE/borsuk_11_k6_four_base_reduction/work/$CASE_ID/solver-version.txt"
+          sha256sum /tmp/kissat-4.0.0 | tee "$GITHUB_WORKSPACE/borsuk_11_k6_four_base_reduction/work/$CASE_ID/solver-binary.sha256"
+
+      - name: Run bounded exact probe
+        id: solve
+        working-directory: borsuk_11_k6_four_base_reduction
+        shell: bash
+        run: |
+          set -u
+          work="work/$CASE_ID"
+          cnf="$work/${CASE_ID}_12color.cnf"
+          proof="$work/${CASE_ID}.drat"
+          solver_args=("$cnf")
+          if [ "$PRODUCE_PROOF" = true ]; then
+            solver_args+=("$proof")
+          fi
+
+          started="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          set +e
+          timeout --signal=TERM --kill-after=10s "$LIMIT_SECONDS" \
+            /tmp/kissat-4.0.0 "${solver_args[@]}" \
+            >"$work/solver.out" 2>"$work/solver.err"
+          solver_status=$?
+          set -e
+          finished="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+          state=UNKNOWN
+          invalid_model=0
+          partial_proof_discarded=false
+          if [ "$solver_status" -eq 10 ]; then
+            set +e
+            python verify_model.py "$CASE_ID" "$work/solver.out" \
+              --output "$work/${CASE_ID}_verified_coloring.json" \
+              >"$work/checker.out" 2>&1
+            checker_status=$?
+            set -e
+            cat "$work/checker.out"
+            if [ "$checker_status" -eq 0 ]; then
+              state=SAT_MODEL
+            else
+              state=SAT_MODEL_INVALID
+              invalid_model=1
+            fi
+          elif [ "$solver_status" -eq 20 ]; then
+            state=UNSAT_UNVERIFIED
+            if [ "$PRODUCE_PROOF" = true ] && [ ! -s "$proof" ]; then
+              state=UNKNOWN
+            fi
+          elif [ -s "$proof" ]; then
+            rm -f "$proof"
+            partial_proof_discarded=true
+          fi
+
+          if [ "$solver_status" -eq 20 ] && [ -s "$proof" ]; then
+            gzip -9 "$proof"
+          fi
+
+          export SOLVER_STATUS="$solver_status"
+          export RESULT_STATE="$state"
+          export STARTED_UTC="$started"
+          export FINISHED_UTC="$finished"
+          export PARTIAL_PROOF_DISCARDED="$partial_proof_discarded"
+          python - "$work/probe-result.json" <<'PY'
+          import json, os, sys
+          from pathlib import Path
+          path = Path(sys.argv[1])
+          path.write_text(json.dumps({
+              'schema': 'borsuk-bounded-solver-probe-v1',
+              'case_id': os.environ['CASE_ID'],
+              'claim_id': os.environ['CRUTHUNAS_CLAIM_ID'],
+              'cruthunas_state': 'PROBE_ONLY_NOT_REGISTERED_EVIDENCE',
+              'limit_seconds': int(os.environ['LIMIT_SECONDS']),
+              'produce_proof': os.environ['PRODUCE_PROOF'] == 'true',
+              'solver_exit_status': int(os.environ['SOLVER_STATUS']),
+              'state': os.environ['RESULT_STATE'],
+              'partial_proof_discarded': os.environ['PARTIAL_PROOF_DISCARDED'] == 'true',
+              'started_utc': os.environ['STARTED_UTC'],
+              'finished_utc': os.environ['FINISHED_UTC'],
+              'repository_status_changed': False,
+          }, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          PY
+          sha256sum "$work"/* >"$work/artifact-sha256.txt"
+
+          echo "solver_status=$solver_status" >> "$GITHUB_OUTPUT"
+          echo "result_state=$state" >> "$GITHUB_OUTPUT"
+          if [ "$invalid_model" -ne 0 ]; then
+            exit 1
+          fi
+
+      - name: Normalize probe result metadata
+        if: always()
+        working-directory: borsuk_11_k6_four_base_reduction
+        shell: bash
+        run: |
+          work="work/$CASE_ID"
+          test -d "$work"
+          solver_report="$(grep -E '^s (SATISFIABLE|UNSATISFIABLE)' "$work/solver.out" >/dev/null 2>&1 && echo reported || echo incomplete)"
+          python - "$work/probe-summary.json" "$solver_report" <<'PY'
+          import hashlib, json, os, sys
+          from pathlib import Path
+          root = Path(sys.argv[1]).parent
+          files = {}
+          for path in sorted(root.iterdir()):
+              if path.is_file():
+                  files[path.name] = {
+                      'bytes': path.stat().st_size,
+                      'sha256': hashlib.sha256(path.read_bytes()).hexdigest(),
+                  }
+          Path(sys.argv[1]).write_text(json.dumps({
+              'schema': 'borsuk-probe-artifact-index-v1',
+              'case_id': os.environ['CASE_ID'],
+              'claim_id': os.environ['CRUTHUNAS_CLAIM_ID'],
+              'cruthunas_state': 'PROBE_ONLY_NOT_REGISTERED_EVIDENCE',
+              'solver_report': sys.argv[2],
+              'files': files,
+              'repository_status_changed': False,
+          }, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          PY
+
+      - name: Upload probe artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.CASE_ID }}-exact-probe
+          path: borsuk_11_k6_four_base_reduction/work/${{ env.CASE_ID }}/
+          if-no-files-found: error
+          retention-days: 30

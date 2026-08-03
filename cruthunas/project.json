@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "framework": "Cruthúnas",
+  "framework_state": "CR-0",
+  "governance_skill": "cruthunas-govern",
+  "project_id": "borsuk-01-d11",
+  "project_title": "0/1-Borsuk investigation in dimension 11",
+  "claim_registry": "research/claims.json",
+  "ledger": "cruthunas/ledger.json",
+  "evidence_registry": "cruthunas/evidence.json",
+  "observation_registry": "cruthunas/observations.json",
+  "transition_registry": "cruthunas/transitions.json",
+  "source_registry": "cruthunas/sources.json",
+  "observation_schema": "cruthunas/schemas/observation.schema.json",
+  "transaction_schema": "cruthunas/schemas/transaction.schema.json",
+  "transaction_plans": [
+    "cruthunas/transactions/n11-k6-gate-2-to-3.blocked.json"
+  ],
+  "canonical_skill": "cruthunas/skills/cruthunas-govern/SKILL.md",
+  "adapters": [
+    ".claude/skills/cruthunas-govern/SKILL.md",
+    ".codex/skills/cruthunas-govern/SKILL.md"
+  ],
+  "gates": {
+    "1": "REGISTERED",
+    "2": "SCOPED",
+    "3": "EVIDENCE_LINKED",
+    "4": "INTERNALLY_CHECKED",
+    "5": "EXTERNALLY_REVIEWED",
+    "6": "PUBLICATION_FROZEN"
+  },
+  "policy": {
+    "require_unique_claim_ids": true,
+    "require_acyclic_claim_dependencies": true,
+    "require_source_boundaries": true,
+    "require_typed_evidence": true,
+    "require_non_evidentiary_observation_separation": true,
+    "require_contiguous_transitions": true,
+    "require_gate_3_to_4_registration": true,
+    "require_artifact_paths": true,
+    "require_source_revision_pins": true,
+    "require_dry_run_transaction_plans": true,
+    "forbid_freehand_status_changes": true,
+    "forbid_timeout_as_unsat": true,
+    "forbid_candidate_publication_promotion": true
+  },
+  "scope_boundary": "Repository-local deterministic governance pilot. Cruthúnas validates evidence and status discipline; it does not prove mathematical claims.",
+  "maturity_nonclaims": [
+    "No claim of Cruthúnas framework maturity beyond CR-0.",
+    "No claim of external conformance, release readiness, publication readiness, or CR-1.",
+    "No mathematical claim is promoted merely because Cruthúnas checks pass."
+  ]
+}

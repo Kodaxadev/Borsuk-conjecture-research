@@ -1,0 +1,355 @@
+{
+  "schema_version": 1,
+  "evidence": [
+    {
+      "id": "E-N10-K4-REPRO",
+      "claim_id": "n10-k4-coloring-reproduction",
+      "type": "REPRODUCTION",
+      "epistemic_class": "COMPUTATIONAL",
+      "verification_state": "INDEPENDENTLY_REPRODUCED",
+      "paths": [
+        "borsuk_n10_k4_reproduction/README.md",
+        "borsuk_n10_k4_reproduction/reproduce_n10_k4.py"
+      ],
+      "commands": [
+        "cd borsuk_n10_k4_reproduction && python reproduce_n10_k4.py"
+      ],
+      "environment": {
+        "python": ">=3.11",
+        "external_dependencies": []
+      },
+      "source_revision": "research-workspace-hardening",
+      "clean_room_verifier": false,
+      "limitations": "Reproduces the coloring computation only; universal coverage is outside this evidence record."
+    },
+    {
+      "id": "E-N11-K4-CANDIDATE",
+      "claim_id": "n11-k4-candidate",
+      "type": "PROOF_PACKAGE",
+      "epistemic_class": "HYBRID",
+      "verification_state": "INTERNALLY_VERIFIED",
+      "paths": [
+        "borsuk_11_k4_candidate/PROOF.md",
+        "borsuk_11_k4_candidate/witness.json",
+        "borsuk_11_k4_candidate/verify.py",
+        "borsuk_11_k4_candidate/verify_independent.js"
+      ],
+      "commands": [
+        "cd borsuk_11_k4_candidate && python verify.py",
+        "cd borsuk_11_k4_candidate && node verify_independent.js"
+      ],
+      "environment": {
+        "python": ">=3.11",
+        "node": ">=22",
+        "external_dependencies": []
+      },
+      "source_revision": "research-workspace-hardening",
+      "clean_room_verifier": true,
+      "limitations": "Internal verification does not establish external review, novelty, priority, or publication readiness."
+    },
+    {
+      "id": "E-N11-K8-CANDIDATE",
+      "claim_id": "n11-k8-candidate",
+      "type": "PROOF_PACKAGE",
+      "epistemic_class": "HYBRID",
+      "verification_state": "INTERNALLY_VERIFIED",
+      "paths": [
+        "borsuk_11_k8_candidate/PROOF.md",
+        "borsuk_11_k8_candidate/witness.json",
+        "borsuk_11_k8_candidate/verify.py",
+        "borsuk_11_k8_candidate/verify_independent.js"
+      ],
+      "commands": [
+        "cd borsuk_11_k8_candidate && python verify.py",
+        "cd borsuk_11_k8_candidate && node verify_independent.js"
+      ],
+      "environment": {
+        "python": ">=3.11",
+        "node": ">=22",
+        "external_dependencies": []
+      },
+      "source_revision": "research-workspace-hardening",
+      "clean_room_verifier": true,
+      "artifact_hashes": [
+        {
+          "artifact": "exact-distance-8 graph",
+          "sha256": "32ed0ca436667ccbd7d026cc06d0990e31350684b2d0136cc93f7c3225294952"
+        }
+      ],
+      "limitations": "The certificate proves an upper bound only and has not completed external specialist review."
+    },
+    {
+      "id": "E-K6-ROOT-ATTACK",
+      "claim_id": "n11-k6-trim-attack-surface",
+      "type": "REDUCTION",
+      "epistemic_class": "COMPUTATIONAL",
+      "verification_state": "INDEPENDENTLY_REPRODUCED",
+      "paths": [
+        "borsuk_11_k6_attack_surface/ATTACK_SURFACE.md",
+        "borsuk_11_k6_attack_surface/verify_structure.py",
+        "borsuk_11_k6_attack_surface/verify_independent.js",
+        "borsuk_11_k6_attack_surface/SHA256SUMS"
+      ],
+      "commands": [
+        "cd borsuk_11_k6_attack_surface && python verify_structure.py",
+        "cd borsuk_11_k6_attack_surface && node verify_independent.js",
+        "cd borsuk_11_k6_attack_surface && sha256sum -c SHA256SUMS"
+      ],
+      "environment": {
+        "python": ">=3.11",
+        "node": ">=22",
+        "external_dependencies": []
+      },
+      "source_revision": "research-workspace-hardening",
+      "clean_room_verifier": true,
+      "artifact_hashes": [
+        {
+          "artifact": "trim graph",
+          "sha256": "a0c7fb01f50083df21ef1e74e478dda4a372455585e1e780763847a4a758fb55"
+        },
+        {
+          "artifact": "12-color CNF",
+          "sha256": "6adb2e0eeb83ed029b4330ff6a1e87e7692694c9d5860be58ac3c5818c8dce4d"
+        }
+      ],
+      "limitations": "The trim is a universal cover containing illegal distance-greater-than-6 pairs."
+    },
+    {
+      "id": "E-K6-ROOT-UNSAT",
+      "claim_id": "n11-k6-trim-unsat",
+      "type": "UNSAT_CERTIFICATE",
+      "epistemic_class": "COMPUTATIONAL",
+      "verification_state": "CERTIFICATE_CHECKED",
+      "paths": [
+        "borsuk_11_k6_trim_unsat_certificate/k6_trim_12color.cnf",
+        "borsuk_11_k6_trim_unsat_certificate/k6_trim_12color.drat.gz",
+        "borsuk_11_k6_trim_unsat_certificate/drup_check.cpp",
+        "borsuk_11_k6_trim_unsat_certificate/k6_drup_check.out"
+      ],
+      "commands": [
+        "make verify-k6-certificate"
+      ],
+      "environment": {
+        "compiler": "g++ with C++17 support",
+        "compression": "gzip",
+        "external_dependencies": []
+      },
+      "source_revision": "research-workspace-hardening",
+      "clean_room_verifier": true,
+      "limitations": "The certificate rejects only the coarse trim cover and does not settle the legal diameter-6 theorem target."
+    },
+    {
+      "id": "E-K6-BRANCH-SCAFFOLD",
+      "claim_id": "n11-k6-branch-search-scaffold",
+      "type": "SEARCH_INFRASTRUCTURE",
+      "epistemic_class": "INFRASTRUCTURE",
+      "verification_state": "INDEPENDENTLY_REPRODUCED",
+      "paths": [
+        "borsuk_11_k6_branch_search/README.md",
+        "borsuk_11_k6_branch_search/generate_root.py",
+        "borsuk_11_k6_branch_search/verify_root_independent.js",
+        "borsuk_11_k6_branch_search/manifest.json",
+        "borsuk_11_k6_branch_search/verify_manifest.py"
+      ],
+      "commands": [
+        "cd borsuk_11_k6_branch_search && python generate_root.py",
+        "cd borsuk_11_k6_branch_search && node verify_root_independent.js",
+        "cd borsuk_11_k6_branch_search && python verify_manifest.py"
+      ],
+      "environment": {
+        "python": ">=3.11",
+        "node": ">=22",
+        "external_dependencies": []
+      },
+      "source_revision": "research-workspace-hardening",
+      "clean_room_verifier": true,
+      "artifact_hashes": [
+        {
+          "artifact": "root vertex set",
+          "sha256": "ece78553536e8cbac3404fb77db0096352024b1dbf15ea4f129d782a1755590d"
+        },
+        {
+          "artifact": "root exact-distance-6 graph",
+          "sha256": "28aeb05060799feae42e3af33d51a66f852f0e6308cb737f0326bcda0af17c3f"
+        },
+        {
+          "artifact": "root incompatibility graph",
+          "sha256": "cc2059f512d2210f1c654c0ae7cbc1f00db22e29cc7fa6d1279e6b77a2f68828"
+        }
+      ],
+      "limitations": "The scaffold contains unresolved UNKNOWN leaves and is not a completed proof."
+    },
+    {
+      "id": "E-K6-FOUR-BASE",
+      "claim_id": "n11-k6-four-base-reduction",
+      "type": "SYMMETRY_REDUCTION",
+      "epistemic_class": "HYBRID",
+      "verification_state": "INDEPENDENTLY_REPRODUCED",
+      "paths": [
+        "borsuk_11_k6_four_base_reduction/PROOF.md",
+        "borsuk_11_k6_four_base_reduction/generate_cases.py",
+        "borsuk_11_k6_four_base_reduction/verify_independent.js",
+        "borsuk_11_k6_four_base_reduction/case_status.json",
+        "borsuk_11_k6_four_base_reduction/verify_status.py"
+      ],
+      "commands": [
+        "cd borsuk_11_k6_four_base_reduction && python generate_cases.py",
+        "cd borsuk_11_k6_four_base_reduction && node verify_independent.js",
+        "cd borsuk_11_k6_four_base_reduction && python verify_status.py"
+      ],
+      "environment": {
+        "python": ">=3.11",
+        "node": ">=22",
+        "external_dependencies": []
+      },
+      "source_revision": "research-workspace-hardening",
+      "clean_room_verifier": true,
+      "artifact_hashes": [
+        {
+          "artifact": "101 intermediate cases",
+          "sha256": "e60f5f81120e42c8c7eae2da299105e802266f6e92629cd6ac6ee24bcef9db19"
+        },
+        {
+          "artifact": "58 canonical trim types",
+          "sha256": "08913feaddbc0f930b6ef90a1677fbc4577cb23dcb6f4dac8987e37056d34742"
+        }
+      ],
+      "limitations": "The reduction is exhaustive, but all 58 solver-frontier types remain UNKNOWN at certificate level."
+    },
+    {
+      "id": "E-K6-SAT-LANE",
+      "claim_id": "n11-k6-four-base-reduction",
+      "type": "SEARCH_INFRASTRUCTURE",
+      "epistemic_class": "HYBRID",
+      "verification_state": "INDEPENDENTLY_REPRODUCED",
+      "paths": [
+        "borsuk_11_k6_four_base_reduction/SAT-WORKFLOW.md",
+        "borsuk_11_k6_four_base_reduction/build_inventory.py",
+        "borsuk_11_k6_four_base_reduction/build_instance.py",
+        "borsuk_11_k6_four_base_reduction/verify_model.py",
+        "borsuk_11_k6_four_base_reduction/verify_sat_lane.py",
+        "borsuk_11_k6_four_base_reduction/case_status.json",
+        "borsuk_11_k6_four_base_reduction/verify_status.py"
+      ],
+      "commands": [
+        "cd borsuk_11_k6_four_base_reduction && python build_inventory.py",
+        "cd borsuk_11_k6_four_base_reduction && python build_instance.py q00 --metadata-only",
+        "cd borsuk_11_k6_four_base_reduction && python verify_sat_lane.py"
+      ],
+      "environment": {
+        "python": ">=3.11",
+        "external_dependencies": []
+      },
+      "source_revision": "research-workspace-hardening",
+      "clean_room_verifier": true,
+      "artifact_hashes": [
+        {
+          "artifact": "q00 deterministic 12-color CNF smoke test",
+          "sha256": "b07c254b71ae0964851afb8dd9f7fa8a728433e27ae76a327e5c10a6e6e7df55"
+        },
+        {
+          "artifact": "q00 variable map smoke test",
+          "sha256": "742bf72f1ae30dc207e22a0c7efe1033ee6e4a5361987ed9e2f8ed3e2b85ed7d"
+        }
+      ],
+      "limitations": "This verifies deterministic instance generation and model-checking infrastructure only. It does not resolve q00 or any of the 58 canonical trim types; every case remains UNKNOWN until certificate-backed evidence is stored and checked."
+    },
+    {
+      "id": "E-K6-Q00-UNSAT",
+      "claim_id": "n11-k6-q00-trim-unsat",
+      "type": "UNSAT_CERTIFICATE",
+      "epistemic_class": "COMPUTATIONAL",
+      "verification_state": "CERTIFICATE_CHECKED",
+      "paths": [
+        "borsuk_11_k6_four_base_reduction/certificates/q00/README.md",
+        "borsuk_11_k6_four_base_reduction/certificates/q00/certificate-result.json",
+        ".github/workflows/q00-proof-certificate-bundle.yml"
+      ],
+      "commands": [
+        "gh run download 30827345819 -n q00-proof-certificate",
+        "gunzip -c q00.drat.gz > q00.drat && drat-trim q00_12color.cnf q00.drat -v"
+      ],
+      "environment": {
+        "solver": "Kissat 4.0.0",
+        "checker": "drat-trim revision 2e3b2dc0ecf938addbd779d42877b6ed69d9a985",
+        "proof_format": "binary DRAT",
+        "runner": "GitHub Actions ubuntu-24.04"
+      },
+      "source_revision": "1849ef7ce8d54a3bd4c15362f84b0496ace5fced",
+      "clean_room_verifier": true,
+      "artifact_hashes": [
+        {
+          "artifact": "q00 compact CNF",
+          "sha256": "36da8f78ae376b370f119d1fa16a58f6504607d949ac8315648fdbda52450299"
+        },
+        {
+          "artifact": "q00 variable map",
+          "sha256": "5f94c619b6a5996c54f269a88de5bfaff042e4c855ea8543869b84009c7dae45"
+        },
+        {
+          "artifact": "q00 binary DRAT proof",
+          "sha256": "59bf62a00d0c63b5ced7967c33421d953af5b96e423cc93dc862e595d08561b5"
+        },
+        {
+          "artifact": "drat-trim checker binary",
+          "sha256": "92f0aa9575ed519d66a99b8b1b3dde6ece4618ae4c202a3a4b200265dda0aa7a"
+        },
+        {
+          "artifact": "proof-producing workflow artifact",
+          "sha256": "e75f4a6571a22bef7f686ec6f91037f17598fecf19872d1c085113f706be2351"
+        },
+        {
+          "artifact": "final certificate bundle artifact",
+          "sha256": "3131aacfd28b3959b1205067c6cff2dd34403fa4029bb70702ffc63b2a2e0a54"
+        },
+        {
+          "artifact": "final certificate metadata artifact",
+          "sha256": "16e5510f997d21380653b641e6e02a62e13e5bf0ec769b43e9446463bc87faa9"
+        }
+      ],
+      "limitations": "This certificate proves UNSAT only for the q00 universal trim CNF. It does not settle a legal diameter-6 instance, q00 refinement, or the full theorem; the Actions proof artifact expires on 2026-11-01 unless archived durably."
+    },
+    {
+      "id": "E-K6-Q00-FIVE-BASE",
+      "claim_id": "n11-k6-q00-five-base-reduction",
+      "type": "SYMMETRY_REDUCTION",
+      "epistemic_class": "HYBRID",
+      "verification_state": "INDEPENDENTLY_REPRODUCED",
+      "paths": [
+        "borsuk_11_k6_q00_five_base_reduction/README.md",
+        "borsuk_11_k6_q00_five_base_reduction/PROOF.md",
+        "borsuk_11_k6_q00_five_base_reduction/generate_cases.py",
+        "borsuk_11_k6_q00_five_base_reduction/verify_independent.js",
+        "borsuk_11_k6_q00_five_base_reduction/case_status.json",
+        "borsuk_11_k6_q00_five_base_reduction/verify_status.py"
+      ],
+      "commands": [
+        "cd borsuk_11_k6_q00_five_base_reduction && python generate_cases.py",
+        "cd borsuk_11_k6_q00_five_base_reduction && node verify_independent.js",
+        "cd borsuk_11_k6_q00_five_base_reduction && python verify_status.py"
+      ],
+      "environment": {
+        "python": "3.11 standard library",
+        "node": "22 standard library",
+        "arithmetic": "exact integer enumeration"
+      },
+      "source_revision": "014378581f5a24ad8b7cc9748411c0ed0aad9105",
+      "clean_room_verifier": true,
+      "artifact_hashes": [
+        {
+          "artifact": "canonical 12-type case CSV",
+          "sha256": "d5b0825cd8645af2c595b3de3c851360e0b283d8ce61383482f76168e1ae9855"
+        },
+        {
+          "artifact": "complete fifth-vertex assignment",
+          "sha256": "6c94923a260290d59727bdcad68293b7f1962a7c5377885dd536fefa5962ffc7"
+        },
+        {
+          "artifact": "parent q00 compact CNF certificate dependency",
+          "sha256": "36da8f78ae376b370f119d1fa16a58f6504607d949ac8315648fdbda52450299"
+        }
+      ],
+      "limitations": "The reduction is exhaustive for five-point extensions of q00 but provides no SAT or UNSAT conclusion for any of the 12 child trims and no theorem-level promotion."
+    }
+  ]
+}

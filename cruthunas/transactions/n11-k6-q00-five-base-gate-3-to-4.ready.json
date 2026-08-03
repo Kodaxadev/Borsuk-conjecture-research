@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "transaction_id": "TX-K6-Q00-FIVE-BASE-3-4",
+  "dry_run": true,
+  "claim_id": "n11-k6-q00-five-base-reduction",
+  "expected_current_transition_id": "T-K6-Q00-FIVE-BASE-2-3",
+  "from_gate": 3,
+  "to_gate": 4,
+  "actor": "openai-gpt-5.6-thinking",
+  "reason": "Register the independently reproduced q00 five-base reduction as internally checked infrastructure.",
+  "source_revision": "ff5b8fcf74764d71cb3eb88125a71b784716e03e",
+  "evidence_ids": [
+    "E-K6-Q00-FIVE-BASE"
+  ],
+  "operations": [
+    {
+      "operation": "update",
+      "path": "cruthunas/evidence.json"
+    },
+    {
+      "operation": "update",
+      "path": "cruthunas/transitions.json"
+    },
+    {
+      "operation": "update",
+      "path": "cruthunas/ledger.json"
+    }
+  ],
+  "status": "READY",
+  "blocking_conditions": []
+}

@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "transaction_id": "TX-K6-Q00-3-4",
+  "dry_run": true,
+  "claim_id": "n11-k6-q00-trim-unsat",
+  "expected_current_transition_id": "T-K6-Q00-2-3",
+  "from_gate": 3,
+  "to_gate": 4,
+  "actor": "openai-gpt-5.6-thinking",
+  "reason": "Register the independently checked q00 UNSAT certificate as a scoped internal obstruction.",
+  "source_revision": "0b684b987ef947c935d1748d0924647f8afc6ce6",
+  "evidence_ids": [
+    "E-K6-Q00-UNSAT"
+  ],
+  "operations": [
+    {
+      "operation": "update",
+      "path": "cruthunas/evidence.json"
+    },
+    {
+      "operation": "update",
+      "path": "cruthunas/transitions.json"
+    },
+    {
+      "operation": "update",
+      "path": "cruthunas/ledger.json"
+    }
+  ],
+  "status": "READY",
+  "blocking_conditions": []
+}

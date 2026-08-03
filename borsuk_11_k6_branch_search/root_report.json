@@ -1,0 +1,59 @@
+{
+  "base_stabilizer_vertex_orbits": [
+    {
+      "key": [
+        0,
+        0
+      ],
+      "size": 2
+    },
+    {
+      "key": [
+        1,
+        1
+      ],
+      "size": 60
+    },
+    {
+      "key": [
+        2,
+        0
+      ],
+      "size": 30
+    },
+    {
+      "key": [
+        2,
+        2
+      ],
+      "size": 300
+    },
+    {
+      "key": [
+        3,
+        1
+      ],
+      "size": 100
+    },
+    {
+      "key": [
+        3,
+        3
+      ],
+      "size": 200
+    }
+  ],
+  "dimension": 11,
+  "first_incompatibility_edge": {
+    "distance": 8,
+    "left": "003",
+    "right": "0fc"
+  },
+  "fixed_neighbor_hex": "03f",
+  "g6_edge_count": 104606,
+  "g6_edge_sha256": "28aeb05060799feae42e3af33d51a66f852f0e6308cb737f0326bcda0af17c3f",
+  "incompatibility_edge_count": 37470,
+  "incompatibility_edge_sha256": "cc2059f512d2210f1c654c0ae7cbc1f00db22e29cc7fa6d1279e6b77a2f68828",
+  "vertex_count": 692,
+  "vertex_sha256": "ece78553536e8cbac3404fb77db0096352024b1dbf15ea4f129d782a1755590d"
+}
