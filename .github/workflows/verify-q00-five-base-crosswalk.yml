@@ -20,7 +20,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: verify-q00-five-base-crosswalk-${{ github.ref }}
@@ -31,12 +31,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - name: Checkout verifier branch
+      - name: Checkout verifier branch without credentials
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.ref }}
           fetch-depth: 0
-          persist-credentials: true
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
@@ -131,19 +131,63 @@ jobs:
           python scripts/validate_cruthunas_transactions.py
           python scripts/validate_cruthunas_observations.py
 
-      - name: Record checked crosswalk
+      - name: Bind result to the verified push run
         if: github.event_name == 'push'
+        env:
+          VERIFIED_EVENT: ${{ github.event_name }}
+          VERIFIED_HEAD_SHA: ${{ github.sha }}
+          VERIFIED_REPOSITORY: ${{ github.repository }}
+          VERIFIED_RUN_ID: ${{ github.run_id }}
+          VERIFIED_WORKFLOW_ID: '326360034'
+          VERIFIED_WORKFLOW_PATH: .github/workflows/verify-q00-five-base-crosswalk.yml
         run: |
           set -euo pipefail
-          destination=borsuk_11_k6_q00_five_base_reduction/differential/crosswalk-result.json
-          cp "$RUNNER_TEMP/q00-five-base-crosswalk.json" "$destination"
-          git config user.name 'q00-crosswalk-bot'
-          git config user.email 'q00-crosswalk-bot@users.noreply.github.com'
-          git add "$destination"
-          git diff --cached --check
-          if git diff --cached --quiet; then
-            echo 'Crosswalk result already current.'
-            exit 0
-          fi
-          git commit -m 'Record checked q00 five-base crosswalk'
-          git push origin HEAD:research/q00-five-base-crosswalk-verifier
+          python - "$RUNNER_TEMP/q00-five-base-crosswalk.json" <<'PY'
+          import json
+          import os
+          import sys
+          from pathlib import Path
+
+          path = Path(sys.argv[1])
+          result = json.loads(path.read_text(encoding='utf-8'))
+          metadata_keys = {
+              'verified_event',
+              'verified_head_sha',
+              'verified_repository',
+              'verified_run_id',
+              'verified_workflow_id',
+              'verified_workflow_path',
+          }
+          if metadata_keys & result.keys():
+              raise SystemExit('crosswalk result unexpectedly contains recorder metadata')
+          result.update(
+              {
+                  'verified_event': os.environ['VERIFIED_EVENT'],
+                  'verified_head_sha': os.environ['VERIFIED_HEAD_SHA'],
+                  'verified_repository': os.environ['VERIFIED_REPOSITORY'],
+                  'verified_run_id': int(os.environ['VERIFIED_RUN_ID']),
+                  'verified_workflow_id': int(os.environ['VERIFIED_WORKFLOW_ID']),
+                  'verified_workflow_path': os.environ['VERIFIED_WORKFLOW_PATH'],
+              }
+          )
+          path.write_text(
+              json.dumps(result, indent=2, sort_keys=True) + '\n',
+              encoding='utf-8',
+              newline='',
+          )
+          print(
+              'PASS bound artifact to '
+              f"run={result['verified_run_id']} head={result['verified_head_sha']}"
+          )
+          PY
+
+      - name: Upload checked crosswalk result
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: q00-five-base-crosswalk-result
+          path: ${{ runner.temp }}/q00-five-base-crosswalk.json
+          if-no-files-found: error
+          compression-level: 0
+          overwrite: true
+          retention-days: 7
