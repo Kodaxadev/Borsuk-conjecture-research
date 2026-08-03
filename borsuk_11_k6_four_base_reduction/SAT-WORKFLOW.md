@@ -20,6 +20,8 @@ python build_inventory.py --output inventory.csv
 
 The inventory is for scheduling only. It does not claim that smaller CNFs are mathematically or computationally easier.
 
+The instance generator performs a bounded deterministic search for a full 12-clique before writing the CNF. A full clique fixes every color label. If the fixed node budget is exhausted, the generator falls back to a deterministic verified clique and extends it greedily. This changes only color-symmetry breaking, not the underlying coloring problem.
+
 ## 2. Generate a deterministic instance
 
 ```bash
@@ -32,7 +34,7 @@ The generated directory contains:
 - `q00_variable_map.json`
 - `q00_metadata.json`
 
-The metadata records the canonical case-list hash, all covered intermediate cases, graph statistics, CNF hash, variable-map hash, and `UNKNOWN` as the initial result state.
+The metadata records the canonical case-list hash, all covered intermediate cases, graph statistics, the selected verified clique, CNF hash, variable-map hash, and `UNKNOWN` as the initial result state.
 
 Generated work files are ignored by Git. Only checked result artifacts and compact manifests should be promoted into the repository.
 
@@ -55,6 +57,8 @@ Possible research states are:
 - a complete SAT model is present;
 - a proof-producing UNSAT result and proof trace are present;
 - anything else is `UNKNOWN`.
+
+The manual `probe-four-base-case` workflow defaults to witness-only mode. Proof output must be requested explicitly for an intended UNSAT run. Timed-out partial proofs are deleted rather than archived as if useful.
 
 ## 4. Verify SAT independently
 
@@ -153,13 +157,16 @@ The theorem target remains open until every canonical type and every required de
 
 ## Deterministic smoke test
 
-`verify_sat_lane.py` generates `q00` in a temporary directory and freezes:
+`verify_sat_lane.py` generates the current `q00` encoding in a temporary directory and freezes:
 
 - vertices: 436
 - edges: 39,600
+- fixed clique: 12 vertices
 - variables: 5,232
-- clauses: 504,422
-- CNF SHA-256: `b07c254b71ae0964851afb8dd9f7fa8a728433e27ae76a327e5c10a6e6e7df55`
-- variable-map SHA-256: `742bf72f1ae30dc207e22a0c7efe1033ee6e4a5361987ed9e2f8ed3e2b85ed7d`
+- clauses: 504,424
+- CNF SHA-256: `b6f5c8e37c63f1149ebabb48ff54764eb6405f239ba31538ee4d711811781434`
+- variable-map SHA-256: `4802b73b31fabb5c180476e31fa14f9d4a40f8bfe13d8f96872d90286f9dc31b`
 
 The same test runs negative controls against the model verifier.
+
+The earlier 180-second `q00` probe used the superseded 10-clique CNF hash `b07c254b71ae0964851afb8dd9f7fa8a728433e27ae76a327e5c10a6e6e7df55` and remains `UNKNOWN`. It must not be cited as a run of the current encoding.
