@@ -1,20 +1,36 @@
 PYTHON ?= python
 NODE ?= node
 
-.PHONY: help status validate verify verify-fast verify-k6-certificate docs
+.PHONY: help status validate verify verify-fast verify-k6-certificate cruthunas-check cruthunas-changed cruthunas-status cruthunas-adapters docs
 
 help:
 	@echo "Available targets:"
-	@echo "  make status                Show the machine-readable research status"
-	@echo "  make validate              Validate the claim registry and package links"
-	@echo "  make verify                Run all lightweight independent verifiers"
+	@echo "  make status                Show Cruthúnas and repository research status"
+	@echo "  make validate              Validate Cruthúnas governance and claim links"
+	@echo "  make verify                Run governance plus all lightweight verifiers"
 	@echo "  make verify-k6-certificate Recheck the stored k=6 DRUP certificate"
+	@echo "  make cruthunas-check       Run the complete Cruthúnas CR-0 policy check"
+	@echo "  make cruthunas-changed     Show changed files and run conservative full check"
+	@echo "  make cruthunas-status      Show claim gate tuples"
+	@echo "  make cruthunas-adapters    Check Claude/Codex adapter synchronization"
 	@echo "  make docs                  Show the documentation entry points"
 
-status:
+status: cruthunas-status
 	$(PYTHON) scripts/repo_status.py
 
-validate:
+cruthunas-check:
+	$(PYTHON) scripts/cruthunas.py check --all
+
+cruthunas-changed:
+	$(PYTHON) scripts/cruthunas.py check --changed
+
+cruthunas-status:
+	$(PYTHON) scripts/cruthunas.py status
+
+cruthunas-adapters:
+	$(PYTHON) scripts/cruthunas.py adapters check
+
+validate: cruthunas-check cruthunas-adapters
 	$(PYTHON) scripts/validate_claims.py
 
 verify: verify-fast
@@ -51,6 +67,9 @@ verify-k6-certificate:
 docs:
 	@echo "Repository documentation:"
 	@echo "  - AGENTS.md"
+	@echo "  - cruthunas/README.md"
+	@echo "  - cruthunas/project.json"
+	@echo "  - cruthunas/ledger.json"
 	@echo "  - research/claims.json"
 	@echo "  - docs/RESEARCH-ROADMAP.md"
 	@echo "  - docs/VERIFICATION.md"
