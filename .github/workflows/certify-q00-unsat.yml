@@ -1,0 +1,242 @@
+name: certify-q00-unsat
+
+on:
+  push:
+    branches:
+      - 'research/q00-certificate-lane'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: certify-q00-unsat-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  produce-and-check-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CASE_ID: q00
+      SOLVER_LIMIT_SECONDS: '900'
+      CHECKER_LIMIT_SECONDS: '1200'
+      CRUTHUNAS_CLAIM_ID: n11-k6-four-base-reduction
+      EXPECTED_CNF_SHA256: 36da8f78ae376b370f119d1fa16a58f6504607d949ac8315648fdbda52450299
+      EXPECTED_VARIABLE_MAP_SHA256: 5f94c619b6a5996c54f269a88de5bfaff042e4c855ea8543869b84009c7dae45
+      DRAT_TRIM_COMMIT: effa1dcce85c878236f8313133dff1a2b766cd7c
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate Cruthúnas governance
+        run: |
+          python scripts/cruthunas.py check --all
+          python scripts/cruthunas.py adapters check
+          python scripts/validate_cruthunas_transactions.py
+          python scripts/validate_cruthunas_observations.py
+
+      - name: Generate and pin exact q00 instance
+        working-directory: borsuk_11_k6_four_base_reduction
+        run: |
+          set -euo pipefail
+          python build_instance.py "$CASE_ID" --output-dir "work/$CASE_ID"
+          echo "$EXPECTED_CNF_SHA256  work/$CASE_ID/${CASE_ID}_12color.cnf" | sha256sum --check --strict
+          echo "$EXPECTED_VARIABLE_MAP_SHA256  work/$CASE_ID/${CASE_ID}_variable_map.json" | sha256sum --check --strict
+
+      - name: Build pinned Kissat 4.0.0
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 \
+            'https://zenodo.org/records/13081405/files/arminbiere/kissat-rel-4.0.0.zip?download=1' \
+            --output /tmp/kissat-rel-4.0.0.zip
+          echo '89801fadc6d7a2ee1519a9cccf0c9029  /tmp/kissat-rel-4.0.0.zip' | md5sum --check --strict
+          rm -rf /tmp/kissat-source
+          mkdir /tmp/kissat-source
+          unzip -q /tmp/kissat-rel-4.0.0.zip -d /tmp/kissat-source
+          configure_path="$(find /tmp/kissat-source -type f -name configure | head -n 1)"
+          test -n "$configure_path"
+          source_dir="$(dirname "$configure_path")"
+          cd "$source_dir"
+          ./configure
+          make -j2
+          test -x build/kissat
+          cp build/kissat /tmp/kissat-4.0.0
+          /tmp/kissat-4.0.0 --version | tee "$GITHUB_WORKSPACE/borsuk_11_k6_four_base_reduction/work/$CASE_ID/solver-version.txt"
+          sha256sum /tmp/kissat-4.0.0 | tee "$GITHUB_WORKSPACE/borsuk_11_k6_four_base_reduction/work/$CASE_ID/solver-binary.sha256"
+
+      - name: Build pinned DRAT-trim checker
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/drat-trim
+          git clone --filter=blob:none https://github.com/marijnheule/drat-trim.git /tmp/drat-trim
+          git -C /tmp/drat-trim checkout --detach "$DRAT_TRIM_COMMIT"
+          test "$(git -C /tmp/drat-trim rev-parse HEAD)" = "$DRAT_TRIM_COMMIT"
+          make -C /tmp/drat-trim -j2
+          test -x /tmp/drat-trim/drat-trim
+          printf '%s\n' "$DRAT_TRIM_COMMIT" | tee "$GITHUB_WORKSPACE/borsuk_11_k6_four_base_reduction/work/$CASE_ID/checker-source-commit.txt"
+          sha256sum /tmp/drat-trim/drat-trim | tee "$GITHUB_WORKSPACE/borsuk_11_k6_four_base_reduction/work/$CASE_ID/checker-binary.sha256"
+
+      - name: Produce q00 binary DRAT proof
+        id: solve
+        working-directory: borsuk_11_k6_four_base_reduction
+        shell: bash
+        run: |
+          set -u
+          work="work/$CASE_ID"
+          cnf="$work/${CASE_ID}_12color.cnf"
+          proof="$work/${CASE_ID}.dratb"
+          started="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          set +e
+          timeout --signal=TERM --kill-after=30s "$SOLVER_LIMIT_SECONDS" \
+            /tmp/kissat-4.0.0 "$cnf" "$proof" \
+            >"$work/solver.out" 2>"$work/solver.err"
+          solver_status=$?
+          set -e
+          finished="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          if [ "$solver_status" -ne 20 ]; then
+            rm -f "$proof"
+          fi
+          printf '%s\n' "$solver_status" >"$work/solver-exit-status.txt"
+          printf '%s\n' "$started" >"$work/started-utc.txt"
+          printf '%s\n' "$finished" >"$work/finished-utc.txt"
+          echo "solver_status=$solver_status" >> "$GITHUB_OUTPUT"
+
+      - name: Independently check binary DRAT proof
+        id: check
+        if: steps.solve.outputs.solver_status == '20'
+        working-directory: borsuk_11_k6_four_base_reduction
+        shell: bash
+        run: |
+          set -u
+          work="work/$CASE_ID"
+          cnf="$work/${CASE_ID}_12color.cnf"
+          proof="$work/${CASE_ID}.dratb"
+          test -s "$proof"
+          set +e
+          timeout --signal=TERM --kill-after=30s "$CHECKER_LIMIT_SECONDS" \
+            /tmp/drat-trim/drat-trim "$cnf" "$proof" -i \
+            >"$work/checker.out" 2>"$work/checker.err"
+          checker_status=$?
+          set -e
+          cat "$work/checker.out"
+          cat "$work/checker.err" >&2
+          verified=false
+          if [ "$checker_status" -eq 0 ] && grep -Eq 's VERIFIED|VERIFIED' "$work/checker.out"; then
+            verified=true
+          fi
+          printf '%s\n' "$checker_status" >"$work/checker-exit-status.txt"
+          printf '%s\n' "$verified" >"$work/checker-verified.txt"
+          echo "checker_status=$checker_status" >> "$GITHUB_OUTPUT"
+          echo "verified=$verified" >> "$GITHUB_OUTPUT"
+
+      - name: Build certificate candidate manifest
+        if: always()
+        working-directory: borsuk_11_k6_four_base_reduction
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="work/$CASE_ID"
+          python - "$work/certificate-candidate.json" <<'PY'
+          import hashlib
+          import json
+          import os
+          import sys
+          from pathlib import Path
+
+          out = Path(sys.argv[1])
+          work = out.parent
+
+          def text(name, default=''):
+              path = work / name
+              return path.read_text(encoding='utf-8').strip() if path.is_file() else default
+
+          def digest(name):
+              path = work / name
+              return hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None
+
+          solver_status = int(text('solver-exit-status.txt', '-1'))
+          checker_status_text = text('checker-exit-status.txt', '-1')
+          checker_status = int(checker_status_text) if checker_status_text else -1
+          checker_verified = text('checker-verified.txt', 'false') == 'true'
+          proof_name = f"{os.environ['CASE_ID']}.dratb"
+          state = 'UNSAT_PROOF_CHECKED_PENDING_REGISTRATION' if (
+              solver_status == 20 and checker_status == 0 and checker_verified
+          ) else 'UNKNOWN'
+          payload = {
+              'schema': 'borsuk-q00-certificate-candidate-v1',
+              'case_id': os.environ['CASE_ID'],
+              'claim_id': os.environ['CRUTHUNAS_CLAIM_ID'],
+              'cruthunas_state': 'CERTIFICATE_CANDIDATE_NOT_REGISTERED_EVIDENCE',
+              'repository_status_changed': False,
+              'case_status_changed': False,
+              'result_state': state,
+              'source_revision': os.environ['GITHUB_SHA'],
+              'workflow_run_id': os.environ['GITHUB_RUN_ID'],
+              'solver': {
+                  'name': 'Kissat',
+                  'version': text('solver-version.txt'),
+                  'binary_sha256': text('solver-binary.sha256').split()[0] if text('solver-binary.sha256') else None,
+                  'exit_status': solver_status,
+                  'limit_seconds': int(os.environ['SOLVER_LIMIT_SECONDS']),
+              },
+              'checker': {
+                  'name': 'DRAT-trim',
+                  'source_commit': text('checker-source-commit.txt'),
+                  'binary_sha256': text('checker-binary.sha256').split()[0] if text('checker-binary.sha256') else None,
+                  'exit_status': checker_status,
+                  'verified': checker_verified,
+                  'limit_seconds': int(os.environ['CHECKER_LIMIT_SECONDS']),
+              },
+              'artifacts': {
+                  'cnf_sha256': digest(f"{os.environ['CASE_ID']}_12color.cnf"),
+                  'variable_map_sha256': digest(f"{os.environ['CASE_ID']}_variable_map.json"),
+                  'proof_sha256': digest(proof_name),
+                  'solver_stdout_sha256': digest('solver.out'),
+                  'solver_stderr_sha256': digest('solver.err'),
+                  'checker_stdout_sha256': digest('checker.out'),
+                  'checker_stderr_sha256': digest('checker.err'),
+              },
+              'limitations': [
+                  'This workflow artifact is not registered Cruthúnas evidence until reviewed and committed with typed evidence and a transition plan.',
+                  'A proof-checked UNSAT q00 trim still requires exhaustive diameter-compatible refinement and does not settle n11-k6-full.',
+              ],
+          }
+          out.write_text(json.dumps(payload, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          PY
+          find "$work" -maxdepth 1 -type f ! -name artifact-sha256.txt -print0 \
+            | sort -z \
+            | xargs -0 sha256sum >"$work/artifact-sha256.txt"
+          cat "$work/certificate-candidate.json"
+
+      - name: Upload certificate candidate artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: q00-unsat-certificate-candidate
+          path: borsuk_11_k6_four_base_reduction/work/q00/
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 6
+
+      - name: Enforce checked certificate candidate
+        if: always()
+        working-directory: borsuk_11_k6_four_base_reduction
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path('work/q00/certificate-candidate.json')
+          if not path.is_file():
+              raise SystemExit('certificate candidate manifest missing')
+          state = json.loads(path.read_text(encoding='utf-8'))['result_state']
+          if state != 'UNSAT_PROOF_CHECKED_PENDING_REGISTRATION':
+              raise SystemExit(f'q00 certificate lane did not verify: {state}')
+          print('q00 produced an independently checked UNSAT proof candidate; repository status remains unchanged.')
+          PY
