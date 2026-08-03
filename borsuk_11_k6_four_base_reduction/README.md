@@ -27,6 +27,7 @@ Every component with at most three vertices is trivially 12-colorable. Every lar
 ```bash
 python generate_cases.py --output case_representatives.csv
 node verify_independent.js
+python verify_status.py
 sha256sum case_representatives.csv
 ```
 
@@ -40,6 +41,19 @@ Both implementations independently regenerate and verify:
   `e60f5f81120e42c8c7eae2da299105e802266f6e92629cd6ac6ee24bcef9db19`.
 
 The CSV is generated rather than checked in so the branch list has two independent executable definitions instead of one trusted data file.
+
+## Case status
+
+`case_status.json` tracks all 101 cases with `UNKNOWN` as the enforced default. Only certified non-UNKNOWN results belong in `overrides`.
+
+`verify_status.py` rejects unknown case IDs, unrecognized states, missing model/proof metadata, and any attempt to call an unresolved case complete. Initially it reports:
+
+```text
+UNKNOWN: 101
+SAT_CLOSED: 0
+UNSAT_REFINED: 0
+LEGAL_UNSAT: 0
+```
 
 ## Status boundary
 
