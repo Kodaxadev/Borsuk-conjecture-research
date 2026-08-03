@@ -1,0 +1,74 @@
+name: k6-second-base-solver
+
+on:
+  push:
+    branches:
+      - research/k6-second-base-orbits
+    paths:
+      - 'borsuk_11_k6_second_base/**'
+      - '.github/workflows/k6-second-base-solver.yml'
+  workflow_dispatch:
+
+jobs:
+  solve-branch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        overlap: [3, 4, 5]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Generate exact branch CNFs
+        run: |
+          python borsuk_11_k6_second_base/enumerate_second_base.py \
+            --out generated_second_base \
+            --emit-cnf
+
+      - name: Compile repository CDCL solver
+        run: |
+          g++ -O3 -std=c++17 \
+            borsuk_11_k6_trim_unsat_certificate/minicdcl_drat.cpp \
+            -o minicdcl
+
+      - name: Solve overlap branch
+        id: solve
+        shell: bash
+        run: |
+          set +e
+          ./minicdcl \
+            generated_second_base/k6_second_base_overlap_${{ matrix.overlap }}.cnf \
+            900 \
+            model_overlap_${{ matrix.overlap }}.txt \
+            > solver_overlap_${{ matrix.overlap }}.out \
+            2> solver_overlap_${{ matrix.overlap }}.log
+          code=$?
+          set -e
+          echo "solver_exit_code=$code" | tee status_overlap_${{ matrix.overlap }}.txt
+          cat solver_overlap_${{ matrix.overlap }}.out
+          tail -n 50 solver_overlap_${{ matrix.overlap }}.log || true
+          if [[ "$code" != "0" && "$code" != "10" && "$code" != "20" ]]; then
+            exit "$code"
+          fi
+
+      - name: Upload solver evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-second-base-overlap-${{ matrix.overlap }}
+          if-no-files-found: ignore
+          retention-days: 14
+          path: |
+            status_overlap_${{ matrix.overlap }}.txt
+            solver_overlap_${{ matrix.overlap }}.out
+            solver_overlap_${{ matrix.overlap }}.log
+            model_overlap_${{ matrix.overlap }}.txt
+            generated_second_base/second_base_report.json
