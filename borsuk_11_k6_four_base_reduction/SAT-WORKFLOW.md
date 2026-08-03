@@ -4,13 +4,21 @@ This workflow separates instance generation, solver execution, witness or proof 
 
 A solver transcript is never a certificate by itself.
 
-## 1. Inspect a type without writing large artifacts
+## 1. Inspect and schedule types
+
+Inspect one type without writing large artifacts:
 
 ```bash
 python build_instance.py q00 --metadata-only
 ```
 
-This regenerates the canonical representative and reports its base, graph size, contained symmetry-breaking clique, variable count, and clause count.
+Generate the deterministic size-based inventory:
+
+```bash
+python build_inventory.py --output inventory.csv
+```
+
+The inventory is for scheduling only. It does not claim that smaller CNFs are mathematically or computationally easier.
 
 ## 2. Generate a deterministic instance
 
@@ -54,7 +62,8 @@ Possible research states are:
 python verify_model.py \
   q00 \
   work/q00/solver.out \
-  --output work/q00/q00_verified_coloring.json
+  --output work/q00/q00_verified_coloring.json \
+  | tee work/q00/checker.out
 ```
 
 The verifier does not trust the stored edge list or variable map. It regenerates the canonical trim and every exact-distance-6 edge from the case id, decodes exactly one color per vertex, rejects out-of-range variables, and checks every edge.
@@ -69,6 +78,8 @@ A SAT type may become `SAT_CLOSED` only after:
 - checker output is preserved;
 - the corresponding `case_status.json` override passes `verify_status.py`.
 
+`verify_status.py` then regenerates the trim again and directly rechecks the stored coloring from first principles.
+
 ## 5. Verify UNSAT independently
 
 An UNSAT type may not be recorded from solver stdout alone.
@@ -78,7 +89,7 @@ Required evidence:
 - the exact CNF and SHA-256 hash;
 - a proof trace produced for that CNF;
 - an independent proof checker accepting the trace;
-- checker command, version, output, and output hash;
+- checker command, version, output artifact, and output hash;
 - a subsequent exhaustive refinement because the trim may still contain pairs farther than 6.
 
 After proof checking, the state is normally `UNSAT_REFINED`, not a theorem conclusion. Refine by either:
@@ -87,6 +98,8 @@ After proof checking, the state is normally `UNSAT_REFINED`, not a theorem concl
 - an exact incompatibility branch covering both endpoint deletions.
 
 Only proof-checked UNSAT with zero incompatibility pairs may be labeled `LEGAL_UNSAT`.
+
+Large proof checks must declare `proof_check_tier` as `manual-heavy` and have a dedicated reproducible workflow. Smaller proof checks may use `ci`.
 
 ## 6. Record status
 
@@ -99,9 +112,10 @@ SAT example shape:
   "q00": {
     "state": "SAT_CLOSED",
     "coloring_artifact": "results/q00/verified_coloring.json",
-    "result_sha256": "<sha256>",
+    "result_sha256": "<sha256 of verified_coloring.json>",
     "verification_command": "python verify_model.py q00 results/q00/solver.out --output results/q00/verified_coloring.json",
-    "checker_output_sha256": "<sha256>"
+    "checker_output_artifact": "results/q00/checker.out",
+    "checker_output_sha256": "<sha256 of checker.out>"
   }
 }
 ```
@@ -113,15 +127,19 @@ UNSAT-refined example shape:
   "q00": {
     "state": "UNSAT_REFINED",
     "proof_artifact": "results/q00/proof.drat",
-    "result_sha256": "<sha256>",
+    "result_sha256": "<sha256 of proof.drat>",
     "verification_command": "<independent proof-check command>",
-    "checker_output_sha256": "<sha256>",
+    "checker_output_artifact": "results/q00/checker.out",
+    "checker_output_sha256": "<sha256 of checker.out>",
+    "proof_check_tier": "manual-heavy",
     "children": ["q00-child-...", "q00-child-..."]
   }
 }
 ```
 
 These are schema illustrations, not existing results.
+
+For SAT results, repository verification checks the artifact path and hash and then verifies the coloring again. For UNSAT results, it checks proof and checker-output presence and hashes; the stated CI or manual-heavy workflow must also execute the independent proof checker.
 
 ## 7. Re-run repository verification
 
