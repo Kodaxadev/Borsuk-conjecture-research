@@ -4,7 +4,9 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 from pathlib import Path
+from typing import TextIO
 
 from generate_cases import (
     A,
@@ -27,8 +29,7 @@ def sha256_bytes(data: bytes) -> str:
 
 def get_case(case_id: str) -> dict[str, object]:
     raw, _ = generate_raw_cases()
-    cases = canonical_classes(raw)
-    for case in cases:
+    for case in canonical_classes(raw):
         if case["id"] == case_id:
             return case
     raise SystemExit(f"unknown canonical case id: {case_id}")
@@ -51,71 +52,47 @@ def variable(vertex_index: int, color: int) -> int:
     return vertex_index * COLORS + color + 1
 
 
-def build_cnf(vertices: list[int], edges: list[tuple[int, int]]) -> tuple[str, dict[str, object]]:
-    index = {vertex: position for position, vertex in enumerate(vertices)}
-    fixed_clique = [vertex for vertex in ROOT_CLIQUE if vertex in index]
-    for left_index, left in enumerate(fixed_clique):
-        for right in fixed_clique[left_index + 1 :]:
+def fixed_clique_for(vertices: list[int]) -> list[int]:
+    present = set(vertices)
+    clique = [vertex for vertex in ROOT_CLIQUE if vertex in present]
+    for left_index, left in enumerate(clique):
+        for right in clique[left_index + 1 :]:
             if distance(left, right) != K:
                 raise SystemExit("fixed symmetry-breaking vertices are not a clique")
+    if len(clique) > COLORS:
+        raise SystemExit("symmetry-breaking clique exceeds the color count")
+    return clique
 
-    clauses: list[list[int]] = []
-    for vertex_index in range(len(vertices)):
-        ids = [variable(vertex_index, color) for color in range(COLORS)]
-        clauses.append(ids)
-        for left_color in range(COLORS):
-            for right_color in range(left_color + 1, COLORS):
-                clauses.append([-ids[left_color], -ids[right_color]])
 
-    for left, right in edges:
-        left_index = index[left]
-        right_index = index[right]
-        for color in range(COLORS):
-            clauses.append([-variable(left_index, color), -variable(right_index, color)])
+def formula_counts(vertex_count: int, edge_count: int, fixed_count: int) -> tuple[int, int]:
+    variables = vertex_count * COLORS
+    clauses_per_vertex = 1 + math.comb(COLORS, 2)
+    clauses = vertex_count * clauses_per_vertex + edge_count * COLORS + fixed_count
+    return variables, clauses
 
-    for color, vertex in enumerate(fixed_clique):
-        clauses.append([variable(index[vertex], color)])
 
-    lines = [
-        "c Borsuk n=11 k=6 canonical four-base trim 12-colorability",
-        "c Variable x_(vertex_index,color) = vertex_index*12 + color + 1.",
-        "c Unit clauses assign distinct colors to a deterministic contained clique.",
-        f"p cnf {len(vertices) * COLORS} {len(clauses)}",
-    ]
-    lines.extend(" ".join(map(str, clause)) + " 0" for clause in clauses)
-    cnf = "\n".join(lines) + "\n"
-    mapping = {
+def mapping_document(vertices: list[int], fixed_clique: list[int], clauses: int) -> dict[str, object]:
+    return {
         "schema": "borsuk-color-variable-map-v1",
         "colors": COLORS,
         "vertices": vertices,
         "fixed_clique": fixed_clique,
         "variable_formula": "vertex_index * 12 + color + 1",
-        "clauses": len(clauses),
+        "clauses": clauses,
         "variables": len(vertices) * COLORS,
     }
-    return cnf, mapping
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("case_id")
-    parser.add_argument("--output-dir", type=Path, required=True)
-    args = parser.parse_args()
-
-    case = get_case(args.case_id)
-    vertices, edges = build_graph(case)
-    cnf, mapping = build_cnf(vertices, edges)
-    args.output_dir.mkdir(parents=True, exist_ok=True)
-
-    cnf_path = args.output_dir / f"{args.case_id}_12color.cnf"
-    map_path = args.output_dir / f"{args.case_id}_variable_map.json"
-    metadata_path = args.output_dir / f"{args.case_id}_metadata.json"
-    cnf_path.write_text(cnf, encoding="ascii", newline="")
-    map_path.write_text(json.dumps(mapping, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-
-    metadata = {
+def instance_metadata(
+    case: dict[str, object],
+    vertices: list[int],
+    edges: list[tuple[int, int]],
+    fixed_clique: list[int],
+) -> dict[str, object]:
+    variables, clauses = formula_counts(len(vertices), len(edges), len(fixed_clique))
+    return {
         "schema": "borsuk-four-base-sat-instance-v1",
-        "case_id": args.case_id,
+        "case_id": case["id"],
         "canonical_case_list_sha256": EXPECTED_CANONICAL_CSV_SHA256,
         "representative_case": case["representative_case"],
         "covered_intermediate_cases": str(case["members"]).split(";"),
@@ -123,13 +100,79 @@ def main() -> int:
         "vertices": len(vertices),
         "edges": len(edges),
         "colors": COLORS,
-        "fixed_clique": mapping["fixed_clique"],
-        "variables": mapping["variables"],
-        "clauses": mapping["clauses"],
-        "cnf_sha256": sha256_bytes(cnf.encode("ascii")),
-        "variable_map_sha256": sha256_bytes(map_path.read_bytes()),
+        "fixed_clique": fixed_clique,
+        "variables": variables,
+        "clauses": clauses,
         "result_state": "UNKNOWN",
     }
+
+
+def emit_cnf(stream: TextIO, vertices: list[int], edges: list[tuple[int, int]], fixed_clique: list[int]) -> None:
+    variables, clauses = formula_counts(len(vertices), len(edges), len(fixed_clique))
+    index = {vertex: position for position, vertex in enumerate(vertices)}
+
+    stream.write("c Borsuk n=11 k=6 canonical four-base trim 12-colorability\n")
+    stream.write("c Variable x_(vertex_index,color) = vertex_index*12 + color + 1.\n")
+    stream.write("c Exactly one color is selected per vertex.\n")
+    stream.write("c Unit clauses assign distinct colors to a deterministic contained clique.\n")
+    stream.write(f"p cnf {variables} {clauses}\n")
+
+    for vertex_index in range(len(vertices)):
+        ids = [variable(vertex_index, color) for color in range(COLORS)]
+        stream.write(" ".join(map(str, ids)) + " 0\n")
+        for left_color in range(COLORS):
+            for right_color in range(left_color + 1, COLORS):
+                stream.write(f"-{ids[left_color]} -{ids[right_color]} 0\n")
+
+    for left, right in edges:
+        left_index = index[left]
+        right_index = index[right]
+        for color in range(COLORS):
+            stream.write(f"-{variable(left_index, color)} -{variable(right_index, color)} 0\n")
+
+    for color, vertex in enumerate(fixed_clique):
+        stream.write(f"{variable(index[vertex], color)} 0\n")
+
+
+def write_cnf(path: Path, vertices: list[int], edges: list[tuple[int, int]], fixed_clique: list[int]) -> str:
+    with path.open("w", encoding="ascii", newline="") as stream:
+        emit_cnf(stream, vertices, edges, fixed_clique)
+    return sha256_bytes(path.read_bytes())
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("case_id")
+    parser.add_argument("--output-dir", type=Path)
+    parser.add_argument(
+        "--metadata-only",
+        action="store_true",
+        help="regenerate the case and print deterministic instance counts without writing CNF artifacts",
+    )
+    args = parser.parse_args()
+
+    if not args.metadata_only and args.output_dir is None:
+        parser.error("--output-dir is required unless --metadata-only is used")
+
+    case = get_case(args.case_id)
+    vertices, edges = build_graph(case)
+    fixed_clique = fixed_clique_for(vertices)
+    metadata = instance_metadata(case, vertices, edges, fixed_clique)
+
+    if args.metadata_only:
+        print(json.dumps(metadata, indent=2, sort_keys=True))
+        return 0
+
+    assert args.output_dir is not None
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    cnf_path = args.output_dir / f"{args.case_id}_12color.cnf"
+    map_path = args.output_dir / f"{args.case_id}_variable_map.json"
+    metadata_path = args.output_dir / f"{args.case_id}_metadata.json"
+
+    mapping = mapping_document(vertices, fixed_clique, int(metadata["clauses"]))
+    map_path.write_text(json.dumps(mapping, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    metadata["cnf_sha256"] = write_cnf(cnf_path, vertices, edges, fixed_clique)
+    metadata["variable_map_sha256"] = sha256_bytes(map_path.read_bytes())
     metadata_path.write_text(json.dumps(metadata, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps(metadata, indent=2, sort_keys=True))
     return 0
