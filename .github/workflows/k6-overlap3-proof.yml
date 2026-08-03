@@ -15,6 +15,10 @@ on:
       - '.github/workflows/k6-overlap3-proof.yml'
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   certify-overlap-3:
     runs-on: ubuntu-latest
