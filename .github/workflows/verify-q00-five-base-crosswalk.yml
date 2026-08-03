@@ -1,6 +1,13 @@
 name: verify-q00-five-base-crosswalk
 
 on:
+  push:
+    branches:
+      - research/q00-fifth-base-reduction
+    paths:
+      - scripts/crosswalk_q00_five_base.py
+      - borsuk_11_k6_q00_fifth_base_reduction/**
+      - .github/workflows/verify-q00-five-base-crosswalk.yml
   pull_request:
     branches:
       - research-workspace-hardening
