@@ -10,7 +10,7 @@ Before changing mathematical status, proof text, solver outputs, manifests, or p
 2. Read `research/claims.json` and `cruthunas/ledger.json`.
 3. Identify the exact claim IDs affected.
 4. Read their registered source and evidence records.
-5. Run `python cruthunas status`.
+5. Run `python scripts/cruthunas.py status`.
 
 ## Claim discipline
 
@@ -54,8 +54,8 @@ Computational evidence must include:
 Run before proposing a research change:
 
 ```bash
-python cruthunas check --all
-python cruthunas adapters check
+python scripts/cruthunas.py check --all
+python scripts/cruthunas.py adapters check
 make verify
 ```
 
