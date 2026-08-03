@@ -3,7 +3,13 @@ name: apply-q00-fifth-base-transitions
 on:
   push:
     branches:
-      - research/q00-fifth-base-reduction
+      - research/q00-fifth-base-clean
+    paths:
+      - .github/workflows/apply-q00-fifth-base-transitions.yml
+      - scripts/register_q00_fifth_base_claim.py
+  pull_request:
+    branches:
+      - research-workspace-hardening
     paths:
       - .github/workflows/apply-q00-fifth-base-transitions.yml
       - scripts/register_q00_fifth_base_claim.py
@@ -24,7 +30,7 @@ jobs:
       - name: Checkout governed branch
         uses: actions/checkout@v4
         with:
-          ref: research/q00-fifth-base-reduction
+          ref: research/q00-fifth-base-clean
           fetch-depth: 0
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -63,7 +69,7 @@ jobs:
           python scripts/validate_cruthunas_transactions.py
           git add research/claims.json cruthunas
           git commit -m 'Register q00 fifth-base reduction at Gate 2'
-          git push origin HEAD:research/q00-fifth-base-reduction
+          git push origin HEAD:research/q00-fifth-base-clean
       - name: Link evidence at Gate 3
         run: |
           set -euo pipefail
@@ -72,7 +78,7 @@ jobs:
           python scripts/validate_cruthunas_transactions.py
           git add research/claims.json cruthunas
           git commit -m 'Link q00 fifth-base reduction evidence at Gate 3'
-          git push origin HEAD:research/q00-fifth-base-reduction
+          git push origin HEAD:research/q00-fifth-base-clean
       - name: Register checked Gate 4 reduction
         run: |
           set -euo pipefail
@@ -99,4 +105,4 @@ jobs:
           PY
           git add research/claims.json cruthunas
           git commit -m 'Register q00 fifth-base reduction at Gate 4'
-          git push origin HEAD:research/q00-fifth-base-reduction
+          git push origin HEAD:research/q00-fifth-base-clean
