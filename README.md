@@ -1,6 +1,6 @@
 # Borsuk Conjecture Research
 
-This repository is a certificate-first research workspace for finite-combinatorial work on the 0/1-Borsuk problem.
+This repository is a certificate-first research workspace for finite-combinatorial work on the 0/1-Borsuk problem, governed from the start by the repository-local **Cruthúnas CR-0** evidence layer.
 
 The immediate program targets dimension 11. Candidate proof packages exist for diameters 4 and 8. The diameter-6 subcase remains open and is the active theorem target.
 
@@ -18,16 +18,45 @@ The k=6 UNSAT result does **not** settle the theorem target. The trim graph cont
 
 The preferred execution frontier is now the 58-type four-base reduction. Each type can be SAT-closed with an explicit coloring or refined only after proof-checked UNSAT. The root branch package remains the generic coverage-proof infrastructure.
 
-The machine-readable source of truth is [`research/claims.json`](research/claims.json). Candidate packages must not be promoted beyond the status recorded there.
+## Cruthúnas governance
+
+`research/claims.json` is the mathematical claim registry. The `cruthunas/` directory governs how every claim is sourced, evidenced, checked, and promoted:
+
+- `cruthunas/project.json` — CR-0 policy and gate definitions;
+- `cruthunas/ledger.json` — gate, epistemic class, verification state, and lifecycle state;
+- `cruthunas/sources.json` — source-document boundaries;
+- `cruthunas/evidence.json` — typed evidence, paths, environments, hashes, and limitations;
+- `cruthunas/transitions.json` — contiguous transition histories;
+- `cruthunas/transactions/` — serializable dry-run status-change plans;
+- `cruthunas/skills/cruthunas-govern/SKILL.md` — canonical agent policy, with generated Claude and Codex adapters.
+
+The full `n11-k6-full` theorem target is intentionally held at:
+
+```text
+Gate 2; MATHEMATICAL; [UNCHECKED]; OPEN
+```
+
+The checked reductions and certificates are separate Gate 4 claims. Their evidence cannot be transferred to the theorem target without a complete new evidence record and contiguous transition.
+
+Cruthúnas is not a prover. A passing governance check establishes repository coherence only; it does not establish mathematical correctness, novelty, external acceptance, publication readiness, framework maturity, CR-1, or external conformance.
 
 ## Verification
 
-Run the standard lightweight verification suite:
+Run the standard governance and lightweight verification suite:
 
 ```bash
 make validate
 make verify
 make status
+```
+
+Direct Cruthúnas commands:
+
+```bash
+python scripts/cruthunas.py check --all
+python scripts/cruthunas.py check --changed
+python scripts/cruthunas.py status
+python scripts/cruthunas.py adapters check
 ```
 
 Recheck the larger stored k=6 proof certificate separately:
@@ -36,7 +65,7 @@ Recheck the larger stored k=6 proof certificate separately:
 make verify-k6-certificate
 ```
 
-CI runs the lightweight suite on pushes and pull requests. The certificate check is available as a manual workflow.
+CI runs Cruthúnas plus the lightweight mathematical suite on pushes and pull requests. The larger certificate check is available as a manual workflow.
 
 ## Active k=6 method
 
@@ -63,16 +92,19 @@ The full certificate-producing plan is documented in [`docs/K6-EXECUTION-PLAN.md
 ## Repository rules
 
 - Work on branches, not directly on `main`.
+- Read and follow `cruthunas-govern` before changing research state.
 - Keep claims, witnesses, certificates, generators, and verifiers logically separate.
 - Preserve provenance and SHA-256 hashes for important artifacts.
 - Require complete SAT witnesses or checked UNSAT proofs.
 - Export complete branch-coverage manifests for exhaustive computations.
+- Record typed evidence and contiguous transitions for status changes.
 - Treat literature novelty and external mathematical review as separate from CI success.
 
 Agent-specific operating constraints are in [`AGENTS.md`](AGENTS.md).
 
 ## Documentation
 
+- [`cruthunas/README.md`](cruthunas/README.md) — governance model and CR-0 boundary.
 - [`docs/PROJECT-STATUS.md`](docs/PROJECT-STATUS.md) — human-readable claim ledger.
 - [`docs/RESEARCH-ROADMAP.md`](docs/RESEARCH-ROADMAP.md) — phased research plan.
 - [`docs/VERIFICATION.md`](docs/VERIFICATION.md) — verification and certificate policy.
