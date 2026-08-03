@@ -2,7 +2,7 @@
 
 This package reduces every nontrivial diameter-6 component with at least four vertices to one of **58 canonical trim types**.
 
-It is a complete symmetry reduction, not a coloring proof.
+It is a complete symmetry reduction and solver workspace, not a coloring proof.
 
 ## Reduction layers
 
@@ -17,7 +17,7 @@ Every component with at most three vertices is trivially 12-colorable. Every lar
 
 See `PROOF.md` for the completeness argument and the exact eight-column-count invariant.
 
-## Reproduce
+## Reproduce the reduction
 
 ```bash
 python generate_cases.py \
@@ -43,11 +43,45 @@ canonical 58:    08913feaddbc0f930b6ef90a1677fbc4577cb23dcb6f4dac8987e37056d3474
 
 The CSV files are generated rather than checked in so both languages define and verify the lists independently.
 
+## Deterministic solver inventory
+
+```bash
+python build_inventory.py --output inventory.csv
+```
+
+This orders all 58 types by deterministic CNF size and records graph density, incompatibility density, fixed-clique size, variable count, and clause count. It is a scheduling inventory, not an empirical hardness claim.
+
+Inventory SHA-256:
+
+```text
+b2b4689bd1f344382c67a02a1a60b051a2ec532d0e018d05d1dee1412afff196
+```
+
+## SAT lane
+
+Inspect or generate a canonical instance:
+
+```bash
+python build_instance.py q00 --metadata-only
+python build_instance.py q00 --output-dir work/q00
+```
+
+Verify a returned SAT model independently:
+
+```bash
+python verify_model.py q00 work/q00/solver.out \
+  --output work/q00/q00_verified_coloring.json
+```
+
+`verify_sat_lane.py` freezes a complete deterministic `q00` CNF and variable-map hash in a temporary directory and runs negative controls against the model verifier.
+
+See [`SAT-WORKFLOW.md`](SAT-WORKFLOW.md) for the exact SAT, UNSAT, and artifact-recording contract.
+
 ## Case status
 
-`case_status.json` tracks the 58 full-isometry types with `UNKNOWN` as the enforced default. Only certified non-UNKNOWN results belong in `overrides`.
+`case_status.json` tracks the 58 full-isometry types with `UNKNOWN` as the enforced default. Only certificate-backed non-UNKNOWN results belong in `overrides`.
 
-`verify_status.py` rejects unknown case IDs, unrecognized states, missing model/proof metadata, and any attempt to call an unresolved case complete. Initially it reports:
+Initially:
 
 ```text
 UNKNOWN: 58
