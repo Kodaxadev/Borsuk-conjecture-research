@@ -1,0 +1,264 @@
+name: solve-q00r00
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/solve-q00r00.yml
+      - borsuk_11_k6_q00_five_base_reduction/build_instance.py
+      - borsuk_11_k6_q00_five_base_reduction/verify_model.py
+      - borsuk_11_k6_q00_five_base_reduction/generate_cases.py
+
+permissions:
+  contents: read
+
+concurrency:
+  group: solve-q00r00-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  solve-and-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CASE_ID: q00r00
+      EXPECTED_CASE_LIST_SHA256: d5b0825cd8645af2c595b3de3c851360e0b283d8ce61383482f76168e1ae9855
+      EXPECTED_CNF_SHA256: 9cb8563e0dbe62caf68effccc7fd031ef971a89b706b50e61928f9fa4e392f53
+      EXPECTED_MAP_SHA256: 1bee6b14c3a71a0e677ada0c2c94c59ddea0b92a22cc69344e84168122269a05
+      KISSAT_ARCHIVE_MD5: 89801fadc6d7a2ee1519a9cccf0c9029
+      DRAT_TRIM_REVISION: 2e3b2dc0ecf938addbd779d42877b6ed69d9a985
+      SOLVER_LIMIT_SECONDS: 900
+      CRUTHUNAS_PARENT_CLAIM_ID: n11-k6-q00-five-base-reduction
+
+    steps:
+      - name: Checkout governed branch
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate Cruthúnas governance
+        run: |
+          set -euo pipefail
+          python scripts/cruthunas.py check --all
+          python scripts/cruthunas.py adapters check
+          python scripts/validate_cruthunas_transactions.py
+          python scripts/validate_cruthunas_observations.py
+
+      - name: Regenerate and freeze q00r00 instance
+        working-directory: borsuk_11_k6_q00_five_base_reduction
+        run: |
+          set -euo pipefail
+          rm -rf work/q00r00
+          python generate_cases.py --output work/canonical_12.csv --assignment-output work/fifth_assignments.csv
+          echo "$EXPECTED_CASE_LIST_SHA256  work/canonical_12.csv" | sha256sum --check --strict
+          python build_instance.py "$CASE_ID" --output-dir work/q00r00 | tee work/q00r00/build.out
+          echo "$EXPECTED_CNF_SHA256  work/q00r00/q00r00_12color.cnf" | sha256sum --check --strict
+          echo "$EXPECTED_MAP_SHA256  work/q00r00/q00r00_variable_map.json" | sha256sum --check --strict
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          metadata = json.loads(Path('work/q00r00/q00r00_metadata.json').read_text())
+          assert metadata['case_id'] == 'q00r00'
+          assert metadata['vertices'] == 334
+          assert metadata['edges'] == 22502
+          assert metadata['variables'] == 2049
+          assert metadata['clauses'] == 72430
+          assert len(metadata['fixed_clique']) == 12
+          assert metadata['canonical_case_list_sha256'] == 'd5b0825cd8645af2c595b3de3c851360e0b283d8ce61383482f76168e1ae9855'
+          PY
+
+      - name: Build pinned Kissat 4.0.0
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 \
+            'https://zenodo.org/records/13081405/files/arminbiere/kissat-rel-4.0.0.zip?download=1' \
+            --output /tmp/kissat-rel-4.0.0.zip
+          echo "$KISSAT_ARCHIVE_MD5  /tmp/kissat-rel-4.0.0.zip" | md5sum --check --strict
+          rm -rf /tmp/kissat-source
+          mkdir /tmp/kissat-source
+          unzip -q /tmp/kissat-rel-4.0.0.zip -d /tmp/kissat-source
+          configure_path="$(find /tmp/kissat-source -type f -name configure | head -n 1)"
+          test -n "$configure_path"
+          source_dir="$(dirname "$configure_path")"
+          cd "$source_dir"
+          ./configure
+          make -j2
+          test -x build/kissat
+          cp build/kissat /tmp/kissat-4.0.0
+          /tmp/kissat-4.0.0 --version | tee "$GITHUB_WORKSPACE/borsuk_11_k6_q00_five_base_reduction/work/q00r00/solver-version.txt"
+          sha256sum /tmp/kissat-4.0.0 | tee "$GITHUB_WORKSPACE/borsuk_11_k6_q00_five_base_reduction/work/q00r00/solver-binary.sha256"
+
+      - name: Build pinned independent DRAT checker
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/drat-trim
+          git clone --filter=blob:none https://github.com/marijnheule/drat-trim.git /tmp/drat-trim
+          cd /tmp/drat-trim
+          git checkout --detach "$DRAT_TRIM_REVISION"
+          make -j2
+          test -x drat-trim
+          git rev-parse HEAD | tee "$GITHUB_WORKSPACE/borsuk_11_k6_q00_five_base_reduction/work/q00r00/checker-revision.txt"
+          sha256sum drat-trim | tee "$GITHUB_WORKSPACE/borsuk_11_k6_q00_five_base_reduction/work/q00r00/checker-binary.sha256"
+
+      - name: Solve exact q00r00 CNF
+        id: solve
+        working-directory: borsuk_11_k6_q00_five_base_reduction
+        shell: bash
+        run: |
+          set -u
+          work=work/q00r00
+          cnf="$work/q00r00_12color.cnf"
+          proof="$work/q00r00.drat"
+          started="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          set +e
+          /usr/bin/time -v -o "$work/solver-time.txt" \
+            timeout --signal=TERM --kill-after=30s "$SOLVER_LIMIT_SECONDS" \
+            /tmp/kissat-4.0.0 "$cnf" "$proof" \
+            >"$work/solver.out" 2>"$work/solver.err"
+          solver_status=$?
+          set -e
+          finished="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+          if [ "$solver_status" -eq 10 ]; then
+            rm -f "$proof"
+            state=SAT_WITNESS_UNCHECKED
+          elif [ "$solver_status" -eq 20 ] && [ -s "$proof" ]; then
+            state=UNSAT_PROOF_UNCHECKED
+          else
+            rm -f "$proof"
+            state=UNKNOWN
+          fi
+
+          export SOLVER_STATUS="$solver_status" STARTED_UTC="$started" FINISHED_UTC="$finished" RESULT_STATE="$state"
+          python - "$work/run-result.json" <<'PY'
+          import json, os, sys
+          from pathlib import Path
+          Path(sys.argv[1]).write_text(json.dumps({
+              'schema': 'borsuk-q00-five-base-solver-result-v1',
+              'case_id': os.environ['CASE_ID'],
+              'parent_claim_id': os.environ['CRUTHUNAS_PARENT_CLAIM_ID'],
+              'cnf_sha256': os.environ['EXPECTED_CNF_SHA256'],
+              'variable_map_sha256': os.environ['EXPECTED_MAP_SHA256'],
+              'solver': 'Kissat 4.0.0',
+              'solver_limit_seconds': int(os.environ['SOLVER_LIMIT_SECONDS']),
+              'solver_exit_status': int(os.environ['SOLVER_STATUS']),
+              'started_utc': os.environ['STARTED_UTC'],
+              'finished_utc': os.environ['FINISHED_UTC'],
+              'state': os.environ['RESULT_STATE'],
+              'repository_status_changed': False,
+              'cruthunas_evidence_registered': False,
+              'case_status_changed': False,
+          }, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          PY
+
+          echo "result_state=$state" >> "$GITHUB_OUTPUT"
+
+      - name: Independently verify SAT witness
+        id: sat_check
+        if: steps.solve.outputs.result_state == 'SAT_WITNESS_UNCHECKED'
+        working-directory: borsuk_11_k6_q00_five_base_reduction
+        run: |
+          set -euo pipefail
+          python verify_model.py "$CASE_ID" work/q00r00/solver.out --output work/q00r00/verified-coloring.json \
+            | tee work/q00r00/model-check.out
+          echo 'certificate_state=SAT_WITNESS_CHECKED' >> "$GITHUB_OUTPUT"
+
+      - name: Independently verify UNSAT proof
+        id: unsat_check
+        if: steps.solve.outputs.result_state == 'UNSAT_PROOF_UNCHECKED'
+        working-directory: borsuk_11_k6_q00_five_base_reduction
+        shell: bash
+        run: |
+          set -euo pipefail
+          work=work/q00r00
+          cnf="$work/q00r00_12color.cnf"
+          proof="$work/q00r00.drat"
+          /usr/bin/time -v -o "$work/checker-time.txt" \
+            /tmp/drat-trim/drat-trim "$cnf" "$proof" \
+            >"$work/checker.out" 2>"$work/checker.err"
+          cat "$work/checker.out" "$work/checker.err" | tr -d '\r' >"$work/checker.normalized.txt"
+          grep -Eq '^[[:space:]]*s VERIFIED[[:space:]]*$' "$work/checker.normalized.txt"
+          if grep -Eq '^[[:space:]]*s NOT VERIFIED[[:space:]]*$' "$work/checker.normalized.txt"; then
+            echo 'proof produced contradictory checker verdicts' >&2
+            exit 1
+          fi
+
+          cp "$proof" "$work/q00r00-structurally-corrupted.drat"
+          printf 'b' | dd of="$work/q00r00-structurally-corrupted.drat" bs=1 seek=0 count=1 conv=notrunc status=none
+          set +e
+          /tmp/drat-trim/drat-trim "$cnf" "$work/q00r00-structurally-corrupted.drat" \
+            >"$work/negative-control.out" 2>"$work/negative-control.err"
+          negative_status=$?
+          set -e
+          echo "$negative_status" >"$work/negative-control.exit-status.txt"
+          cat "$work/negative-control.out" "$work/negative-control.err" | tr -d '\r' \
+            >"$work/negative-control.normalized.txt"
+          if grep -Eq '^[[:space:]]*s VERIFIED[[:space:]]*$' "$work/negative-control.normalized.txt"; then
+            echo 'structurally corrupted proof was accepted' >&2
+            exit 1
+          fi
+          rm -f "$work/q00r00-structurally-corrupted.drat"
+          sha256sum "$proof" >"$work/proof.sha256"
+          gzip -9 "$proof"
+          echo 'certificate_state=PROOF_CHECKED_UNSAT' >> "$GITHUB_OUTPUT"
+
+      - name: Write bounded result metadata
+        if: always()
+        working-directory: borsuk_11_k6_q00_five_base_reduction
+        run: |
+          set -euo pipefail
+          work=work/q00r00
+          export SAT_STATE='${{ steps.sat_check.outputs.certificate_state }}'
+          export UNSAT_STATE='${{ steps.unsat_check.outputs.certificate_state }}'
+          python - "$work/certificate-result.json" <<'PY'
+          import hashlib, json, os, sys
+          from pathlib import Path
+
+          root = Path(sys.argv[1]).parent
+          run = json.loads((root / 'run-result.json').read_text())
+          certificate_state = os.environ.get('SAT_STATE') or os.environ.get('UNSAT_STATE') or 'UNKNOWN'
+          payload = {
+              **run,
+              'certificate_state': certificate_state,
+              'bounded_claim': (
+                  'A checked result applies only to the exact frozen q00r00 '
+                  'five-base universal-trim CNF.'
+              ),
+              'limitation': (
+                  'SAT closes this child trim type. Proof-checked UNSAT requires '
+                  'further compatible-base or incompatibility refinement and does '
+                  'not by itself resolve legal q00 or the full theorem.'
+              ),
+          }
+          for name in ('verified-coloring.json', 'q00r00.drat.gz', 'checker.out', 'checker.err'):
+              path = root / name
+              if path.exists():
+                  payload[name + '_sha256'] = hashlib.sha256(path.read_bytes()).hexdigest()
+                  payload[name + '_bytes'] = path.stat().st_size
+          Path(sys.argv[1]).write_text(json.dumps(payload, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          PY
+          sha256sum "$work"/* >"$work/artifact-sha256.txt"
+
+      - name: Upload q00r00 solver artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: q00r00-certificate-attempt
+          path: borsuk_11_k6_q00_five_base_reduction/work/q00r00/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+
+      - name: Report scoped state
+        if: always()
+        shell: bash
+        run: |
+          echo "Solver state: ${{ steps.solve.outputs.result_state }}"
+          echo "SAT certificate state: ${{ steps.sat_check.outputs.certificate_state }}"
+          echo "UNSAT certificate state: ${{ steps.unsat_check.outputs.certificate_state }}"
+          echo 'No Cruthúnas evidence, child case status, q00 parent status, or theorem gate changed.'
