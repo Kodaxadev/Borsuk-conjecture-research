@@ -1,0 +1,11 @@
+{
+  "archive_path": "borsuk_11_k6_q00r00_sixth_base_child_trims/evidence/artifacts/q00r00-sixth-base-child-trims-run-30851783510.zip",
+  "archive_sha256": "a1862053e19a4341b941e62181c180805fb59a7969241d473705635dd04d0505",
+  "artifact_id": 8870872535,
+  "case_count": 36,
+  "parent_manifest_sha256": "559f83e4eb245902b9ec1808812248694c7931a535213c45b50d7a89a461e5fa",
+  "parent_sha256sums_sha256": "45e96e2b460d6f968ed664b06ec59adc6091040273acf9cfbc022d3a1586654c",
+  "schema": "borsuk-q00r00-sixth-base-colorability-screen-input-v1",
+  "source_commit": "aad27339d6e689afdb50dbb8c280a76230b915fc",
+  "workflow_run_id": 30851783510
+}
