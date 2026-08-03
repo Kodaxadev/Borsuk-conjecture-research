@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Create a format-aware DRAT negative control.
+"""Create a format-aware, record-aligned DRAT negative control.
 
-The output proof is the exact prefix ending immediately before the first
-addition of the empty clause. This removes every empty-clause addition at
-or after that point without modifying any preceding proof record.
+The output proof is an exact prefix ending before the first empty-clause
+addition and, optionally, a requested number of complete predecessor records.
+Truncating before the first empty-clause record removes every later explicit
+empty-clause addition without cutting through a DRAT record.
 """
 
 from __future__ import annotations
@@ -12,6 +13,7 @@ import argparse
 import hashlib
 import json
 import mmap
+from collections import deque
 from pathlib import Path
 
 
@@ -43,9 +45,15 @@ def detect_format(path: Path) -> str:
     return "ascii"
 
 
-def find_ascii_empty_additions(path: Path) -> tuple[list[int], int]:
+def find_ascii_boundary(
+    path: Path, preceding_records: int
+) -> tuple[list[int], int, int, int]:
     offsets: list[int] = []
     records = 0
+    first_empty_record = 0
+    cutoff = -1
+    history: deque[int] = deque(maxlen=preceding_records + 1)
+
     with path.open("rb") as handle:
         while True:
             line_start = handle.tell()
@@ -70,10 +78,20 @@ def find_ascii_empty_additions(path: Path) -> tuple[list[int], int]:
                     raise ValueError(
                         f"invalid ASCII DRAT token {token!r} at byte {line_start}"
                     ) from exc
+
             records += 1
+            history.append(line_start)
             if not is_deletion and clause_tokens == [b"0"]:
                 offsets.append(line_start)
-    return offsets, records
+                if cutoff < 0:
+                    if len(history) < preceding_records + 1:
+                        raise ValueError(
+                            "not enough predecessor records before first empty clause"
+                        )
+                    cutoff = history[0]
+                    first_empty_record = records
+
+    return offsets, records, first_empty_record, cutoff
 
 
 def read_binary_varint(proof: mmap.mmap, pos: int, size: int) -> tuple[int, int]:
@@ -92,9 +110,15 @@ def read_binary_varint(proof: mmap.mmap, pos: int, size: int) -> tuple[int, int]
             raise ValueError("binary DRAT literal exceeds 64-bit parser limit")
 
 
-def find_binary_empty_additions(path: Path) -> tuple[list[int], int]:
+def find_binary_boundary(
+    path: Path, preceding_records: int
+) -> tuple[list[int], int, int, int]:
     offsets: list[int] = []
     records = 0
+    first_empty_record = 0
+    cutoff = -1
+    history: deque[int] = deque(maxlen=preceding_records + 1)
+
     with path.open("rb") as handle:
         with mmap.mmap(handle.fileno(), 0, access=mmap.ACCESS_READ) as proof:
             size = len(proof)
@@ -115,10 +139,20 @@ def find_binary_empty_additions(path: Path) -> tuple[list[int], int]:
                     if encoded_literal == 0:
                         break
                     literal_count += 1
+
                 records += 1
+                history.append(record_start)
                 if is_addition and literal_count == 0:
                     offsets.append(record_start)
-    return offsets, records
+                    if cutoff < 0:
+                        if len(history) < preceding_records + 1:
+                            raise ValueError(
+                                "not enough predecessor records before first empty clause"
+                            )
+                        cutoff = history[0]
+                        first_empty_record = records
+
+    return offsets, records, first_empty_record, cutoff
 
 
 def copy_prefix(source: Path, destination: Path, byte_count: int) -> None:
@@ -148,7 +182,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("proof", type=Path)
     parser.add_argument("negative_proof", type=Path)
     parser.add_argument("metadata", type=Path)
-    return parser.parse_args()
+    parser.add_argument(
+        "--preceding-records",
+        type=int,
+        default=0,
+        help=(
+            "also remove this many complete records immediately preceding "
+            "the first empty-clause addition"
+        ),
+    )
+    args = parser.parse_args()
+    if args.preceding_records < 0:
+        parser.error("--preceding-records must be non-negative")
+    return args
 
 
 def main() -> int:
@@ -156,29 +202,35 @@ def main() -> int:
     proof: Path = args.proof
     negative: Path = args.negative_proof
     metadata: Path = args.metadata
+    preceding_records: int = args.preceding_records
 
     if not proof.is_file():
         raise FileNotFoundError(proof)
 
     proof_format = detect_format(proof)
     if proof_format == "binary":
-        offsets, record_count = find_binary_empty_additions(proof)
+        offsets, record_count, first_empty_record, cutoff = find_binary_boundary(
+            proof, preceding_records
+        )
     else:
-        offsets, record_count = find_ascii_empty_additions(proof)
+        offsets, record_count, first_empty_record, cutoff = find_ascii_boundary(
+            proof, preceding_records
+        )
 
     if not offsets:
         raise ValueError("proof contains no empty-clause addition")
+    if cutoff < 0:
+        raise ValueError("failed to locate record-aligned truncation boundary")
 
-    first_empty_offset = offsets[0]
-    copy_prefix(proof, negative, first_empty_offset)
+    copy_prefix(proof, negative, cutoff)
 
     proof_size = proof.stat().st_size
     negative_size = negative.stat().st_size
-    if negative_size != first_empty_offset or negative_size >= proof_size:
+    if negative_size != cutoff or negative_size >= proof_size:
         raise ValueError("negative-control size invariant failed")
 
     payload: dict[str, object] = {
-        "schema": "drat-format-aware-negative-control-v1",
+        "schema": "drat-format-aware-negative-control-v2",
         "proof_format": proof_format,
         "proof_path": str(proof),
         "proof_bytes": proof_size,
@@ -186,8 +238,14 @@ def main() -> int:
         "record_count": record_count,
         "empty_clause_addition_count": len(offsets),
         "empty_clause_addition_offsets": offsets,
-        "truncation_strategy": "truncate immediately before first empty-clause addition",
-        "truncation_offset": first_empty_offset,
+        "first_empty_clause_record_index": first_empty_record,
+        "preceding_records_removed": preceding_records,
+        "removed_record_count_at_boundary": preceding_records + 1,
+        "truncation_strategy": (
+            "truncate at a complete record boundary before the first "
+            f"empty-clause addition and {preceding_records} predecessor record(s)"
+        ),
+        "truncation_offset": cutoff,
         "negative_proof_path": str(negative),
         "negative_proof_bytes": negative_size,
         "negative_proof_sha256": sha256_file(negative),
