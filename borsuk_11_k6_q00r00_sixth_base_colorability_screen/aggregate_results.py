@@ -39,6 +39,7 @@ def main() -> int:
     sat_cases = [str(record["case_id"]) for record in records if record["certificate_state"] == "SAT_CHECKED_COLORING"]
     unsat_cases = [str(record["case_id"]) for record in records if record["certificate_state"] == "PROOF_CHECKED_UNSAT"]
     unknown_cases = [str(record["case_id"]) for record in records if record["certificate_state"] == "UNKNOWN"]
+    non_sat_cases = [case_id for case_id in expected_ids if case_id not in sat_cases]
     summary = {
         "schema": "borsuk-q00r00-sixth-base-colorability-screen-summary-v1",
         "claim_id": "n11-k6-q00r00-sixth-base-colorability-screen",
@@ -47,9 +48,11 @@ def main() -> int:
         "checked_sat_cases": sat_cases,
         "checked_unsat_universal_trim_cases": unsat_cases,
         "incomplete_cases": unknown_cases,
-        "seventh_base_refinement_frontier": unsat_cases,
+        "seventh_base_refinement_frontier": non_sat_cases,
+        "proof_checked_unsat_frontier": unsat_cases,
         "closed_child_branches": sat_cases,
-        "q00r00_status": "CLOSED" if len(sat_cases) == 36 else "UNKNOWN",
+        "q00r00_certificate_effect": "ELIGIBLE_FOR_GOVERNED_CLOSURE" if len(sat_cases) == 36 else "REMAINS_UNKNOWN",
+        "repository_q00r00_status_changed": False,
         "q00_status": "UNKNOWN",
         "n11-k6-full": "Gate 2 / OPEN",
         "interpretation": {
@@ -63,7 +66,7 @@ def main() -> int:
     summary_path = args.output / "screen-summary.json"
     summary_path.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     (args.output / "screen-summary.sha256").write_text(f"{sha256_file(summary_path)}  screen-summary.json\n", encoding="ascii")
-    print(json.dumps({key: summary[key] for key in ("certificate_state_counts", "closed_child_branches", "seventh_base_refinement_frontier", "incomplete_cases", "q00r00_status")}, indent=2, sort_keys=True))
+    print(json.dumps({key: summary[key] for key in ("certificate_state_counts", "closed_child_branches", "seventh_base_refinement_frontier", "proof_checked_unsat_frontier", "incomplete_cases", "q00r00_certificate_effect")}, indent=2, sort_keys=True))
     return 0
 
 
