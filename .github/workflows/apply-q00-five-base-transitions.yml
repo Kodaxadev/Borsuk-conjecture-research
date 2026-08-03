@@ -1,0 +1,190 @@
+name: apply-q00-five-base-transitions
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/apply-q00-five-base-transitions.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apply-q00-five-base-transitions
+  cancel-in-progress: false
+
+jobs:
+  register-five-base-reduction:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout governed branch directly
+        uses: actions/checkout@v4
+        with:
+          ref: research-workspace-hardening
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Configure serialized writer
+        run: |
+          set -euo pipefail
+          git config user.name 'cruthunas-transition-bot'
+          git config user.email 'cruthunas-transition-bot@users.noreply.github.com'
+          git pull --ff-only origin research-workspace-hardening
+          test -z "$(git status --porcelain)"
+
+      - name: Freeze parent boundaries
+        run: |
+          set -euo pipefail
+          sha256sum borsuk_11_k6_four_base_reduction/case_status.json > "$RUNNER_TEMP/parent-status.before.sha256"
+          python - <<'PY' > "$RUNNER_TEMP/boundaries.before.json"
+          import json
+          from pathlib import Path
+          claims = json.loads(Path('research/claims.json').read_text())
+          ledger = json.loads(Path('cruthunas/ledger.json').read_text())
+          output = {}
+          for claim_id in ('n11-k6-full', 'n11-k6-q00-trim-unsat'):
+              claim = next(item for item in claims['claims'] if item['id'] == claim_id)
+              entry = next(item for item in ledger['entries'] if item['claim_id'] == claim_id)
+              output[claim_id] = {
+                  'claim_status': claim['status'],
+                  'gate': entry['gate'],
+                  'epistemic_class': entry['epistemic_class'],
+                  'verification_state': entry['verification_state'],
+                  'lifecycle_state': entry['lifecycle_state'],
+                  'current_transition_id': entry['current_transition_id'],
+              }
+          print(json.dumps(output, sort_keys=True))
+          PY
+          cat "$RUNNER_TEMP/boundaries.before.json"
+
+      - name: Validate baseline
+        run: |
+          set -euo pipefail
+          python scripts/cruthunas.py status
+          python scripts/validate_claims.py
+          python scripts/cruthunas.py check --all
+          python scripts/cruthunas.py adapters check
+          python scripts/validate_cruthunas_transactions.py
+          python scripts/validate_cruthunas_observations.py
+          make verify
+
+      - name: Register scoped five-base claim at Gate 2
+        run: |
+          set -euo pipefail
+          git pull --ff-only origin research-workspace-hardening
+          python scripts/register_q00_five_base_reduction.py scoped
+          python scripts/validate_claims.py
+          python scripts/cruthunas.py check --all
+          python scripts/cruthunas.py adapters check
+          python scripts/validate_cruthunas_transactions.py
+          python scripts/validate_cruthunas_observations.py
+          make verify
+          git add Makefile research/claims.json cruthunas
+          git diff --cached --check
+          git commit -m 'Register q00 five-base reduction at Cruthunas Gate 2'
+          git push origin HEAD:research-workspace-hardening
+
+      - name: Reproduce the 12-type reduction independently
+        run: |
+          set -euo pipefail
+          cd borsuk_11_k6_q00_five_base_reduction
+          python generate_cases.py --output "$RUNNER_TEMP/canonical_12.csv" --assignment-output "$RUNNER_TEMP/fifth_assignments.csv"
+          node verify_independent.js
+          python verify_status.py
+          test "$(sha256sum "$RUNNER_TEMP/canonical_12.csv" | awk '{print $1}')" = d5b0825cd8645af2c595b3de3c851360e0b283d8ce61383482f76168e1ae9855
+          test "$(sha256sum "$RUNNER_TEMP/fifth_assignments.csv" | awk '{print $1}')" = 6c94923a260290d59727bdcad68293b7f1962a7c5377885dd536fefa5962ffc7
+
+      - name: Validate and apply Gate 2 to Gate 3
+        run: |
+          set -euo pipefail
+          git pull --ff-only origin research-workspace-hardening
+          python scripts/validate_cruthunas_transactions.py
+          python scripts/register_q00_five_base_reduction.py gate3
+          python scripts/validate_claims.py
+          python scripts/cruthunas.py check --all
+          python scripts/cruthunas.py adapters check
+          python scripts/validate_cruthunas_transactions.py
+          python scripts/validate_cruthunas_observations.py
+          make verify
+          git add research/claims.json cruthunas
+          git diff --cached --check
+          git commit -m 'Link q00 five-base evidence at Cruthunas Gate 3'
+          git push origin HEAD:research-workspace-hardening
+
+      - name: Validate and apply explicit Gate 3 to Gate 4
+        run: |
+          set -euo pipefail
+          git pull --ff-only origin research-workspace-hardening
+          python scripts/validate_cruthunas_transactions.py
+          python scripts/register_q00_five_base_reduction.py gate4
+          python scripts/validate_claims.py
+          python scripts/cruthunas.py check --all
+          python scripts/cruthunas.py adapters check
+          python scripts/validate_cruthunas_transactions.py
+          python scripts/validate_cruthunas_observations.py
+          make verify
+          git add research/claims.json cruthunas
+          git diff --cached --check
+          git commit -m 'Register q00 five-base reduction as Gate 4 infrastructure'
+          git push origin HEAD:research-workspace-hardening
+
+      - name: Verify final state and unchanged boundaries
+        run: |
+          set -euo pipefail
+          git pull --ff-only origin research-workspace-hardening
+          test -z "$(git status --porcelain)"
+          python scripts/validate_claims.py
+          python scripts/cruthunas.py check --all
+          python scripts/cruthunas.py adapters check
+          python scripts/validate_cruthunas_transactions.py
+          python scripts/validate_cruthunas_observations.py
+          make verify
+          make status
+          sha256sum --check "$RUNNER_TEMP/parent-status.before.sha256"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          before = json.loads(Path("${{ runner.temp }}/boundaries.before.json").read_text())
+          claims = json.loads(Path('research/claims.json').read_text())
+          ledger = json.loads(Path('cruthunas/ledger.json').read_text())
+          after = {}
+          for claim_id in ('n11-k6-full', 'n11-k6-q00-trim-unsat'):
+              claim = next(item for item in claims['claims'] if item['id'] == claim_id)
+              entry = next(item for item in ledger['entries'] if item['claim_id'] == claim_id)
+              after[claim_id] = {
+                  'claim_status': claim['status'],
+                  'gate': entry['gate'],
+                  'epistemic_class': entry['epistemic_class'],
+                  'verification_state': entry['verification_state'],
+                  'lifecycle_state': entry['lifecycle_state'],
+                  'current_transition_id': entry['current_transition_id'],
+              }
+          if after != before:
+              raise SystemExit(f'parent boundary changed: before={before} after={after}')
+          child = next(item for item in ledger['entries'] if item['claim_id'] == 'n11-k6-q00-five-base-reduction')
+          expected = {
+              'gate': 4,
+              'epistemic_class': 'HYBRID',
+              'verification_state': 'INDEPENDENTLY_REPRODUCED',
+              'lifecycle_state': 'WORKING',
+              'current_transition_id': 'T-K6-Q00-FIVE-BASE-3-4',
+          }
+          actual = {key: child[key] for key in expected}
+          if actual != expected:
+              raise SystemExit(f'unexpected five-base state: {actual}')
+          print(json.dumps({'boundaries': after, 'five_base': actual}, indent=2, sort_keys=True))
+          PY
