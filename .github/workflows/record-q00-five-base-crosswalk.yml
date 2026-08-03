@@ -1,0 +1,477 @@
+name: record-q00-five-base-crosswalk
+
+on:
+  workflow_run:
+    workflows:
+      - verify-q00-five-base-crosswalk
+    types:
+      - completed
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: record-q00-five-base-crosswalk
+  cancel-in-progress: false
+
+jobs:
+  record-crosswalk:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.workflow_id == 326360034 &&
+      github.event.workflow_run.head_branch == 'research/q00-five-base-crosswalk-verifier' &&
+      github.event.workflow_run.repository.full_name == github.repository &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RUN_ID: ${{ github.event.workflow_run.id }}
+      EXPECTED_WORKFLOW_ID: '326360034'
+      EXPECTED_WORKFLOW_NAME: verify-q00-five-base-crosswalk
+      EXPECTED_WORKFLOW_PATH: .github/workflows/verify-q00-five-base-crosswalk.yml
+      EXPECTED_HEAD_BRANCH: research/q00-five-base-crosswalk-verifier
+      EXPECTED_ARTIFACT_NAME: q00-five-base-crosswalk-result
+      EXPECTED_ARTIFACT_FILE: q00-five-base-crosswalk.json
+      DESTINATION: borsuk_11_k6_q00_five_base_reduction/differential/crosswalk-result.json
+    steps:
+      - name: Validate and record exact verified artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from __future__ import annotations
+
+          import base64
+          import hashlib
+          import io
+          import json
+          import os
+          import re
+          import stat
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+          import zipfile
+          from typing import Any
+
+          API_VERSION = "2022-11-28"
+          MAX_ARCHIVE_BYTES = 2_000_000
+          MAX_JSON_BYTES = 1_000_000
+
+          token = os.environ["GH_TOKEN"]
+          repository = os.environ["GITHUB_REPOSITORY"]
+          api_url = os.environ["GITHUB_API_URL"].rstrip("/")
+          run_id = int(os.environ["RUN_ID"])
+          expected_workflow_id = int(os.environ["EXPECTED_WORKFLOW_ID"])
+          expected_workflow_name = os.environ["EXPECTED_WORKFLOW_NAME"]
+          expected_workflow_path = os.environ["EXPECTED_WORKFLOW_PATH"]
+          expected_head_branch = os.environ["EXPECTED_HEAD_BRANCH"]
+          expected_artifact_name = os.environ["EXPECTED_ARTIFACT_NAME"]
+          expected_artifact_file = os.environ["EXPECTED_ARTIFACT_FILE"]
+          destination = os.environ["DESTINATION"]
+
+          sha256_re = re.compile(r"^[0-9a-f]{64}$")
+          commit_re = re.compile(r"^[0-9a-f]{40}$")
+
+          def fail(message: str) -> None:
+              raise SystemExit(message)
+
+          def api_request(
+              method: str,
+              path_or_url: str,
+              payload: dict[str, Any] | None = None,
+          ) -> tuple[Any, dict[str, str]]:
+              url = (
+                  path_or_url
+                  if path_or_url.startswith("https://")
+                  else f"{api_url}{path_or_url}"
+              )
+              body = None
+              headers = {
+                  "Accept": "application/vnd.github+json",
+                  "Authorization": f"Bearer {token}",
+                  "User-Agent": "q00-crosswalk-trusted-recorder",
+                  "X-GitHub-Api-Version": API_VERSION,
+              }
+              if payload is not None:
+                  body = json.dumps(payload, separators=(",", ":")).encode("utf-8")
+                  headers["Content-Type"] = "application/json"
+              request = urllib.request.Request(url, data=body, headers=headers, method=method)
+              try:
+                  with urllib.request.urlopen(request, timeout=30) as response:
+                      raw = response.read(MAX_ARCHIVE_BYTES + 1)
+                      if len(raw) > MAX_ARCHIVE_BYTES:
+                          fail(f"API response exceeded {MAX_ARCHIVE_BYTES} bytes")
+                      response_headers = dict(response.headers.items())
+              except urllib.error.HTTPError as error:
+                  detail = error.read(8192).decode("utf-8", "replace")
+                  fail(f"GitHub API {method} {url} failed: {error.code}: {detail}")
+              if not raw:
+                  return None, response_headers
+              content_type = response_headers.get("Content-Type", "")
+              if "json" not in content_type:
+                  return raw, response_headers
+              return json.loads(raw), response_headers
+
+          with open(os.environ["GITHUB_EVENT_PATH"], "rb") as event_file:
+              event = json.load(event_file)
+          event_run = event.get("workflow_run") or {}
+          if event_run.get("id") != run_id:
+              fail("event workflow_run ID mismatch")
+
+          run, _ = api_request(
+              "GET", f"/repos/{repository}/actions/runs/{run_id}"
+          )
+          if not isinstance(run, dict):
+              fail("workflow-run response is not an object")
+
+          run_path = str(run.get("path", "")).split("@", 1)[0]
+          head_repository = run.get("head_repository") or {}
+          run_repository = run.get("repository") or {}
+          trusted_identity = {
+              "id": run.get("id") == run_id,
+              "workflow_id": run.get("workflow_id") == expected_workflow_id,
+              "name": run.get("name") == expected_workflow_name,
+              "path": run_path == expected_workflow_path,
+              "status": run.get("status") == "completed",
+              "conclusion": run.get("conclusion") == "success",
+              "event": run.get("event") == "push",
+              "repository": run_repository.get("full_name") == repository,
+              "head_repository": head_repository.get("full_name") == repository,
+              "head_repository_id": head_repository.get("id") == run_repository.get("id"),
+              "head_branch": run.get("head_branch") == expected_head_branch,
+              "head_sha": bool(commit_re.fullmatch(str(run.get("head_sha", "")))),
+          }
+          failed_identity = [key for key, value in trusted_identity.items() if not value]
+          if failed_identity:
+              fail(f"untrusted workflow-run identity fields: {failed_identity}")
+
+          head_sha = str(run["head_sha"])
+          for key in (
+              "id",
+              "workflow_id",
+              "name",
+              "event",
+              "head_branch",
+              "head_sha",
+              "conclusion",
+          ):
+              if event_run.get(key) != run.get(key):
+                  fail(f"event/API workflow-run mismatch for {key}")
+          if (event_run.get("repository") or {}).get("full_name") != repository:
+              fail("event repository mismatch")
+          if (event_run.get("head_repository") or {}).get("full_name") != repository:
+              fail("event head repository mismatch")
+
+          artifacts, _ = api_request(
+              "GET",
+              f"/repos/{repository}/actions/runs/{run_id}/artifacts?per_page=100",
+          )
+          if (
+              not isinstance(artifacts, dict)
+              or artifacts.get("total_count") != 1
+              or len(artifacts.get("artifacts", [])) != 1
+          ):
+              fail("expected exactly one artifact for the verified run")
+          artifact = artifacts["artifacts"][0]
+          artifact_run = artifact.get("workflow_run") or {}
+          if artifact.get("name") != expected_artifact_name:
+              fail("unexpected artifact name")
+          if artifact.get("expired") is not False:
+              fail("artifact is expired or expiration state is missing")
+          if artifact_run.get("id") != run_id:
+              fail("artifact is not associated with the exact workflow run")
+          if artifact_run.get("head_sha") != head_sha:
+              fail("artifact head SHA does not match the verified run")
+          if artifact_run.get("repository_id") != run_repository.get("id"):
+              fail("artifact repository ID mismatch")
+          if artifact_run.get("head_repository_id") != head_repository.get("id"):
+              fail("artifact head repository ID mismatch")
+
+          digest_field = str(artifact.get("digest", ""))
+          if not digest_field.startswith("sha256:"):
+              fail("artifact has no SHA-256 digest")
+          trusted_digest = digest_field.removeprefix("sha256:")
+          if not sha256_re.fullmatch(trusted_digest):
+              fail("artifact digest is malformed")
+
+          archive, _ = api_request("GET", str(artifact["archive_download_url"]))
+          if not isinstance(archive, bytes):
+              fail("artifact download did not return bytes")
+          archive_digest = hashlib.sha256(archive).hexdigest()
+          if archive_digest != trusted_digest:
+              fail(
+                  f"artifact digest mismatch: API={trusted_digest} downloaded={archive_digest}"
+              )
+
+          try:
+              with zipfile.ZipFile(io.BytesIO(archive), "r") as bundle:
+                  members = bundle.infolist()
+                  if len(members) != 1:
+                      fail("artifact archive must contain exactly one member")
+                  member = members[0]
+                  if member.filename != expected_artifact_file:
+                      fail(f"unexpected artifact member: {member.filename!r}")
+                  if (
+                      member.is_dir()
+                      or member.filename.startswith(("/", "\\"))
+                      or "\\" in member.filename
+                      or ".." in member.filename.split("/")
+                      or "\x00" in member.filename
+                  ):
+                      fail("artifact member path is unsafe")
+                  mode = (member.external_attr >> 16) & 0xFFFF
+                  if stat.S_ISLNK(mode):
+                      fail("artifact member is a symbolic link")
+                  if mode and not stat.S_ISREG(mode):
+                      fail(f"artifact member is not a regular file: mode={mode:o}")
+                  if member.file_size > MAX_JSON_BYTES:
+                      fail("artifact JSON is too large")
+                  result_bytes = bundle.read(member)
+          except zipfile.BadZipFile as error:
+              fail(f"artifact is not a valid ZIP archive: {error}")
+
+          if len(result_bytes) > MAX_JSON_BYTES:
+              fail("artifact JSON exceeds size limit")
+          try:
+              result_text = result_bytes.decode("utf-8")
+          except UnicodeDecodeError as error:
+              fail(f"artifact JSON is not valid UTF-8: {error}")
+          if result_text.startswith("\ufeff"):
+              fail("artifact JSON must not contain a BOM")
+
+          def reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+              output: dict[str, Any] = {}
+              for key, value in pairs:
+                  if key in output:
+                      fail(f"duplicate JSON key: {key}")
+                  output[key] = value
+              return output
+
+          try:
+              result = json.loads(result_text, object_pairs_hook=reject_duplicate_keys)
+          except json.JSONDecodeError as error:
+              fail(f"artifact JSON is invalid: {error}")
+          if not isinstance(result, dict):
+              fail("artifact JSON root must be an object")
+
+          top_level_keys = {
+              "all_transformed_child_vertex_sets_equal",
+              "candidate_count",
+              "child_status_changed",
+              "claim_status_changed",
+              "class_count",
+              "complete_bijection",
+              "coverage_assignments_equal_under_crosswalk",
+              "crosswalk",
+              "differential_case_csv_sha256",
+              "differential_generator_sha256",
+              "governed_assignment_sha256",
+              "governed_case_csv_sha256",
+              "governed_claim_id",
+              "governed_generator_sha256",
+              "historical_differential_labels_only",
+              "historical_draft_commit",
+              "parent_q00_status_changed",
+              "schema",
+              "status",
+              "theorem_status_changed",
+              "verified_event",
+              "verified_head_sha",
+              "verified_repository",
+              "verified_run_id",
+              "verified_workflow_id",
+              "verified_workflow_path",
+          }
+          if set(result) != top_level_keys:
+              fail(
+                  "artifact JSON top-level schema mismatch: "
+                  f"missing={sorted(top_level_keys - set(result))} "
+                  f"extra={sorted(set(result) - top_level_keys)}"
+              )
+
+          expected_values = {
+              "schema": "borsuk-q00-five-base-crosswalk-v2",
+              "status": "PASS",
+              "governed_claim_id": "n11-k6-q00-five-base-reduction",
+              "historical_draft_commit": "99de5d42d1caa3987734dfa7bd35c18ad5c19929",
+              "historical_differential_labels_only": True,
+              "governed_generator_sha256": "9d79d38273f3c7722918d4b080dc8910b913c2e47ba301dece167168d1f33d19",
+              "differential_generator_sha256": "8f41f954eb88f0c6c606e53439debccd60ff43cdb85f6fd5fcc9ec0bbbe57117",
+              "governed_case_csv_sha256": "d5b0825cd8645af2c595b3de3c851360e0b283d8ce61383482f76168e1ae9855",
+              "governed_assignment_sha256": "6c94923a260290d59727bdcad68293b7f1962a7c5377885dd536fefa5962ffc7",
+              "differential_case_csv_sha256": "01b3ee2e629788037f1ccd6906140302abddd1ae1c077aa8cf7e8f619adb807a",
+              "candidate_count": 432,
+              "class_count": 12,
+              "complete_bijection": True,
+              "coverage_assignments_equal_under_crosswalk": True,
+              "all_transformed_child_vertex_sets_equal": True,
+              "claim_status_changed": False,
+              "child_status_changed": False,
+              "parent_q00_status_changed": False,
+              "theorem_status_changed": False,
+              "verified_event": "push",
+              "verified_head_sha": head_sha,
+              "verified_repository": repository,
+              "verified_run_id": run_id,
+              "verified_workflow_id": expected_workflow_id,
+              "verified_workflow_path": expected_workflow_path,
+          }
+          for key, expected in expected_values.items():
+              if result.get(key) != expected:
+                  fail(f"artifact JSON value mismatch for {key}")
+
+          expected_id_map = {
+              "q00r00": "f11",
+              "q00r01": "f09",
+              "q00r02": "f05",
+              "q00r03": "f07",
+              "q00r04": "f02",
+              "q00r05": "f10",
+              "q00r06": "f08",
+              "q00r07": "f03",
+              "q00r08": "f06",
+              "q00r09": "f01",
+              "q00r10": "f04",
+              "q00r11": "f00",
+          }
+          row_keys = {
+              "affine_map",
+              "canonical_signature",
+              "differential_D",
+              "exact_distance_edges",
+              "governed_D",
+              "governed_id",
+              "historical_differential_id",
+              "incompatible_pairs",
+              "orbit_size",
+              "transformed_child_vertex_sets_equal",
+              "vertex_sha256",
+              "vertices",
+          }
+          affine_keys = {
+              "coordinate_map_old_to_new",
+              "source_point_to_target_index",
+              "translation",
+          }
+          crosswalk = result.get("crosswalk")
+          if not isinstance(crosswalk, list) or len(crosswalk) != 12:
+              fail("crosswalk must contain exactly 12 rows")
+
+          observed_map: dict[str, str] = {}
+          observed_signatures: set[str] = set()
+          orbit_total = 0
+          for row in crosswalk:
+              if not isinstance(row, dict) or set(row) != row_keys:
+                  fail("crosswalk row schema mismatch")
+              governed_id = row.get("governed_id")
+              differential_id = row.get("historical_differential_id")
+              if not isinstance(governed_id, str) or not isinstance(differential_id, str):
+                  fail("crosswalk IDs must be strings")
+              if governed_id in observed_map:
+                  fail(f"duplicate governed ID: {governed_id}")
+              observed_map[governed_id] = differential_id
+              signature = row.get("canonical_signature")
+              if not isinstance(signature, str) or signature in observed_signatures:
+                  fail("canonical signatures must be unique strings")
+              observed_signatures.add(signature)
+              if row.get("transformed_child_vertex_sets_equal") is not True:
+                  fail("a transformed child set is not equal")
+              if row.get("governed_D") != row.get("differential_D"):
+                  fail("matched representatives differ unexpectedly")
+              for count_key in (
+                  "vertices",
+                  "exact_distance_edges",
+                  "incompatible_pairs",
+                  "orbit_size",
+              ):
+                  if not isinstance(row.get(count_key), int) or row[count_key] < 0:
+                      fail(f"invalid {count_key} in crosswalk row")
+              orbit_total += row["orbit_size"]
+              if not sha256_re.fullmatch(str(row.get("vertex_sha256", ""))):
+                  fail("invalid child vertex digest")
+              affine = row.get("affine_map")
+              if not isinstance(affine, dict) or set(affine) != affine_keys:
+                  fail("affine-map schema mismatch")
+              if affine.get("translation") != 0:
+                  fail("expected identity affine translation")
+              if affine.get("coordinate_map_old_to_new") != list(range(11)):
+                  fail("expected identity coordinate map")
+              if affine.get("source_point_to_target_index") != list(range(5)):
+                  fail("expected identity point map")
+
+          if observed_map != expected_id_map:
+              fail(f"crosswalk bijection mismatch: {observed_map}")
+          if len(set(observed_map.values())) != 12:
+              fail("differential IDs are not a bijection")
+          if orbit_total != 432:
+              fail(f"orbit coverage total is {orbit_total}, expected 432")
+
+          canonical_text = json.dumps(result, indent=2, sort_keys=True) + "\n"
+          canonical_bytes = canonical_text.encode("utf-8")
+          if canonical_bytes != result_bytes:
+              fail("artifact JSON is not in the required canonical encoding")
+
+          encoded_branch = urllib.parse.quote(expected_head_branch, safe="")
+          branch_ref, _ = api_request(
+              "GET", f"/repos/{repository}/git/ref/heads/{encoded_branch}"
+          )
+          if (branch_ref.get("object") or {}).get("sha") != head_sha:
+              fail("feature-branch head no longer equals the verified SHA")
+
+          encoded_destination = urllib.parse.quote(destination, safe="/")
+          current, _ = api_request(
+              "GET",
+              f"/repos/{repository}/contents/{encoded_destination}"
+              f"?ref={urllib.parse.quote(head_sha, safe='')}",
+          )
+          if not isinstance(current, dict) or not current.get("sha"):
+              fail("destination file does not exist at the verified commit")
+          current_blob_sha = str(current["sha"])
+
+          branch_ref, _ = api_request(
+              "GET", f"/repos/{repository}/git/ref/heads/{encoded_branch}"
+          )
+          if (branch_ref.get("object") or {}).get("sha") != head_sha:
+              fail("feature-branch head moved before the write")
+
+          update_payload = {
+              "message": "Record checked q00 five-base crosswalk",
+              "content": base64.b64encode(canonical_bytes).decode("ascii"),
+              "sha": current_blob_sha,
+              "branch": expected_head_branch,
+          }
+          updated, _ = api_request(
+              "PUT",
+              f"/repos/{repository}/contents/{encoded_destination}",
+              update_payload,
+          )
+          new_commit_sha = str((updated.get("commit") or {}).get("sha", ""))
+          if not commit_re.fullmatch(new_commit_sha):
+              fail("contents API returned no valid commit SHA")
+
+          commit, _ = api_request(
+              "GET", f"/repos/{repository}/git/commits/{new_commit_sha}"
+          )
+          parents = commit.get("parents") or []
+          if len(parents) != 1 or parents[0].get("sha") != head_sha:
+              fail("recording commit was not created directly on the verified SHA")
+          changed_tree = commit.get("tree") or {}
+          if not changed_tree.get("sha"):
+              fail("recording commit has no tree SHA")
+
+          final_ref, _ = api_request(
+              "GET", f"/repos/{repository}/git/ref/heads/{encoded_branch}"
+          )
+          if (final_ref.get("object") or {}).get("sha") != new_commit_sha:
+              fail("feature branch does not point to the recording commit")
+
+          print(
+              "PASS recorded exact verified crosswalk artifact "
+              f"run={run_id} head={head_sha} artifact={artifact['id']} "
+              f"digest={trusted_digest} commit={new_commit_sha}"
+          )
+          PY
