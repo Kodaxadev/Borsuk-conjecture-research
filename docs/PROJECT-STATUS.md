@@ -34,14 +34,27 @@ The one-base normalization produces a canonical trim graph with 692 vertices and
 
 The canonical trim graph has a checked UNSAT certificate for 12-colorability. This proves that the one-base cover is too coarse. It does **not** disprove or settle the diameter-6 theorem target because the trim graph contains pairs farther than 6 apart.
 
+### n=11, k=6 branch-search scaffold
+
+The root is independently regenerated with:
+
+- 692 vertices;
+- 104,606 exact-distance-6 coloring edges;
+- 37,470 distance-greater-than-6 incompatibility edges;
+- matching Python and JavaScript SHA-256 hashes.
+
+The initial coverage manifest imports the root certified obstruction by claim reference and branches on the lexicographically first incompatibility edge `003--0fc`, whose Hamming distance is 8. The two 691-vertex children are recorded with verified vertex-set hashes and remain `UNKNOWN`.
+
 ## Current research frontier
 
-The next exact layer must combine two relations on the 692 vertices:
+The next exact layer must resolve those two first-level child nodes and then continue recursively:
 
-- exact distance 6, which defines the coloring graph;
-- distance greater than 6, which defines forbidden pairs in a legal component.
+- a verified SAT coloring closes a node and every descendant;
+- a proof-checked UNSAT node must branch on a remaining distance-greater-than-6 pair;
+- a legal proof-checked UNSAT node is a counterexample candidate;
+- a timeout, crash, or missing certificate remains `UNKNOWN`.
 
-The planned proof search branches only on forbidden pairs after a proof-checked UNSAT result. A SAT coloring closes the entire descendant branch by restriction. Full details are in [`K6-EXECUTION-PLAN.md`](K6-EXECUTION-PLAN.md).
+Full details are in [`K6-EXECUTION-PLAN.md`](K6-EXECUTION-PLAN.md).
 
 ## Promotion boundary
 
