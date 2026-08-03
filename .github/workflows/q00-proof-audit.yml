@@ -1,0 +1,251 @@
+name: q00-proof-audit
+
+on:
+  push:
+    branches:
+      - research/q00-proof-audit
+    paths:
+      - .github/workflows/q00-proof-audit.yml
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: q00-proof-audit-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  audit-preserved-certificate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      SOURCE_RUN_ID: 30822622138
+      SOURCE_ARTIFACT_ID: 8859778824
+      SOURCE_ARTIFACT_DIGEST: e75f4a6571a22bef7f686ec6f91037f17598fecf19872d1c085113f706be2351
+      EXPECTED_CNF_SHA256: 36da8f78ae376b370f119d1fa16a58f6504607d949ac8315648fdbda52450299
+      EXPECTED_MAP_SHA256: 5f94c619b6a5996c54f269a88de5bfaff042e4c855ea8543869b84009c7dae45
+      DRAT_TRIM_REVISION: 2e3b2dc0ecf938addbd779d42877b6ed69d9a985
+      CRUTHUNAS_CLAIM_ID: n11-k6-four-base-reduction
+
+    steps:
+      - name: Checkout governed audit branch
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate Cruthúnas governance
+        run: |
+          set -euo pipefail
+          python scripts/cruthunas.py check --all
+          python scripts/cruthunas.py adapters check
+          python scripts/validate_cruthunas_transactions.py
+          python scripts/validate_cruthunas_observations.py
+
+      - name: Download preserved q00 certificate attempt
+        uses: actions/download-artifact@v4
+        with:
+          name: q00-certificate-attempt
+          path: /tmp/q00-source
+          repository: Kodaxadev/Borsuk-conjecture-research
+          run-id: ${{ env.SOURCE_RUN_ID }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate frozen q00 inputs
+        run: |
+          set -euo pipefail
+          test -s /tmp/q00-source/q00_12color.cnf
+          test -s /tmp/q00-source/q00_variable_map.json
+          test -s /tmp/q00-source/q00.drat
+          echo "$EXPECTED_CNF_SHA256  /tmp/q00-source/q00_12color.cnf" | sha256sum --check --strict
+          echo "$EXPECTED_MAP_SHA256  /tmp/q00-source/q00_variable_map.json" | sha256sum --check --strict
+          grep -Eq '^s UNSATISFIABLE([[:space:]]|$)' /tmp/q00-source/solver.out
+
+      - name: Build pinned independent checker
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/drat-trim
+          git clone --filter=blob:none https://github.com/marijnheule/drat-trim.git /tmp/drat-trim
+          cd /tmp/drat-trim
+          git checkout --detach "$DRAT_TRIM_REVISION"
+          make -j2
+          test -x drat-trim
+          mkdir -p "$GITHUB_WORKSPACE/q00-audit-result"
+          git rev-parse HEAD | tee "$GITHUB_WORKSPACE/q00-audit-result/checker-revision.txt"
+          sha256sum drat-trim | tee "$GITHUB_WORKSPACE/q00-audit-result/checker-binary.sha256"
+
+      - name: Require exact VERIFIED verdict for full proof
+        run: |
+          set -euo pipefail
+          cnf=/tmp/q00-source/q00_12color.cnf
+          proof=/tmp/q00-source/q00.drat
+          result="$GITHUB_WORKSPACE/q00-audit-result"
+          set +e
+          /usr/bin/time -v /tmp/drat-trim/drat-trim "$cnf" "$proof" -v \
+            >"$result/full-checker.out" 2>"$result/full-checker.err"
+          checker_status=$?
+          set -e
+          echo "$checker_status" >"$result/full-checker.exit-status"
+          test "$checker_status" -eq 0
+          tr -d '\r' <"$result/full-checker.out" >"$result/full-checker.normalized.out"
+          grep -Eq '^[[:space:]]*s VERIFIED[[:space:]]*$' "$result/full-checker.normalized.out"
+          if grep -Eq '^[[:space:]]*s NOT VERIFIED[[:space:]]*$' "$result/full-checker.normalized.out"; then
+            echo 'full proof produced contradictory checker verdicts' >&2
+            exit 1
+          fi
+
+      - name: Require exact NOT VERIFIED verdict for empty proof
+        run: |
+          set -euo pipefail
+          cnf=/tmp/q00-source/q00_12color.cnf
+          empty=/tmp/q00-empty-control.drat
+          result="$GITHUB_WORKSPACE/q00-audit-result"
+          : >"$empty"
+          set +e
+          /usr/bin/time -v /tmp/drat-trim/drat-trim "$cnf" "$empty" -v \
+            >"$result/empty-control.out" 2>"$result/empty-control.err"
+          empty_status=$?
+          set -e
+          echo "$empty_status" >"$result/empty-control.exit-status"
+          test "$empty_status" -ne 0
+          tr -d '\r' <"$result/empty-control.out" >"$result/empty-control.normalized.out"
+          grep -Eq '^[[:space:]]*s NOT VERIFIED[[:space:]]*$' "$result/empty-control.normalized.out"
+          if grep -Eq '^[[:space:]]*s VERIFIED[[:space:]]*$' "$result/empty-control.normalized.out"; then
+            echo 'empty proof was accepted' >&2
+            exit 1
+          fi
+          rm -f "$empty"
+
+      - name: Audit prefix before first empty-clause addition
+        run: |
+          set -euo pipefail
+          cnf=/tmp/q00-source/q00_12color.cnf
+          proof=/tmp/q00-source/q00.drat
+          prefix=/tmp/q00-before-first-empty-clause.drat
+          result="$GITHUB_WORKSPACE/q00-audit-result"
+          python scripts/drat_empty_clause_control.py \
+            "$proof" "$prefix" "$result/prefix-control-mutation.json" \
+            >"$result/prefix-control-generator.out"
+          test -s "$prefix"
+          set +e
+          /usr/bin/time -v /tmp/drat-trim/drat-trim "$cnf" "$prefix" -v \
+            >"$result/prefix-control.out" 2>"$result/prefix-control.err"
+          prefix_status=$?
+          set -e
+          echo "$prefix_status" >"$result/prefix-control.exit-status"
+          tr -d '\r' <"$result/prefix-control.out" >"$result/prefix-control.normalized.out"
+          if grep -Eq '^[[:space:]]*s VERIFIED[[:space:]]*$' "$result/prefix-control.normalized.out"; then
+            prefix_verdict='s VERIFIED'
+          elif grep -Eq '^[[:space:]]*s NOT VERIFIED[[:space:]]*$' "$result/prefix-control.normalized.out"; then
+            prefix_verdict='s NOT VERIFIED'
+          else
+            echo 'prefix control produced no recognized checker verdict' >&2
+            exit 1
+          fi
+          printf '%s\n' "$prefix_verdict" >"$result/prefix-control.verdict"
+          rm -f "$prefix"
+
+      - name: Write audit metadata
+        run: |
+          set -euo pipefail
+          result="$GITHUB_WORKSPACE/q00-audit-result"
+          python - "$result/certificate-audit.json" <<'PY'
+          import hashlib, json, os, sys
+          from pathlib import Path
+
+          def sha256(path: Path) -> str:
+              digest = hashlib.sha256()
+              with path.open('rb') as handle:
+                  for chunk in iter(lambda: handle.read(1024 * 1024), b''):
+                      digest.update(chunk)
+              return digest.hexdigest()
+
+          source = Path('/tmp/q00-source')
+          result = Path(sys.argv[1]).parent
+          proof = source / 'q00.drat'
+          prefix_mutation = json.loads((result / 'prefix-control-mutation.json').read_text())
+          payload = {
+              'schema': 'borsuk-q00-proof-audit-v1',
+              'case_id': 'q00',
+              'claim_id': os.environ['CRUTHUNAS_CLAIM_ID'],
+              'audit_workflow_run_id': int(os.environ['GITHUB_RUN_ID']),
+              'audit_revision': os.environ['GITHUB_SHA'],
+              'source_workflow_run_id': int(os.environ['SOURCE_RUN_ID']),
+              'source_artifact_id': int(os.environ['SOURCE_ARTIFACT_ID']),
+              'source_artifact_digest': 'sha256:' + os.environ['SOURCE_ARTIFACT_DIGEST'],
+              'cnf_sha256': os.environ['EXPECTED_CNF_SHA256'],
+              'variable_map_sha256': os.environ['EXPECTED_MAP_SHA256'],
+              'proof_format': prefix_mutation['proof_format'],
+              'proof_sha256': sha256(proof),
+              'proof_bytes': proof.stat().st_size,
+              'checker': 'drat-trim',
+              'checker_revision': os.environ['DRAT_TRIM_REVISION'],
+              'checker_binary_sha256': (result / 'checker-binary.sha256').read_text().split()[0],
+              'full_proof_exit_status': int((result / 'full-checker.exit-status').read_text()),
+              'full_proof_verdict': 's VERIFIED',
+              'empty_control_exit_status': int((result / 'empty-control.exit-status').read_text()),
+              'empty_control_verdict': 's NOT VERIFIED',
+              'prefix_control_verdict': (result / 'prefix-control.verdict').read_text().strip(),
+              'prefix_control': prefix_mutation,
+              'certificate_state': 'PROOF_CHECKED_UNSAT',
+              'proof_check_tier': 'manual-heavy',
+              'repository_status_changed': False,
+              'cruthunas_evidence_registered': False,
+              'case_status_changed': False,
+              'interpretation': 'The exact q00 compact trim CNF has an independently checked UNSAT proof. This is a scoped universal-trim obstruction, not a legal diameter-6 theorem conclusion.',
+              'next_required_step': 'Persist the proof durably, register a dedicated q00 certificate claim and typed evidence, and construct exhaustive refinement children before changing case_status.json.',
+          }
+          Path(sys.argv[1]).write_text(json.dumps(payload, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          PY
+          sha256sum "$result"/* >"$result/result-sha256.txt"
+
+      - name: Compress and split proof for durable handoff
+        run: |
+          set -euo pipefail
+          result="$GITHUB_WORKSPACE/q00-audit-result"
+          gzip -9 -c /tmp/q00-source/q00.drat > /tmp/q00.drat.gz
+          sha256sum /tmp/q00.drat.gz | tee "$result/compressed-proof.sha256"
+          stat -c '%s' /tmp/q00.drat.gz | tee "$result/compressed-proof.bytes"
+          split -b 400M -d -a 2 /tmp/q00.drat.gz /tmp/q00.drat.gz.part-
+          sha256sum /tmp/q00.drat.gz.part-* | tee "$result/compressed-proof-parts.sha256"
+          rm -f /tmp/q00.drat.gz
+
+      - name: Upload compact audit metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: q00-proof-audit-metadata
+          path: |
+            q00-audit-result/
+            /tmp/q00-source/q00_12color.cnf
+            /tmp/q00-source/q00_variable_map.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Upload compressed proof part 00
+        uses: actions/upload-artifact@v4
+        with:
+          name: q00-proof-audit-certificate-part-00
+          path: /tmp/q00.drat.gz.part-00
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+
+      - name: Upload compressed proof part 01
+        uses: actions/upload-artifact@v4
+        with:
+          name: q00-proof-audit-certificate-part-01
+          path: /tmp/q00.drat.gz.part-01
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 90
+
+      - name: Report bounded audit result
+        run: |
+          echo 'Full q00 proof verdict: s VERIFIED'
+          echo 'Empty-proof control verdict: s NOT VERIFIED'
+          echo "Prefix-control verdict: $(cat q00-audit-result/prefix-control.verdict)"
+          echo 'No Cruthúnas evidence, case status, theorem gate, or ledger state changed.'
