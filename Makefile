@@ -28,6 +28,9 @@ verify-fast: validate
 	cd borsuk_11_k6_attack_surface && $(PYTHON) verify_structure.py
 	cd borsuk_11_k6_attack_surface && $(NODE) verify_independent.js
 	cd borsuk_11_k6_attack_surface && sha256sum -c SHA256SUMS
+	cd borsuk_11_k6_branch_search && $(PYTHON) generate_root.py
+	cd borsuk_11_k6_branch_search && $(NODE) verify_root_independent.js
+	cd borsuk_11_k6_branch_search && $(PYTHON) verify_manifest.py
 
 verify-k6-certificate:
 	@set -eu; \
