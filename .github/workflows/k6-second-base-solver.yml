@@ -15,6 +15,10 @@ on:
       - '.github/workflows/k6-second-base-solver.yml'
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   solve-branch:
     runs-on: ubuntu-latest
