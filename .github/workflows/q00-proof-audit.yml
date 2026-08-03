@@ -6,6 +6,11 @@ on:
       - research/q00-proof-audit
     paths:
       - .github/workflows/q00-proof-audit.yml
+  pull_request:
+    branches:
+      - research-workspace-hardening
+    paths:
+      - .github/workflows/q00-proof-audit.yml
   workflow_dispatch:
 
 permissions:
