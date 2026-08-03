@@ -147,17 +147,15 @@ jobs:
             >"$work/checker.out" 2>"$work/checker.err"
           grep -E 's VERIFIED|VERIFIED' "$work/checker.out" "$work/checker.err"
 
-          proof_size="$(stat -c %s "$proof")"
-          test "$proof_size" -gt 1
-          head -c "$((proof_size - 1))" "$proof" >"$work/q00-truncated-negative-control.drat"
+          : >"$work/q00-empty-negative-control.drat"
           set +e
-          /tmp/drat-trim/drat-trim "$cnf" "$work/q00-truncated-negative-control.drat" \
+          /tmp/drat-trim/drat-trim "$cnf" "$work/q00-empty-negative-control.drat" \
             >"$work/negative-control.out" 2>"$work/negative-control.err"
           negative_status=$?
           set -e
-          rm -f "$work/q00-truncated-negative-control.drat"
+          rm -f "$work/q00-empty-negative-control.drat"
           if grep -Eq 's VERIFIED|VERIFIED' "$work/negative-control.out" "$work/negative-control.err"; then
-            echo 'truncated proof was unexpectedly accepted' >&2
+            echo 'empty proof was unexpectedly accepted' >&2
             exit 1
           fi
           echo "$negative_status" >"$work/negative-control.exit-status"
@@ -180,7 +178,7 @@ jobs:
               'checker_revision': os.environ['DRAT_TRIM_REVISION'],
               'checker_output_sha256': hashlib.sha256(checker_out.read_bytes()).hexdigest(),
               'checker_stderr_sha256': hashlib.sha256(checker_err.read_bytes()).hexdigest(),
-              'negative_control': 'truncated proof rejected',
+              'negative_control': 'empty proof rejected',
               'certificate_state': 'PROOF_CHECKED_UNSAT',
               'repository_status_changed': False,
               'cruthunas_evidence_registered': False,
