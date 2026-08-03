@@ -142,15 +142,17 @@
     },
     {
       "claim_id": "n11-k6-q00-fifth-base-reduction",
-      "gate": 2,
+      "gate": 3,
       "epistemic_class": "HYBRID",
-      "verification_state": "UNCHECKED",
-      "lifecycle_state": "OPEN",
+      "verification_state": "INDEPENDENTLY_REPRODUCED",
+      "lifecycle_state": "WORKING",
       "source_ids": [
         "SRC-K6-Q00-FIFTH-BASE"
       ],
-      "evidence_ids": [],
-      "current_transition_id": "T-K6-Q00-FIFTH-1-2"
+      "evidence_ids": [
+        "E-K6-Q00-FIFTH-BASE"
+      ],
+      "current_transition_id": "T-K6-Q00-FIFTH-2-3"
     }
   ]
 }

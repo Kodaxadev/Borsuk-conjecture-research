@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "transaction_id": "TX-K6-Q00-FIFTH-3-4",
+  "dry_run": true,
+  "claim_id": "n11-k6-q00-fifth-base-reduction",
+  "expected_current_transition_id": "T-K6-Q00-FIFTH-2-3",
+  "from_gate": 3,
+  "to_gate": 4,
+  "actor": "openai-gpt-5.6-thinking",
+  "reason": "Register the independently reproduced fifth-base reduction as a checked attack surface.",
+  "source_revision": "f25ac26b1362055e1a011cec2b10824975c3f37c",
+  "evidence_ids": [
+    "E-K6-Q00-FIFTH-BASE"
+  ],
+  "operations": [
+    {
+      "operation": "update",
+      "path": "cruthunas/evidence.json"
+    },
+    {
+      "operation": "update",
+      "path": "cruthunas/transitions.json"
+    },
+    {
+      "operation": "update",
+      "path": "cruthunas/ledger.json"
+    }
+  ],
+  "status": "READY",
+  "blocking_conditions": []
+}
