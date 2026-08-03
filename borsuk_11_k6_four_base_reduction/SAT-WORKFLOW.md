@@ -20,7 +20,11 @@ python build_inventory.py --output inventory.csv
 
 The inventory is for scheduling only. It does not claim that smaller CNFs are mathematically or computationally easier.
 
-The instance generator performs a bounded deterministic search for a full 12-clique before writing the CNF. A full clique fixes every color label. If the fixed node budget is exhausted, the generator falls back to a deterministic verified clique and extends it greedily. This changes only color-symmetry breaking, not the underlying coloring problem.
+The instance generator performs a bounded deterministic search for a full 12-clique. Any proper coloring gives distinct colors to clique vertices, so a global color permutation lets the generator assign those clique colors canonically.
+
+After fixing the clique, each other vertex loses every color belonging to an adjacent fixed clique vertex. The generator deletes those impossible variables and emits an equivalent compact list-coloring CNF. If the fixed clique has fewer than 12 vertices, unfixed colors remain available to every non-clique vertex.
+
+If the clique search exceeds its fixed node budget, the generator falls back to a deterministic verified clique and extends it greedily. This changes only the amount of sound preprocessing, not the underlying coloring problem.
 
 ## 2. Generate a deterministic instance
 
@@ -34,7 +38,9 @@ The generated directory contains:
 - `q00_variable_map.json`
 - `q00_metadata.json`
 
-The metadata records the canonical case-list hash, all covered intermediate cases, graph statistics, the selected verified clique, CNF hash, variable-map hash, and `UNKNOWN` as the initial result state.
+The metadata records the canonical case-list hash, all covered intermediate cases, graph statistics, selected clique, domain-size histogram, compact CNF hash, variable-map hash, and `UNKNOWN` as the initial result state.
+
+The variable map uses schema `borsuk-list-color-variable-map-v2`. Variables are assigned in canonical vertex order and then allowed-color order.
 
 Generated work files are ignored by Git. Only checked result artifacts and compact manifests should be promoted into the repository.
 
@@ -70,7 +76,7 @@ python verify_model.py \
   | tee work/q00/checker.out
 ```
 
-The verifier does not trust the stored edge list or variable map. It regenerates the canonical trim and every exact-distance-6 edge from the case id, decodes exactly one color per vertex, rejects out-of-range variables, and checks every edge.
+The verifier does not trust the stored edge list or variable map. It regenerates the canonical trim, deterministic clique, compact color domains, variable numbering, and every exact-distance-6 edge from the case id. It requires exactly one allowed color per vertex, rejects out-of-range variables, and checks every edge.
 
 It explicitly rejects UNSAT text presented as a model.
 
@@ -90,7 +96,7 @@ An UNSAT type may not be recorded from solver stdout alone.
 
 Required evidence:
 
-- the exact CNF and SHA-256 hash;
+- the exact compact CNF and SHA-256 hash;
 - a proof trace produced for that CNF;
 - an independent proof checker accepting the trace;
 - checker command, version, output artifact, and output hash;
@@ -157,16 +163,17 @@ The theorem target remains open until every canonical type and every required de
 
 ## Deterministic smoke test
 
-`verify_sat_lane.py` generates the current `q00` encoding in a temporary directory and freezes:
+`verify_sat_lane.py` generates the current compact `q00` encoding in a temporary directory and freezes:
 
 - vertices: 436
 - edges: 39,600
 - fixed clique: 12 vertices
-- variables: 5,232
-- clauses: 504,424
-- CNF SHA-256: `b6f5c8e37c63f1149ebabb48ff54764eb6405f239ba31538ee4d711811781434`
-- variable-map SHA-256: `4802b73b31fabb5c180476e31fa14f9d4a40f8bfe13d8f96872d90286f9dc31b`
+- domain sizes: 12 singleton, 368 six-color, and 56 nine-color domains
+- variables: 2,724
+- clauses: 130,840
+- CNF SHA-256: `36da8f78ae376b370f119d1fa16a58f6504607d949ac8315648fdbda52450299`
+- variable-map SHA-256: `5f94c619b6a5996c54f269a88de5bfaff042e4c855ea8543869b84009c7dae45`
 
-The same test runs negative controls against the model verifier.
+The same test runs negative controls against the compact model verifier.
 
-The earlier 180-second `q00` probe used the superseded 10-clique CNF hash `b07c254b71ae0964851afb8dd9f7fa8a728433e27ae76a327e5c10a6e6e7df55` and remains `UNKNOWN`. It must not be cited as a run of the current encoding.
+The earlier 180-second `q00` probe used the superseded direct 10-clique CNF hash `b07c254b71ae0964851afb8dd9f7fa8a728433e27ae76a327e5c10a6e6e7df55` and remains `UNKNOWN`. It must not be cited as a run of the compact encoding.
