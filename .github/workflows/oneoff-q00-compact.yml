@@ -1,4 +1,4 @@
-name: oneoff-q00-compact
+name: oneoff-q00-compact-proof
 
 on:
   pull_request:
@@ -7,9 +7,9 @@ on:
       - '.github/workflows/oneoff-q00-compact.yml'
 
 jobs:
-  bounded-witness-probe:
+  proof-producing-run:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 35
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -32,7 +32,7 @@ jobs:
           python build_instance.py q00 --output-dir work/q00
           python verify_sat_lane.py
 
-      - name: Build pinned Kissat 4.0.0
+      - name: Build pinned Kissat and independent checker
         run: |
           set -euo pipefail
           curl --fail --location --retry 3 \
@@ -52,60 +52,93 @@ jobs:
           /tmp/kissat-4.0.0 --version | tee "$GITHUB_WORKSPACE/borsuk_11_k6_four_base_reduction/work/q00/solver-version.txt"
           sha256sum /tmp/kissat-4.0.0 | tee "$GITHUB_WORKSPACE/borsuk_11_k6_four_base_reduction/work/q00/solver-binary.sha256"
 
-      - name: Run five-minute witness-only probe
+          g++ -O3 -std=c++17 \
+            "$GITHUB_WORKSPACE/borsuk_11_k6_trim_unsat_certificate/drup_check.cpp" \
+            -o /tmp/drup_check
+          sha256sum /tmp/drup_check | tee "$GITHUB_WORKSPACE/borsuk_11_k6_four_base_reduction/work/q00/checker-binary.sha256"
+
+      - name: Produce and independently check proof
         working-directory: borsuk_11_k6_four_base_reduction
         shell: bash
         run: |
           set -u
           work=work/q00
+          cnf="$work/q00_12color.cnf"
+          proof="$work/q00.drat"
           started="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
           set +e
-          timeout --signal=TERM --kill-after=10s 300 \
-            /tmp/kissat-4.0.0 "$work/q00_12color.cnf" \
+          timeout --signal=TERM --kill-after=10s 600 \
+            /tmp/kissat-4.0.0 "$cnf" "$proof" \
             >"$work/solver.out" 2>"$work/solver.err"
           solver_status=$?
           set -e
-          finished="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
           state=UNKNOWN
-          if [ "$solver_status" -eq 10 ]; then
+          checker_status=-1
+          if [ "$solver_status" -eq 20 ] && [ -s "$proof" ]; then
+            set +e
+            timeout --signal=TERM --kill-after=10s 600 \
+              /tmp/drup_check "$cnf" "$proof" \
+              >"$work/checker.out" 2>"$work/checker.err"
+            checker_status=$?
+            set -e
+            cat "$work/checker.out"
+            cat "$work/checker.err" >&2
+            if [ "$checker_status" -eq 0 ] && grep -q 'VERIFIED UNSAT' "$work/checker.out"; then
+              state=UNSAT_PROOF_VERIFIED
+            else
+              state=UNSAT_PROOF_REJECTED
+            fi
+          elif [ "$solver_status" -eq 10 ]; then
             python verify_model.py q00 "$work/solver.out" \
               --output "$work/q00_verified_coloring.json" \
               | tee "$work/checker.out"
-            state=SAT_MODEL
-          elif [ "$solver_status" -eq 20 ]; then
-            state=UNSAT_WITHOUT_PROOF
+            checker_status=0
+            state=SAT_MODEL_VERIFIED
+          fi
+
+          finished="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          if [ -s "$proof" ]; then
+            gzip -9 "$proof"
           fi
 
           export SOLVER_STATUS="$solver_status"
+          export CHECKER_STATUS="$checker_status"
           export RESULT_STATE="$state"
           export STARTED_UTC="$started"
           export FINISHED_UTC="$finished"
-          python - "$work/probe-result.json" <<'PY'
+          python - "$work/proof-result.json" <<'PY'
           import json, os, sys
           from pathlib import Path
           Path(sys.argv[1]).write_text(json.dumps({
-              'schema': 'borsuk-bounded-solver-probe-v1',
+              'schema': 'borsuk-proof-producing-run-v1',
               'case_id': 'q00',
               'claim_id': 'n11-k6-four-base-reduction',
               'encoding': 'compact-list-color-v2',
-              'limit_seconds': 300,
-              'produce_proof': False,
+              'solver_limit_seconds': 600,
+              'checker_limit_seconds': 600,
               'solver_exit_status': int(os.environ['SOLVER_STATUS']),
+              'checker_exit_status': int(os.environ['CHECKER_STATUS']),
               'state': os.environ['RESULT_STATE'],
               'started_utc': os.environ['STARTED_UTC'],
               'finished_utc': os.environ['FINISHED_UTC'],
               'repository_status_changed': False,
-              'cruthunas_state': 'PROBE_ONLY_NOT_REGISTERED_EVIDENCE',
+              'cruthunas_state': 'PROBE_ONLY_UNTIL_ARTIFACT_IMPORT',
           }, indent=2, sort_keys=True) + '\n', encoding='utf-8')
           PY
           sha256sum "$work"/* >"$work/artifact-sha256.txt"
 
-      - name: Upload compact probe artifacts
+          case "$state" in
+            UNSAT_PROOF_VERIFIED|SAT_MODEL_VERIFIED) exit 0 ;;
+            *) exit 1 ;;
+          esac
+
+      - name: Upload proof-run artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: q00-compact-exact-probe
+          name: q00-compact-proof-run
           path: borsuk_11_k6_four_base_reduction/work/q00/
           if-no-files-found: error
           retention-days: 30
