@@ -68,7 +68,7 @@
       "verification_state": "INDEPENDENTLY_REPRODUCED",
       "lifecycle_state": "WORKING",
       "source_ids": ["SRC-K6-FOUR-BASE"],
-      "evidence_ids": ["E-K6-FOUR-BASE"],
+      "evidence_ids": ["E-K6-FOUR-BASE", "E-K6-SAT-LANE"],
       "current_transition_id": "T-K6-FOUR-BASE-3-4"
     },
     {
