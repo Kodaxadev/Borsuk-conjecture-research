@@ -55,17 +55,19 @@ jobs:
           run-id: ${{ env.SOURCE_RUN_ID }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Validate preserved instance and proof presence
+      - name: Validate preserved instance and binary proof
         run: |
           set -euo pipefail
-          find /tmp/q00-source -maxdepth 2 -type f -printf '%P\n' | sort | tee /tmp/q00-files.txt
+          find /tmp/q00-source -maxdepth 1 -type f -printf '%f\n' | sort | tee /tmp/q00-files.txt
           test -s /tmp/q00-source/q00_12color.cnf
           test -s /tmp/q00-source/q00_variable_map.json
           test -s /tmp/q00-source/q00.drat
           echo "$EXPECTED_CNF_SHA256  /tmp/q00-source/q00_12color.cnf" | sha256sum --check --strict
           echo "$EXPECTED_MAP_SHA256  /tmp/q00-source/q00_variable_map.json" | sha256sum --check --strict
           grep -Eq '^s UNSATISFIABLE' /tmp/q00-source/solver.out
-          test "$(tail -n 1 /tmp/q00-source/q00.drat | tr -d '[:space:]')" = 0
+          final_record="$(tail -c 2 /tmp/q00-source/q00.drat | od -An -tx1 | tr -d '[:space:]')"
+          echo "final binary DRAT record: $final_record"
+          test "$final_record" = 6100
 
       - name: Build pinned independent DRAT checker
         run: |
@@ -90,16 +92,17 @@ jobs:
             >"$result/checker.out" 2>"$result/checker.err"
           grep -Eq 's VERIFIED|VERIFIED' "$result/checker.out" "$result/checker.err"
 
-      - name: Reject proof missing final contradiction
+      - name: Reject proof missing binary empty-clause record
         run: |
           set -euo pipefail
           cnf=/tmp/q00-source/q00_12color.cnf
           proof=/tmp/q00-source/q00.drat
           bad=/tmp/q00-missing-final-empty-clause.drat
           result="$GITHUB_WORKSPACE/q00-check-result"
-          head -n -1 "$proof" >"$bad"
-          test -s "$bad"
-          test "$(stat -c %s "$bad")" -lt "$(stat -c %s "$proof")"
+          proof_size="$(stat -c %s "$proof")"
+          test "$proof_size" -gt 2
+          head -c "$((proof_size - 2))" "$proof" >"$bad"
+          test "$(stat -c %s "$bad")" -eq "$((proof_size - 2))"
           set +e
           /usr/bin/time -v /tmp/drat-trim/drat-trim "$cnf" "$bad" -v \
             >"$result/negative-control.out" 2>"$result/negative-control.err"
@@ -107,7 +110,7 @@ jobs:
           set -e
           echo "$negative_status" >"$result/negative-control.exit-status"
           if grep -Eq 's VERIFIED|VERIFIED' "$result/negative-control.out" "$result/negative-control.err"; then
-            echo 'proof with final empty-clause line removed was unexpectedly accepted' >&2
+            echo 'binary proof with final empty-clause record removed was unexpectedly accepted' >&2
             exit 1
           fi
           rm -f "$bad"
@@ -119,6 +122,13 @@ jobs:
           python - "$result/certificate-result.json" <<'PY'
           import hashlib, json, os, sys
           from pathlib import Path
+
+          def sha256(path: Path) -> str:
+              digest = hashlib.sha256()
+              with path.open('rb') as handle:
+                  for chunk in iter(lambda: handle.read(1024 * 1024), b''):
+                      digest.update(chunk)
+              return digest.hexdigest()
 
           source = Path('/tmp/q00-source')
           result = Path(sys.argv[1]).parent
@@ -132,16 +142,17 @@ jobs:
               'source_artifact_digest': 'sha256:' + os.environ['SOURCE_ARTIFACT_DIGEST'],
               'cnf_sha256': os.environ['EXPECTED_CNF_SHA256'],
               'variable_map_sha256': os.environ['EXPECTED_MAP_SHA256'],
-              'proof_sha256': hashlib.sha256(proof.read_bytes()).hexdigest(),
+              'proof_format': 'binary DRAT',
+              'proof_sha256': sha256(proof),
               'proof_bytes': proof.stat().st_size,
               'checker': 'drat-trim',
               'checker_revision': os.environ['DRAT_TRIM_REVISION'],
               'checker_binary_sha256': (result / 'checker-binary.sha256').read_text().split()[0],
-              'checker_output_sha256': hashlib.sha256((result / 'checker.out').read_bytes()).hexdigest(),
-              'checker_stderr_sha256': hashlib.sha256((result / 'checker.err').read_bytes()).hexdigest(),
-              'negative_control': 'final empty-clause proof line removed and rejected',
-              'negative_control_output_sha256': hashlib.sha256((result / 'negative-control.out').read_bytes()).hexdigest(),
-              'negative_control_stderr_sha256': hashlib.sha256((result / 'negative-control.err').read_bytes()).hexdigest(),
+              'checker_output_sha256': sha256(result / 'checker.out'),
+              'checker_stderr_sha256': sha256(result / 'checker.err'),
+              'negative_control': 'final binary addition-empty-clause record 0x61 0x00 removed and rejected',
+              'negative_control_output_sha256': sha256(result / 'negative-control.out'),
+              'negative_control_stderr_sha256': sha256(result / 'negative-control.err'),
               'certificate_state': 'PROOF_CHECKED_UNSAT',
               'proof_check_tier': 'manual-heavy',
               'repository_status_changed': False,
@@ -191,5 +202,5 @@ jobs:
 
       - name: Report bounded research result
         run: |
-          echo 'The exact q00 compact trim CNF has an independently checked UNSAT proof and a valid negative control.'
+          echo 'The exact q00 compact trim CNF has an independently checked UNSAT proof and a valid binary negative control.'
           echo 'No Cruthúnas evidence, case status, theorem gate, or ledger state was changed by this workflow.'
