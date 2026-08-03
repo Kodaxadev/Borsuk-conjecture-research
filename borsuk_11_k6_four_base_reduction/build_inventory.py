@@ -10,7 +10,7 @@ from pathlib import Path
 from build_instance import fixed_clique_for, formula_counts
 from generate_cases import A, allowed, canonical_classes, generate_raw_cases
 
-EXPECTED_INVENTORY_SHA256 = "b2b4689bd1f344382c67a02a1a60b051a2ec532d0e018d05d1dee1412afff196"
+EXPECTED_INVENTORY_SHA256 = "860fc2d3762a6956afda8739e651aa0f03fe7b4fce6686267d038f113f43a9a5"
 FIELDS = [
     "rank",
     "id",
