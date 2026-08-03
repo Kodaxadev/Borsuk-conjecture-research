@@ -1,22 +1,47 @@
 {
-  "schema": "borsuk-proof-checked-unsat-result-v1",
+  "schema": "borsuk-proof-checked-unsat-result-v2",
   "case_id": "q00",
   "claim_id": "n11-k6-q00-trim-unsat",
   "certificate_state": "PROOF_CHECKED_UNSAT",
   "cnf_sha256": "36da8f78ae376b370f119d1fa16a58f6504607d949ac8315648fdbda52450299",
   "variable_map_sha256": "5f94c619b6a5996c54f269a88de5bfaff042e4c855ea8543869b84009c7dae45",
   "proof_format": "binary DRAT",
+  "proof_record_count": 3374480,
   "proof_bytes": 118009628,
   "proof_sha256": "59bf62a00d0c63b5ced7967c33421d953af5b96e423cc93dc862e595d08561b5",
   "checker": "drat-trim",
   "checker_revision": "2e3b2dc0ecf938addbd779d42877b6ed69d9a985",
   "checker_binary_sha256": "92f0aa9575ed519d66a99b8b1b3dde6ece4618ae4c202a3a4b200265dda0aa7a",
   "positive_verdict": "s VERIFIED",
-  "negative_control": {
-    "mutation": "first operation byte changed from 0x61 to invalid 0x62",
-    "damaged_sha256": "71b588a0668f74b85715640eaeed1bf37638775f82f8f3d1de70190ba5f06c49",
-    "checker_exit_status": 1,
-    "verdict": "CORRUPTED_PROOF_REJECTED"
+  "negative_controls": {
+    "structural_corruption": {
+      "mutation": "first operation byte changed from 0x61 to invalid 0x62",
+      "damaged_sha256": "71b588a0668f74b85715640eaeed1bf37638775f82f8f3d1de70190ba5f06c49",
+      "checker_exit_status": 1,
+      "verdict": "CORRUPTED_PROOF_REJECTED"
+    },
+    "explicit_empty_clause_only": {
+      "empty_clause_addition_count": 1,
+      "empty_clause_offset": 118009626,
+      "records_removed": 1,
+      "verdict": "s VERIFIED",
+      "interpretation": "The checker detected a root contradiction from preceding learned clauses, so removing only the explicit empty-clause record is not a valid negative control for this proof/checker pair."
+    },
+    "semantic_record_prefix": {
+      "strategy": "truncate at a complete binary-DRAT record boundary before the sole empty-clause addition and 256 immediately preceding records",
+      "records_removed": 257,
+      "truncation_offset": 118008578,
+      "damaged_bytes": 118008578,
+      "damaged_sha256": "f38c1b6439eb20f6d2c1a80e63e1de7c8d421ea5d65e7fb61961a0f5d609c064",
+      "checker_exit_status": 1,
+      "verdict": "s NOT VERIFIED",
+      "elapsed_wall_seconds": 5.43,
+      "metadata_path": "borsuk_11_k6_four_base_reduction/certificates/q00/semantic-negative-control.json",
+      "workflow_run_id": 30828438527,
+      "artifact_id": 8861877893,
+      "artifact_digest": "sha256:31f10ecdc9db90cd29328b09c68a90e8d97f983173905555bb80b9d96c2902fd",
+      "artifact_expires_at": "2026-09-02T15:39:08Z"
+    }
   },
   "proof_producing_run": {
     "workflow_run_id": 30822622138,
@@ -31,10 +56,11 @@
     "metadata_artifact_digest": "sha256:16e5510f997d21380653b641e6e02a62e13e5bf0ec769b43e9446463bc87faa9",
     "expires_at": "2026-11-01T15:24:33Z"
   },
-  "scope": "The q00 compact universal trim CNF is UNSAT.",
+  "scope": "The exact frozen q00 compact universal-trim CNF is UNSAT.",
   "non_implications": [
     "The q00 trim is not itself guaranteed to be a legal diameter-6 set.",
-    "This certificate does not settle q00 without exhaustive compatible refinement.",
+    "This certificate does not validate the encoding-to-Borsuk correspondence beyond the registered generator and reduction evidence.",
+    "This certificate does not settle the legal q00 case without exhaustive compatible refinement.",
     "This certificate does not promote the full n=11,k=6 theorem target."
   ],
   "repository_status_changed": false,
