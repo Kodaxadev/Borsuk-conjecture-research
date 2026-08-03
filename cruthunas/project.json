@@ -10,6 +10,10 @@
   "evidence_registry": "cruthunas/evidence.json",
   "transition_registry": "cruthunas/transitions.json",
   "source_registry": "cruthunas/sources.json",
+  "transaction_schema": "cruthunas/schemas/transaction.schema.json",
+  "transaction_plans": [
+    "cruthunas/transactions/n11-k6-gate-2-to-3.blocked.json"
+  ],
   "canonical_skill": "cruthunas/skills/cruthunas-govern/SKILL.md",
   "adapters": [
     ".claude/skills/cruthunas-govern/SKILL.md",
@@ -32,6 +36,7 @@
     "require_gate_3_to_4_registration": true,
     "require_artifact_paths": true,
     "require_source_revision_pins": true,
+    "require_dry_run_transaction_plans": true,
     "forbid_freehand_status_changes": true,
     "forbid_timeout_as_unsat": true,
     "forbid_candidate_publication_promotion": true
