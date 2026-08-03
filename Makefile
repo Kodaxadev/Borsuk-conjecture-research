@@ -21,10 +21,12 @@ status: cruthunas-status
 cruthunas-check:
 	$(PYTHON) scripts/cruthunas.py check --all
 	$(PYTHON) scripts/validate_cruthunas_transactions.py
+	$(PYTHON) scripts/validate_cruthunas_observations.py
 
 cruthunas-changed:
 	$(PYTHON) scripts/cruthunas.py check --changed
 	$(PYTHON) scripts/validate_cruthunas_transactions.py
+	$(PYTHON) scripts/validate_cruthunas_observations.py
 
 cruthunas-status:
 	$(PYTHON) scripts/cruthunas.py status
@@ -72,6 +74,7 @@ docs:
 	@echo "  - cruthunas/README.md"
 	@echo "  - cruthunas/project.json"
 	@echo "  - cruthunas/ledger.json"
+	@echo "  - cruthunas/observations.json"
 	@echo "  - research/claims.json"
 	@echo "  - docs/RESEARCH-ROADMAP.md"
 	@echo "  - docs/VERIFICATION.md"
