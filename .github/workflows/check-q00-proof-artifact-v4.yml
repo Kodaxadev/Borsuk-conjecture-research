@@ -100,8 +100,13 @@ jobs:
           empty=/tmp/q00-empty-control.drat
           result="$GITHUB_WORKSPACE/q00-check-result"
           : >"$empty"
+          set +e
           /usr/bin/time -v /tmp/drat-trim/drat-trim "$cnf" "$empty" -v \
             >"$result/negative-control.out" 2>"$result/negative-control.err"
+          negative_status=$?
+          set -e
+          echo "$negative_status" >"$result/negative-control.exit-status"
+          test "$negative_status" -ne 0
           tr -d '\r' <"$result/negative-control.out" >"$result/negative-control.normalized.out"
           grep -Eq '^[[:space:]]*s NOT VERIFIED[[:space:]]*$' "$result/negative-control.normalized.out"
           if grep -Eq '^[[:space:]]*s VERIFIED[[:space:]]*$' "$result/negative-control.normalized.out"; then
@@ -147,6 +152,7 @@ jobs:
               'checker_stderr_sha256': sha256(result / 'checker.err'),
               'checker_verdict': 's VERIFIED',
               'negative_control': 'empty proof',
+              'negative_control_exit_status': int((result / 'negative-control.exit-status').read_text()),
               'negative_control_output_sha256': sha256(result / 'negative-control.out'),
               'negative_control_stderr_sha256': sha256(result / 'negative-control.err'),
               'negative_control_verdict': 's NOT VERIFIED',
