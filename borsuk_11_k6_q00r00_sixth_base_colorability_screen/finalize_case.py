@@ -25,6 +25,10 @@ def main() -> int:
     parser.add_argument("--started", required=True)
     parser.add_argument("--finished", required=True)
     parser.add_argument("--solver-limit-seconds", type=int, required=True)
+    parser.add_argument("--workflow-run-id", type=int, required=True)
+    parser.add_argument("--workflow-run-attempt", type=int, required=True)
+    parser.add_argument("--workflow-sha", required=True)
+    parser.add_argument("--workflow-ref", required=True)
     args = parser.parse_args()
 
     metadata_path = args.instance_dir / "cases" / args.case_id / f"{args.case_id}_metadata.json"
@@ -53,6 +57,14 @@ def main() -> int:
         if path.is_file() and path.name not in {"certificate-result.json", "artifact-sha256.txt", "finalize.out"}:
             files[path.name] = {"sha256": sha256_file(path), "size_bytes": path.stat().st_size}
 
+    def read_text(name: str) -> str:
+        path = args.case_dir / name
+        return path.read_text(encoding="utf-8").strip() if path.is_file() else "MISSING"
+
+    def read_recorded_sha256(name: str) -> str:
+        text = read_text(name)
+        return text.split()[0] if text != "MISSING" and text.split() else "MISSING"
+
     result = {
         "schema": "borsuk-q00r00-sixth-base-colorability-result-v1",
         "claim_id": "n11-k6-q00r00-sixth-base-colorability-screen",
@@ -68,6 +80,19 @@ def main() -> int:
             "incompatible_pairs": metadata["incompatible_pairs"],
             "variables": metadata["variables"],
             "clauses": metadata["clauses"],
+        },
+        "execution": {
+            "workflow_run_id": args.workflow_run_id,
+            "workflow_run_attempt": args.workflow_run_attempt,
+            "workflow_sha": args.workflow_sha,
+            "workflow_ref": args.workflow_ref,
+            "artifact_id": "PENDING_POST_UPLOAD_BINDING",
+        },
+        "toolchain": {
+            "kissat_version": read_text("kissat-version.txt"),
+            "kissat_binary_sha256": read_recorded_sha256("kissat-binary.sha256"),
+            "drat_trim_revision": read_text("drat-trim-revision.txt"),
+            "drat_trim_binary_sha256": read_recorded_sha256("drat-trim-binary.sha256"),
         },
         "solver": {
             "name": "Kissat",
