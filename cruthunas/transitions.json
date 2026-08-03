@@ -476,6 +476,19 @@
           "evidence_ids": [],
           "source_revision": "4173574f32991d14c3557e4ad2f9cebf007aceb6",
           "bootstrap_import": false
+        },
+        {
+          "id": "T-K6-Q00-FIFTH-2-3",
+          "from_gate": 2,
+          "to_gate": 3,
+          "date": "2026-08-03",
+          "actor": "openai-gpt-5.6-thinking",
+          "reason": "Link the exact orbit list, completeness proof, independent verifier, hashes, and UNKNOWN child ledger.",
+          "evidence_ids": [
+            "E-K6-Q00-FIFTH-BASE"
+          ],
+          "source_revision": "5e999699438d45e63faae8bab5dfbe92712385cd",
+          "bootstrap_import": false
         }
       ]
     }
