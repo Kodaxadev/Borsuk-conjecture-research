@@ -1,0 +1,181 @@
+name: check-q00-proof-artifact-v3
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/check-q00-proof-artifact-v3.yml
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: check-q00-proof-artifact-v3-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  check-preserved-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      SOURCE_RUN_ID: 30822622138
+      SOURCE_ARTIFACT_ID: 8859778824
+      SOURCE_ARTIFACT_DIGEST: e75f4a6571a22bef7f686ec6f91037f17598fecf19872d1c085113f706be2351
+      EXPECTED_CNF_SHA256: 36da8f78ae376b370f119d1fa16a58f6504607d949ac8315648fdbda52450299
+      EXPECTED_MAP_SHA256: 5f94c619b6a5996c54f269a88de5bfaff042e4c855ea8543869b84009c7dae45
+      DRAT_TRIM_REVISION: 2e3b2dc0ecf938addbd779d42877b6ed69d9a985
+      CRUTHUNAS_CLAIM_ID: n11-k6-four-base-reduction
+
+    steps:
+      - name: Checkout governed branch
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate Cruthúnas governance
+        run: |
+          set -euo pipefail
+          python scripts/cruthunas.py check --all
+          python scripts/cruthunas.py adapters check
+          python scripts/validate_cruthunas_transactions.py
+          python scripts/validate_cruthunas_observations.py
+
+      - name: Download preserved q00 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: q00-certificate-attempt
+          path: /tmp/q00-source
+          repository: Kodaxadev/Borsuk-conjecture-research
+          run-id: ${{ env.SOURCE_RUN_ID }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate frozen instance and proof boundary
+        run: |
+          set -euo pipefail
+          test -s /tmp/q00-source/q00_12color.cnf
+          test -s /tmp/q00-source/q00_variable_map.json
+          test -s /tmp/q00-source/q00.drat
+          echo "$EXPECTED_CNF_SHA256  /tmp/q00-source/q00_12color.cnf" | sha256sum --check --strict
+          echo "$EXPECTED_MAP_SHA256  /tmp/q00-source/q00_variable_map.json" | sha256sum --check --strict
+          grep -Eq '^s UNSATISFIABLE' /tmp/q00-source/solver.out
+          final_record="$(tail -c 2 /tmp/q00-source/q00.drat | od -An -tx1 | tr -d '[:space:]')"
+          test "$final_record" = 6100
+
+      - name: Build pinned drat-trim
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/drat-trim
+          git clone --filter=blob:none https://github.com/marijnheule/drat-trim.git /tmp/drat-trim
+          cd /tmp/drat-trim
+          git checkout --detach "$DRAT_TRIM_REVISION"
+          make -j2
+          test -x drat-trim
+          mkdir -p "$GITHUB_WORKSPACE/q00-check-result"
+          git rev-parse HEAD | tee "$GITHUB_WORKSPACE/q00-check-result/checker-revision.txt"
+          sha256sum drat-trim | tee "$GITHUB_WORKSPACE/q00-check-result/checker-binary.sha256"
+
+      - name: Require exact VERIFIED verdict for full proof
+        run: |
+          set -euo pipefail
+          cnf=/tmp/q00-source/q00_12color.cnf
+          proof=/tmp/q00-source/q00.drat
+          result="$GITHUB_WORKSPACE/q00-check-result"
+          /usr/bin/time -v /tmp/drat-trim/drat-trim "$cnf" "$proof" -v \
+            >"$result/checker.out" 2>"$result/checker.err"
+          tr -d '\r' <"$result/checker.out" >"$result/checker.normalized.out"
+          grep -Eq '^[[:space:]]*s VERIFIED[[:space:]]*$' "$result/checker.normalized.out"
+          if grep -Eq '^[[:space:]]*s NOT VERIFIED[[:space:]]*$' "$result/checker.normalized.out"; then
+            echo 'full proof produced contradictory checker verdicts' >&2
+            exit 1
+          fi
+
+      - name: Require exact NOT VERIFIED verdict after damage
+        run: |
+          set -euo pipefail
+          cnf=/tmp/q00-source/q00_12color.cnf
+          proof=/tmp/q00-source/q00.drat
+          bad=/tmp/q00-missing-final-record.drat
+          result="$GITHUB_WORKSPACE/q00-check-result"
+          proof_size="$(stat -c %s "$proof")"
+          head -c "$((proof_size - 2))" "$proof" >"$bad"
+          set +e
+          /usr/bin/time -v /tmp/drat-trim/drat-trim "$cnf" "$bad" -v \
+            >"$result/negative-control.out" 2>"$result/negative-control.err"
+          negative_status=$?
+          set -e
+          echo "$negative_status" >"$result/negative-control.exit-status"
+          tr -d '\r' <"$result/negative-control.out" >"$result/negative-control.normalized.out"
+          grep -Eq '^[[:space:]]*s NOT VERIFIED[[:space:]]*$' "$result/negative-control.normalized.out"
+          if grep -Eq '^[[:space:]]*s VERIFIED[[:space:]]*$' "$result/negative-control.normalized.out"; then
+            echo 'damaged proof was accepted' >&2
+            exit 1
+          fi
+          rm -f "$bad"
+
+      - name: Write checked-certificate metadata
+        run: |
+          set -euo pipefail
+          result="$GITHUB_WORKSPACE/q00-check-result"
+          python - "$result/certificate-result.json" <<'PY'
+          import hashlib, json, os, sys
+          from pathlib import Path
+
+          def sha256(path: Path) -> str:
+              digest = hashlib.sha256()
+              with path.open('rb') as handle:
+                  for chunk in iter(lambda: handle.read(1024 * 1024), b''):
+                      digest.update(chunk)
+              return digest.hexdigest()
+
+          source = Path('/tmp/q00-source')
+          result = Path(sys.argv[1]).parent
+          proof = source / 'q00.drat'
+          payload = {
+              'schema': 'borsuk-proof-checked-unsat-result-v1',
+              'case_id': 'q00',
+              'claim_id': os.environ['CRUTHUNAS_CLAIM_ID'],
+              'source_workflow_run_id': int(os.environ['SOURCE_RUN_ID']),
+              'source_artifact_id': int(os.environ['SOURCE_ARTIFACT_ID']),
+              'source_artifact_digest': 'sha256:' + os.environ['SOURCE_ARTIFACT_DIGEST'],
+              'cnf_sha256': os.environ['EXPECTED_CNF_SHA256'],
+              'variable_map_sha256': os.environ['EXPECTED_MAP_SHA256'],
+              'proof_format': 'binary DRAT',
+              'proof_sha256': sha256(proof),
+              'proof_bytes': proof.stat().st_size,
+              'checker': 'drat-trim',
+              'checker_revision': os.environ['DRAT_TRIM_REVISION'],
+              'checker_binary_sha256': (result / 'checker-binary.sha256').read_text().split()[0],
+              'checker_verdict': 's VERIFIED',
+              'negative_control': 'final binary record removed',
+              'negative_control_verdict': 's NOT VERIFIED',
+              'certificate_state': 'PROOF_CHECKED_UNSAT',
+              'proof_check_tier': 'manual-heavy',
+              'repository_status_changed': False,
+              'cruthunas_evidence_registered': False,
+              'case_status_changed': False,
+              'interpretation': 'The exact q00 compact trim CNF is proof-checked UNSAT. This is a scoped trim obstruction and not a legal diameter-6 theorem conclusion.',
+              'next_required_step': 'Register a dedicated q00 certificate claim and typed evidence, then construct exhaustive refinement children before changing case_status.json.',
+          }
+          Path(sys.argv[1]).write_text(json.dumps(payload, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          PY
+          sha256sum "$result"/* >"$result/result-sha256.txt"
+
+      - name: Upload compact checked metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: q00-proof-checked-metadata-v3
+          path: q00-check-result/
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Report bounded result
+        run: |
+          echo 'Full q00 proof verdict: s VERIFIED'
+          echo 'Damaged q00 proof verdict: s NOT VERIFIED'
+          echo 'No claim, ledger, case status, or theorem gate changed.'
