@@ -16,7 +16,7 @@
   "solver": {
     "name": "Kissat",
     "version": "4.0.0",
-    "binary_sha256": "5878fea3bc8dedaeb1157dcee457d6064b4adabe592a17872ba71145521c8ac2",
+    "binary_sha256": "5218f48dda6bc773ad0802e0afbf727e61a37ff39b008226874afb3cb8f129c5",
     "source_archive_md5": "89801fadc6d7a2ee1519a9cccf0c9029"
   },
   "run": {
@@ -31,6 +31,13 @@
     "artifact_id": 8845671264,
     "artifact_digest": "sha256:6bf3966ee84a373844899ed343e8dfce108af8f9afce3fe057f3262c3a5e8efb",
     "artifact_expires_at": "2026-09-02T05:28:22Z"
+  },
+  "artifact_reconciliation": {
+    "checked_utc": "2026-08-03T14:11:00Z",
+    "preserved_artifact_file": "solver-binary.sha256",
+    "preserved_artifact_sha256": "5218f48dda6bc773ad0802e0afbf727e61a37ff39b008226874afb3cb8f129c5",
+    "previous_recorded_value": "5878fea3bc8dedaeb1157dcee457d6064b4adabe592a17872ba71145521c8ac2",
+    "resolution": "The probe-history record was corrected to the value contained in the preserved workflow artifact. This correction has no epistemic effect."
   },
   "observed_metrics": {
     "conflicts": 1417087,
