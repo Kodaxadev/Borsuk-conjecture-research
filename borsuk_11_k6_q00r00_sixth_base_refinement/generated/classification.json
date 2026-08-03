@@ -1,0 +1,48 @@
+{
+  "base": [
+    0,
+    63,
+    455,
+    1611,
+    732
+  ],
+  "candidate_count": 329,
+  "candidate_encoding": "ascending lowercase three-hex-digit vertices, one per LF-terminated line",
+  "checks": {
+    "all_listed_candidates_compatible": true,
+    "all_orbit_mappings_valid": true,
+    "candidate_scan_exhaustive": true,
+    "generator_closure_equals_stabilizer": true,
+    "no_incompatible_vertex_listed": true,
+    "orbit_stabilizer_identity": true,
+    "orbits_disjoint": true,
+    "orbits_union_candidate_set": true,
+    "unordered_and_pointwise_actions_distinct": true
+  },
+  "claim_id": "n11-k6-q00r00-sixth-base-classification",
+  "compatibility_predicate": "v not in B; wt(v) is even; and d_H(v,b) <= 6 for every b in B",
+  "induced_base_permutation_count": 12,
+  "k": 6,
+  "n": 11,
+  "orbit_count": 36,
+  "orbit_size_histogram": [
+    {"count": 1, "orbit_size": 1},
+    {"count": 2, "orbit_size": 2},
+    {"count": 4, "orbit_size": 3},
+    {"count": 14, "orbit_size": 6},
+    {"count": 11, "orbit_size": 12},
+    {"count": 4, "orbit_size": 24}
+  ],
+  "output_hashes": {
+    "child_manifest_csv_sha256": "180e8398807c95478ac7cb62262758314a9c49270a487de0370f384dff39efb5",
+    "compatible_candidates_sha256": "67b1aa6542de0af7db525681e1a0cbfbfe6e56e3cb56c781e09708b41fdcff80",
+    "orbits_json_sha256": "40b23c5c7c726a0526c501aa8b783c5b086d71fd2ffd7c7a3041b235293db1de",
+    "stabilizer_json_sha256": "93145769f74924b2ff823adbe6f3b2bf8886bb7165c5c5fbb644b1e0f079c33d"
+  },
+  "pointwise_orbit_count_negative_control": 222,
+  "pointwise_stabilizer_order": 2,
+  "schema": "borsuk-q00r00-sixth-base-classification-v1",
+  "stabilizer_generator_count": 3,
+  "stabilizer_order": 24,
+  "status": "PASS"
+}
