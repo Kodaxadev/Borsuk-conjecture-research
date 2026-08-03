@@ -1,0 +1,36 @@
+name: verify-q00r00-sixth-base-child-trims
+
+on:
+  push:
+    branches:
+      - research/q00r00-sixth-base-child-trims
+  pull_request:
+    paths:
+      - 'borsuk_11_k6_q00r00_sixth_base_child_trims/**'
+      - '.github/workflows/verify-q00r00-sixth-base-child-trims.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  generate-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Generate and independently verify all 36 trims
+        working-directory: borsuk_11_k6_q00r00_sixth_base_child_trims
+        run: python verify_package.py
+      - name: Upload complete child-trim certificates
+        uses: actions/upload-artifact@v4
+        with:
+          name: q00r00-sixth-base-child-trims
+          path: borsuk_11_k6_q00r00_sixth_base_child_trims/generated/
+          if-no-files-found: error
+          retention-days: 90
