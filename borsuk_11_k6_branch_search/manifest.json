@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "theorem_target_claim_id": "n11-k6-full",
+  "root_node": "root-ece78553536e",
+  "theorem_complete": false,
+  "nodes": [
+    {
+      "id": "root-ece78553536e",
+      "parent": null,
+      "state": "UNSAT_BRANCHED",
+      "vertex_count": 692,
+      "vertex_sha256": "ece78553536e8cbac3404fb77db0096352024b1dbf15ea4f129d782a1755590d",
+      "certificate_claim_id": "n11-k6-trim-unsat",
+      "branch_edge": {
+        "left": "003",
+        "right": "0fc",
+        "distance": 8
+      },
+      "children": [
+        "drop-003-271433c2fe58",
+        "drop-0fc-1eeabc53bc7d"
+      ]
+    },
+    {
+      "id": "drop-003-271433c2fe58",
+      "parent": "root-ece78553536e",
+      "removed_from_parent": "003",
+      "state": "UNKNOWN",
+      "vertex_count": 691,
+      "vertex_sha256": "271433c2fe587f09402130002dbc7e8bc7c153a26400812e2d053c2afc8e6590",
+      "reason": "Solver and certificate work not yet run.",
+      "children": []
+    },
+    {
+      "id": "drop-0fc-1eeabc53bc7d",
+      "parent": "root-ece78553536e",
+      "removed_from_parent": "0fc",
+      "state": "UNKNOWN",
+      "vertex_count": 691,
+      "vertex_sha256": "1eeabc53bc7dff2f5750508e9d9ecbdb3cc454ff60d50936f4a1897f00d16856",
+      "reason": "Solver and certificate work not yet run.",
+      "children": []
+    }
+  ]
+}
