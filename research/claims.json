@@ -160,7 +160,7 @@
       "id": "n11-k6-q00-trim-unsat",
       "title": "Proof-checked UNSAT result for the q00 compact four-base trim",
       "type": "certificate",
-      "status": "attack-surface",
+      "status": "certified-obstruction",
       "package": "borsuk_11_k6_four_base_reduction",
       "claim": "The deterministic compact list-coloring CNF for canonical universal trim type q00 is UNSAT.",
       "depends_on": [
