@@ -114,15 +114,17 @@
     },
     {
       "claim_id": "n11-k6-q00-trim-unsat",
-      "gate": 2,
+      "gate": 3,
       "epistemic_class": "COMPUTATIONAL",
-      "verification_state": "UNCHECKED",
-      "lifecycle_state": "OPEN",
+      "verification_state": "CERTIFICATE_CHECKED",
+      "lifecycle_state": "WORKING",
       "source_ids": [
         "SRC-K6-Q00-UNSAT"
       ],
-      "evidence_ids": [],
-      "current_transition_id": "T-K6-Q00-1-2"
+      "evidence_ids": [
+        "E-K6-Q00-UNSAT"
+      ],
+      "current_transition_id": "T-K6-Q00-2-3"
     }
   ]
 }

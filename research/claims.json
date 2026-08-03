@@ -160,20 +160,23 @@
       "id": "n11-k6-q00-trim-unsat",
       "title": "Proof-checked UNSAT result for the q00 compact four-base trim",
       "type": "certificate",
-      "status": "open",
+      "status": "attack-surface",
       "package": "borsuk_11_k6_four_base_reduction",
       "claim": "The deterministic compact list-coloring CNF for canonical universal trim type q00 is UNSAT.",
       "depends_on": [
         "n11-k6-four-base-reduction"
       ],
-      "evidence_commands": [],
+      "evidence_commands": [
+        "gh run download 30827345819 -n q00-proof-certificate",
+        "gunzip -c q00.drat.gz > q00.drat && drat-trim q00_12color.cnf q00.drat -v"
+      ],
       "limitations": [
         "The q00 trim may contain pairs farther than Hamming distance 6 and is not itself a legal theorem instance.",
         "Proof-checked trim UNSAT requires exhaustive compatible refinement before q00 can be marked UNSAT_REFINED.",
         "The full n=11,k=6 theorem target remains open and unchanged.",
         "The proof bundle is currently retained as a time-limited GitHub Actions artifact; durable archival remains pending."
       ],
-      "public_claim_allowed": false
+      "public_claim_allowed": true
     }
   ]
 }
