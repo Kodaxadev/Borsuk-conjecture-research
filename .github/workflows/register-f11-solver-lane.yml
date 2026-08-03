@@ -7,6 +7,12 @@ on:
     paths:
       - .github/workflows/register-f11-solver-lane.yml
       - scripts/register_q00_fifth_base_sat_lane.py
+  pull_request:
+    branches:
+      - research-workspace-hardening
+    paths:
+      - .github/workflows/register-f11-solver-lane.yml
+      - scripts/register_q00_fifth_base_sat_lane.py
   workflow_dispatch:
 
 permissions:
