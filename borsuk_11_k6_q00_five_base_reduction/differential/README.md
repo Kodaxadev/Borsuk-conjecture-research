@@ -38,7 +38,18 @@ q00r10 <-> f04
 q00r11 <-> f00
 ```
 
-Reproduce:
+## Checked result
+
+`crosswalk-result.json` was written only after the pinned workflow reproduced both classifications and passed the full crosswalk. It records:
+
+- `candidate_count: 432`;
+- `class_count: 12`;
+- `complete_bijection: true`;
+- `coverage_assignments_equal_under_crosswalk: true`;
+- `all_transformed_child_vertex_sets_equal: true`;
+- no claim, child, parent-q00, or theorem status change.
+
+## Reproduce
 
 ```bash
 python differential/generate_stabilizer_orbits.py
