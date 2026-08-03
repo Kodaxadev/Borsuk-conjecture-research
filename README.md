@@ -11,6 +11,7 @@ The immediate program targets dimension 11. Candidate proof packages exist for d
 - `borsuk_11_k8_candidate/` — candidate proof with an explicit 12-coloring and independent verifiers.
 - `borsuk_11_k6_attack_surface/` — canonical 692-vertex one-base reduction for the remaining diameter-6 work.
 - `borsuk_11_k6_trim_unsat_certificate/` — independently checked UNSAT certificate showing the coarse trim graph is not 12-colorable.
+- `borsuk_11_k6_branch_search/` — independently regenerates both root graph relations and records the first exact incompatibility branch with two explicit `UNKNOWN` leaves.
 
 The k=6 UNSAT result does **not** settle the theorem target. The trim graph contains pairs farther than 6 apart, so it is a universal cover rather than a legal diameter-6 set. The next layer must enforce diameter compatibility.
 
@@ -44,6 +45,8 @@ At each search node:
 2. a proof-checked UNSAT result must branch on an incompatible pair;
 3. timeout, crash, or missing certificate remains `UNKNOWN` and cannot close a branch;
 4. certified UNSAT with no incompatible pair is a legal counterexample candidate.
+
+The root has been regenerated independently as 692 vertices, 104,606 coloring edges, and 37,470 incompatibility edges. The initial manifest branches on the valid distance-8 pair `003--0fc`; neither child has yet been resolved.
 
 The full certificate-producing plan is documented in [`docs/K6-EXECUTION-PLAN.md`](docs/K6-EXECUTION-PLAN.md).
 
