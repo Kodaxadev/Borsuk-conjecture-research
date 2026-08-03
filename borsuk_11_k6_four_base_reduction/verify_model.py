@@ -7,8 +7,8 @@ import json
 import tempfile
 from pathlib import Path
 
-from build_instance import COLORS, build_graph, get_case, variable
-from generate_cases import EXPECTED_CANONICAL_CSV_SHA256
+from build_instance import COLORS, build_graph, fixed_clique_for, get_case
+from generate_cases import EXPECTED_CANONICAL_CSV_SHA256, K, distance
 
 
 def parse_positive_literals(path: Path) -> set[int]:
@@ -43,23 +43,70 @@ def parse_positive_literals(path: Path) -> set[int]:
     return positives
 
 
-def decode_coloring(vertices: list[int], positives: set[int]) -> dict[int, int]:
-    max_variable = len(vertices) * COLORS
+def independent_domains(
+    vertices: list[int], fixed_clique: list[int]
+) -> dict[int, tuple[int, ...]]:
+    assigned = {vertex: color for color, vertex in enumerate(fixed_clique)}
+    domains: dict[int, tuple[int, ...]] = {}
+    for vertex in vertices:
+        if vertex in assigned:
+            domain = (assigned[vertex],)
+        else:
+            domain = tuple(
+                color
+                for color in range(COLORS)
+                if color >= len(fixed_clique)
+                or distance(vertex, fixed_clique[color]) != K
+            )
+        if not domain:
+            raise ValueError(f"vertex {vertex} has an empty reconstructed color domain")
+        domains[vertex] = domain
+    return domains
+
+
+def independent_variable_map(
+    vertices: list[int], domains: dict[int, tuple[int, ...]]
+) -> dict[tuple[int, int], int]:
+    mapping: dict[tuple[int, int], int] = {}
+    next_variable = 1
+    for vertex in vertices:
+        for color in domains[vertex]:
+            mapping[(vertex, color)] = next_variable
+            next_variable += 1
+    return mapping
+
+
+def decode_coloring(
+    vertices: list[int], fixed_clique: list[int], positives: set[int]
+) -> dict[int, int]:
+    domains = independent_domains(vertices, fixed_clique)
+    mapping = independent_variable_map(vertices, domains)
+    max_variable = len(mapping)
     out_of_range = sorted(literal for literal in positives if literal > max_variable)
     if out_of_range:
         raise ValueError(f"model contains out-of-range variables: {out_of_range[:10]}")
 
     colors: dict[int, int] = {}
-    for vertex_index, vertex in enumerate(vertices):
-        selected = [color for color in range(COLORS) if variable(vertex_index, color) in positives]
+    for vertex in vertices:
+        selected = [
+            color
+            for color in domains[vertex]
+            if mapping[(vertex, color)] in positives
+        ]
         if len(selected) != 1:
-            raise ValueError(f"vertex {vertex} has {len(selected)} selected colors: {selected}")
+            raise ValueError(
+                f"vertex {vertex} has {len(selected)} selected colors: {selected}"
+            )
         colors[vertex] = selected[0]
     return colors
 
 
 def verify_coloring(edges: list[tuple[int, int]], colors: dict[int, int]) -> None:
-    bad = [(left, right, colors[left]) for left, right in edges if colors[left] == colors[right]]
+    bad = [
+        (left, right, colors[left])
+        for left, right in edges
+        if colors[left] == colors[right]
+    ]
     if bad:
         raise ValueError(f"monochromatic exact-distance-6 edges: {bad[:10]}")
 
@@ -67,8 +114,11 @@ def verify_coloring(edges: list[tuple[int, int]], colors: dict[int, int]) -> Non
 def self_test() -> None:
     vertices = [0, 1]
     edges = [(0, 1)]
-    valid = {variable(0, 0), variable(1, 1)}
-    colors = decode_coloring(vertices, valid)
+    fixed_clique = [0]
+    domains = independent_domains(vertices, fixed_clique)
+    mapping = independent_variable_map(vertices, domains)
+    valid = {mapping[(0, 0)], mapping[(1, 1)]}
+    colors = decode_coloring(vertices, fixed_clique, valid)
     verify_coloring(edges, colors)
 
     try:
@@ -77,6 +127,13 @@ def self_test() -> None:
         pass
     else:
         raise SystemExit("self-test failed: monochromatic edge was accepted")
+
+    try:
+        decode_coloring(vertices, fixed_clique, {max(mapping.values()) + 1})
+    except ValueError:
+        pass
+    else:
+        raise SystemExit("self-test failed: out-of-range variable was accepted")
 
     with tempfile.TemporaryDirectory() as directory:
         path = Path(directory) / "solver.txt"
@@ -88,7 +145,7 @@ def self_test() -> None:
         else:
             raise SystemExit("self-test failed: UNSAT text was accepted as a model")
 
-    print("PASS: model verifier self-test")
+    print("PASS: compact model verifier self-test")
 
 
 def main() -> int:
@@ -107,9 +164,10 @@ def main() -> int:
 
     case = get_case(args.case_id)
     vertices, edges = build_graph(case)
+    fixed_clique = fixed_clique_for(vertices)
     try:
         positives = parse_positive_literals(args.model)
-        colors = decode_coloring(vertices, positives)
+        colors = decode_coloring(vertices, fixed_clique, positives)
         verify_coloring(edges, colors)
     except ValueError as exc:
         raise SystemExit(str(exc)) from exc
@@ -125,7 +183,9 @@ def main() -> int:
         "coloring": {str(vertex): colors[vertex] for vertex in vertices},
     }
     if args.output:
-        args.output.write_text(json.dumps(output, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        args.output.write_text(
+            json.dumps(output, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
     print(
         f"PASS: verified {COLORS}-coloring for {args.case_id} "
         f"on {len(vertices)} vertices and {len(edges)} edges"
