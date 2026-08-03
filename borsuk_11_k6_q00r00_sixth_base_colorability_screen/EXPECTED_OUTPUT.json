@@ -1,0 +1,12 @@
+{
+  "case_count": 36,
+  "instances_sha256": "e44a9fe50ad90fc206469581d3cd20157af8127718f83163caf931ccee5087f6",
+  "schema": "borsuk-q00r00-sixth-base-colorability-screen-expected-v1",
+  "sha256sums_sha256": "3e4fb8ff2fdf99240e5b8294a2c3c3bd9ccf9a491c205143e7dba3021bbb46d1",
+  "totals": {
+    "clauses_across_cases": 2729558,
+    "edges_across_cases": 611145,
+    "variables_across_cases": 72463,
+    "vertices_across_cases": 10513
+  }
+}
