@@ -7,10 +7,15 @@ import hashlib
 from io import StringIO
 from pathlib import Path
 
-from build_instance import fixed_clique_for, formula_counts
-from generate_cases import A, allowed, canonical_classes, generate_raw_cases
+from build_instance import (
+    allowed_colors_for,
+    build_graph,
+    fixed_clique_for,
+    formula_counts,
+)
+from generate_cases import canonical_classes, generate_raw_cases
 
-EXPECTED_INVENTORY_SHA256 = "860fc2d3762a6956afda8739e651aa0f03fe7b4fce6686267d038f113f43a9a5"
+EXPECTED_INVENTORY_SHA256 = "3212beac7ab2b301a7ca97801c91610344f27a29c03233041bd7392209c91ccf"
 FIELDS = [
     "rank",
     "id",
@@ -31,13 +36,13 @@ def build_rows() -> list[dict[str, int | str]]:
     raw, _ = generate_raw_cases()
     rows: list[dict[str, int | str]] = []
     for case in canonical_classes(raw):
-        base = (0, A, int(case["B"]), int(case["C"]))
-        vertices = [mask for mask in range(1 << 11) if allowed(mask, base)]
-        fixed_count = len(fixed_clique_for(vertices))
+        vertices, edges = build_graph(case)
+        fixed_clique = fixed_clique_for(vertices)
+        domains = allowed_colors_for(vertices, fixed_clique)
         vertex_count = int(case["vertices"])
         edge_count = int(case["exact_distance_edges"])
         incompatible = int(case["incompatible_pairs"])
-        variables, clauses = formula_counts(vertex_count, edge_count, fixed_count)
+        variables, clauses = formula_counts(vertices, edges, domains)
         pair_count = vertex_count * (vertex_count - 1) // 2
         rows.append({
             "rank": 0,
@@ -47,7 +52,7 @@ def build_rows() -> list[dict[str, int | str]]:
             "vertices": vertex_count,
             "exact_distance_edges": edge_count,
             "incompatible_pairs": incompatible,
-            "fixed_clique_size": fixed_count,
+            "fixed_clique_size": len(fixed_clique),
             "variables": variables,
             "clauses": clauses,
             "edge_density_ppm": round(edge_count * 1_000_000 / pair_count),
@@ -55,6 +60,7 @@ def build_rows() -> list[dict[str, int | str]]:
         })
     rows.sort(key=lambda row: (
         int(row["clauses"]),
+        int(row["variables"]),
         int(row["vertices"]),
         int(row["incompatible_pairs"]),
         str(row["id"]),
