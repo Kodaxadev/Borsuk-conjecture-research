@@ -24,6 +24,7 @@ jobs:
         run: |
           python scripts/cruthunas.py check --all
           python scripts/cruthunas.py adapters check
+          python scripts/validate_cruthunas_transactions.py
           python scripts/repo_status.py
           test -f README.md
           test -f CONTRIBUTING.md
@@ -34,3 +35,7 @@ jobs:
           test -f cruthunas/evidence.json
           test -f cruthunas/transitions.json
           test -f cruthunas/sources.json
+          test -f cruthunas/schemas/evidence.schema.json
+          test -f cruthunas/schemas/transition.schema.json
+          test -f cruthunas/schemas/transaction.schema.json
+          test -f cruthunas/transactions/n11-k6-gate-2-to-3.blocked.json
