@@ -13,7 +13,7 @@ on:
         required: true
         default: q00
       limit_seconds:
-        description: Wall-clock solver limit in seconds
+        description: Wall-clock solver limit in seconds, at most 900
         required: true
         default: '180'
 
@@ -33,7 +33,7 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Validate requested case id
+      - name: Validate requested inputs
         run: |
           case "$CASE_ID" in
             q[0-5][0-9]) ;;
@@ -42,6 +42,13 @@ jobs:
           numeric="${CASE_ID#q}"
           if [ "$((10#$numeric))" -gt 57 ]; then
             echo "case id outside q00-q57: $CASE_ID" >&2
+            exit 2
+          fi
+          case "$LIMIT_SECONDS" in
+            ''|*[!0-9]*) echo "limit must be an integer" >&2; exit 2 ;;
+          esac
+          if [ "$LIMIT_SECONDS" -lt 1 ] || [ "$LIMIT_SECONDS" -gt 900 ]; then
+            echo "limit must be between 1 and 900 seconds" >&2
             exit 2
           fi
 
@@ -90,11 +97,21 @@ jobs:
           finished="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
           state=UNKNOWN
+          invalid_model=0
           if [ "$solver_status" -eq 10 ]; then
+            set +e
             python verify_model.py "$CASE_ID" "$work/solver.out" \
               --output "$work/${CASE_ID}_verified_coloring.json" \
-              | tee "$work/checker.out"
-            state=SAT_MODEL
+              >"$work/checker.out" 2>&1
+            checker_status=$?
+            set -e
+            cat "$work/checker.out"
+            if [ "$checker_status" -eq 0 ]; then
+              state=SAT_MODEL
+            else
+              state=SAT_MODEL_INVALID
+              invalid_model=1
+            fi
           elif [ "$solver_status" -eq 20 ]; then
             state=UNSAT_UNVERIFIED
             test -s "$proof" || state=UNKNOWN
@@ -103,8 +120,11 @@ jobs:
           if [ -s "$proof" ]; then
             gzip -9 "$proof"
           fi
-          sha256sum "$work"/* >"$work/artifact-sha256.txt"
 
+          export SOLVER_STATUS="$solver_status"
+          export RESULT_STATE="$state"
+          export STARTED_UTC="$started"
+          export FINISHED_UTC="$finished"
           python - "$work/probe-result.json" <<'PY'
           import json, os, sys
           from pathlib import Path
@@ -120,11 +140,13 @@ jobs:
               'repository_status_changed': False,
           }, indent=2, sort_keys=True) + '\n', encoding='utf-8')
           PY
-        env:
-          SOLVER_STATUS: ${{ steps.solve.outputs.solver_status }}
-          RESULT_STATE: ${{ steps.solve.outputs.result_state }}
-          STARTED_UTC: ${{ steps.solve.outputs.started_utc }}
-          FINISHED_UTC: ${{ steps.solve.outputs.finished_utc }}
+          sha256sum "$work"/* >"$work/artifact-sha256.txt"
+
+          echo "solver_status=$solver_status" >> "$GITHUB_OUTPUT"
+          echo "result_state=$state" >> "$GITHUB_OUTPUT"
+          if [ "$invalid_model" -ne 0 ]; then
+            exit 1
+          fi
 
       - name: Normalize probe result metadata
         if: always()
@@ -133,8 +155,8 @@ jobs:
         run: |
           work="work/$CASE_ID"
           test -d "$work"
-          solver_status="$(grep -E '^s (SATISFIABLE|UNSATISFIABLE)' "$work/solver.out" >/dev/null 2>&1 && echo reported || echo incomplete)"
-          python - "$work/probe-summary.json" "$solver_status" <<'PY'
+          solver_report="$(grep -E '^s (SATISFIABLE|UNSATISFIABLE)' "$work/solver.out" >/dev/null 2>&1 && echo reported || echo incomplete)"
+          python - "$work/probe-summary.json" "$solver_report" <<'PY'
           import hashlib, json, os, sys
           from pathlib import Path
           root = Path(sys.argv[1]).parent
