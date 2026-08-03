@@ -44,6 +44,14 @@ q00r11 <-> f00
 
 A separate `workflow_run` recorder is defined on the default branch. It does not check out or execute feature-branch code, restore caches, install packages, or rerun the crosswalk. It binds the artifact to the exact successful push run through GitHub's API, checks the workflow identity, repository, branch, head commit, artifact ID and digest, validates the one-file JSON schema, confirms the branch has not moved, and uses the contents API to replace only this fixed destination.
 
+The exercised recording chain is:
+
+- verified source head: `68e21b1b533f581a84158f1c9dfca64e6cf90ef0`;
+- read-only push verification run: `30835946112`;
+- immutable artifact ID: `8864816229`;
+- artifact SHA-256: `0992cb84997e30529d993e3891cb3cd22dfbba1431226ecc1ec7a2befa0fae43`;
+- exact single-file recording commit: `6cd10e08ad6d5b5c52daa99ed1ea79781a8af8a4`.
+
 The checked result records:
 
 - `candidate_count: 432`;
