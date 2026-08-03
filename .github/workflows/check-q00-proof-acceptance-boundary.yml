@@ -18,9 +18,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  locate-acceptance-boundary:
+  check-acceptance-boundary:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 30
     env:
       SOURCE_RUN_ID: 30822622138
       SOURCE_ARTIFACT_ID: 8859778824
@@ -31,6 +31,7 @@ jobs:
       EXPECTED_CHECKER_SHA256: 92f0aa9575ed519d66a99b8b1b3dde6ece4618ae4c202a3a4b200265dda0aa7a
       DRAT_TRIM_REVISION: 2e3b2dc0ecf938addbd779d42877b6ed69d9a985
       CRUTHUNAS_CLAIM_ID: n11-k6-four-base-reduction
+      BOUNDARY_PREDECESSOR_COUNT: 256
 
     steps:
       - name: Checkout governed branch
@@ -83,17 +84,51 @@ jobs:
           git rev-parse HEAD | tee "$result/checker-revision.txt"
           sha256sum drat-trim | tee "$result/checker-binary.sha256"
 
-      - name: Recheck original proof
+      - name: Generate format-aware controls
+        run: |
+          set -euo pipefail
+          result="$GITHUB_WORKSPACE/q00-boundary-result"
+          proof=/tmp/q00-source/q00.drat
+
+          python scripts/drat_empty_clause_control.py \
+            "$proof" /tmp/q00-empty-clause-removed.drat \
+            "$result/empty-clause-control.json" \
+            --preceding-records 0 \
+            >"$result/empty-clause-generation.stdout"
+
+          python scripts/drat_empty_clause_control.py \
+            "$proof" /tmp/q00-boundary-control.drat \
+            "$result/boundary-control.json" \
+            --preceding-records "$BOUNDARY_PREDECESSOR_COUNT" \
+            >"$result/boundary-generation.stdout"
+
+          python - "$result/empty-clause-control.json" "$result/boundary-control.json" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          empty = json.loads(Path(sys.argv[1]).read_text())
+          boundary = json.loads(Path(sys.argv[2]).read_text())
+          assert empty['proof_format'] == 'binary'
+          assert empty['proof_sha256'] == boundary['proof_sha256']
+          assert empty['empty_clause_addition_count'] == 1
+          assert empty['empty_clause_addition_offsets'] == [118009626]
+          assert empty['preceding_records_removed'] == 0
+          assert boundary['preceding_records_removed'] == 256
+          assert empty['negative_proof_sha256'] == '805c3fbeb2f09a6513b9ed9d20bae3baa871b795305260899bf26b6afe915b8b'
+          PY
+
+      - name: Check original proof
         run: |
           set -euo pipefail
           result="$GITHUB_WORKSPACE/q00-boundary-result"
           cnf=/tmp/q00-source/q00_12color.cnf
           proof=/tmp/q00-source/q00.drat
-          printf '/tmp/drat-trim/drat-trim %s %s -v\n' "$cnf" "$proof" >"$result/original-command.txt"
+          printf '/tmp/drat-trim/drat-trim %s %s\n' "$cnf" "$proof" >"$result/original-command.txt"
           date -u +%Y-%m-%dT%H:%M:%SZ >"$result/original-started-utc.txt"
           set +e
           /usr/bin/time -v -o "$result/original-time.txt" \
-            /tmp/drat-trim/drat-trim "$cnf" "$proof" -v \
+            /tmp/drat-trim/drat-trim "$cnf" "$proof" \
             >"$result/original.stdout" 2>"$result/original.stderr"
           status=$?
           set -e
@@ -106,57 +141,60 @@ jobs:
             echo 'original proof produced NOT VERIFIED' >&2
             exit 1
           fi
+          echo 's VERIFIED' >"$result/original-verdict.txt"
 
-      - name: Locate a rejecting record-aligned prefix
+      - name: Check exact empty-clause removal
         run: |
           set -euo pipefail
           result="$GITHUB_WORKSPACE/q00-boundary-result"
           cnf=/tmp/q00-source/q00_12color.cnf
-          proof=/tmp/q00-source/q00.drat
-          : >"$result/attempt-order.txt"
+          proof=/tmp/q00-empty-clause-removed.drat
+          printf '/tmp/drat-trim/drat-trim %s %s\n' "$cnf" "$proof" >"$result/empty-clause-command.txt"
+          date -u +%Y-%m-%dT%H:%M:%SZ >"$result/empty-clause-started-utc.txt"
+          set +e
+          /usr/bin/time -v -o "$result/empty-clause-time.txt" \
+            /tmp/drat-trim/drat-trim "$cnf" "$proof" \
+            >"$result/empty-clause.stdout" 2>"$result/empty-clause.stderr"
+          status=$?
+          set -e
+          date -u +%Y-%m-%dT%H:%M:%SZ >"$result/empty-clause-finished-utc.txt"
+          echo "$status" >"$result/empty-clause-exit-status.txt"
+          cat "$result/empty-clause.stdout" "$result/empty-clause.stderr" | tr -d '\r' \
+            >"$result/empty-clause.normalized.txt"
 
-          for predecessors in 0 1 2 4 8 16 32 64 128 256; do
-            bad="/tmp/q00-prefix-${predecessors}.drat"
-            meta="$result/control-${predecessors}.json"
-            echo "$predecessors" >>"$result/attempt-order.txt"
-            python scripts/drat_empty_clause_control.py \
-              "$proof" "$bad" "$meta" \
-              --preceding-records "$predecessors" \
-              >"$result/control-${predecessors}.generation.out"
-            printf '/tmp/drat-trim/drat-trim %s %s -v\n' "$cnf" "$bad" \
-              >"$result/control-${predecessors}.command.txt"
-            date -u +%Y-%m-%dT%H:%M:%SZ >"$result/control-${predecessors}.started-utc.txt"
-            set +e
-            /usr/bin/time -v -o "$result/control-${predecessors}.time.txt" \
-              /tmp/drat-trim/drat-trim "$cnf" "$bad" -v \
-              >"$result/control-${predecessors}.stdout" \
-              2>"$result/control-${predecessors}.stderr"
-            status=$?
-            set -e
-            date -u +%Y-%m-%dT%H:%M:%SZ >"$result/control-${predecessors}.finished-utc.txt"
-            echo "$status" >"$result/control-${predecessors}.exit-status.txt"
-            cat "$result/control-${predecessors}.stdout" \
-                "$result/control-${predecessors}.stderr" | tr -d '\r' \
-              >"$result/control-${predecessors}.normalized.txt"
+          if grep -Eq '^[[:space:]]*s VERIFIED[[:space:]]*$' "$result/empty-clause.normalized.txt"; then
+            echo 's VERIFIED' >"$result/empty-clause-verdict.txt"
+          else
+            grep -Eq '^[[:space:]]*s NOT VERIFIED[[:space:]]*$' "$result/empty-clause.normalized.txt"
+            echo 's NOT VERIFIED' >"$result/empty-clause-verdict.txt"
+          fi
 
-            if grep -Eq '^[[:space:]]*s VERIFIED[[:space:]]*$' \
-                "$result/control-${predecessors}.normalized.txt"; then
-              echo VERIFIED >"$result/control-${predecessors}.verdict.txt"
-              rm -f "$bad"
-              continue
-            fi
+      - name: Check deeper record-aligned boundary control
+        run: |
+          set -euo pipefail
+          result="$GITHUB_WORKSPACE/q00-boundary-result"
+          cnf=/tmp/q00-source/q00_12color.cnf
+          proof=/tmp/q00-boundary-control.drat
+          printf '/tmp/drat-trim/drat-trim %s %s\n' "$cnf" "$proof" >"$result/boundary-command.txt"
+          date -u +%Y-%m-%dT%H:%M:%SZ >"$result/boundary-started-utc.txt"
+          set +e
+          /usr/bin/time -v -o "$result/boundary-time.txt" \
+            /tmp/drat-trim/drat-trim "$cnf" "$proof" \
+            >"$result/boundary.stdout" 2>"$result/boundary.stderr"
+          status=$?
+          set -e
+          date -u +%Y-%m-%dT%H:%M:%SZ >"$result/boundary-finished-utc.txt"
+          echo "$status" >"$result/boundary-exit-status.txt"
+          cat "$result/boundary.stdout" "$result/boundary.stderr" | tr -d '\r' \
+            >"$result/boundary.normalized.txt"
+          grep -Eq '^[[:space:]]*s NOT VERIFIED[[:space:]]*$' "$result/boundary.normalized.txt"
+          if grep -Eq '^[[:space:]]*s VERIFIED[[:space:]]*$' "$result/boundary.normalized.txt"; then
+            echo '256-record boundary control was accepted' >&2
+            exit 1
+          fi
+          echo 's NOT VERIFIED' >"$result/boundary-verdict.txt"
 
-            grep -Eq '^[[:space:]]*s NOT VERIFIED[[:space:]]*$' \
-              "$result/control-${predecessors}.normalized.txt"
-            echo 'NOT VERIFIED' >"$result/control-${predecessors}.verdict.txt"
-            echo "$predecessors" >"$result/selected-predecessor-count.txt"
-            rm -f "$bad"
-            break
-          done
-
-          test -s "$result/selected-predecessor-count.txt"
-
-      - name: Write bounded result metadata
+      - name: Write compact bounded-result metadata
         run: |
           set -euo pipefail
           result="$GITHUB_WORKSPACE/q00-boundary-result"
@@ -175,30 +213,10 @@ jobs:
               return digest.hexdigest()
 
           result = Path(sys.argv[1]).parent
-          selected = int((result / 'selected-predecessor-count.txt').read_text())
-          selected_meta = json.loads((result / f'control-{selected}.json').read_text())
-          attempts = []
-          for text in (result / 'attempt-order.txt').read_text().splitlines():
-              count = int(text)
-              verdict_path = result / f'control-{count}.verdict.txt'
-              if not verdict_path.exists():
-                  continue
-              meta = json.loads((result / f'control-{count}.json').read_text())
-              attempts.append({
-                  'preceding_records_removed': count,
-                  'removed_record_count_at_boundary': meta['removed_record_count_at_boundary'],
-                  'negative_proof_sha256': meta['negative_proof_sha256'],
-                  'negative_proof_bytes': meta['negative_proof_bytes'],
-                  'truncation_offset': meta['truncation_offset'],
-                  'verdict': verdict_path.read_text().strip(),
-                  'exit_status': int((result / f'control-{count}.exit-status.txt').read_text()),
-                  'stdout_sha256': sha256(result / f'control-{count}.stdout'),
-                  'stderr_sha256': sha256(result / f'control-{count}.stderr'),
-                  'time_sha256': sha256(result / f'control-{count}.time.txt'),
-              })
-
+          empty = json.loads((result / 'empty-clause-control.json').read_text())
+          boundary = json.loads((result / 'boundary-control.json').read_text())
           payload = {
-              'schema': 'borsuk-q00-proof-acceptance-boundary-v1',
+              'schema': 'borsuk-q00-proof-acceptance-boundary-v2',
               'case_id': 'q00',
               'claim_id': os.environ['CRUTHUNAS_CLAIM_ID'],
               'source_workflow_run_id': int(os.environ['SOURCE_RUN_ID']),
@@ -207,31 +225,53 @@ jobs:
               'cnf_sha256': os.environ['EXPECTED_CNF_SHA256'],
               'variable_map_sha256': os.environ['EXPECTED_MAP_SHA256'],
               'proof_sha256': os.environ['EXPECTED_PROOF_SHA256'],
-              'proof_format': selected_meta['proof_format'],
-              'record_count': selected_meta['record_count'],
-              'empty_clause_addition_count': selected_meta['empty_clause_addition_count'],
-              'empty_clause_addition_offsets': selected_meta['empty_clause_addition_offsets'],
+              'proof_format': empty['proof_format'],
+              'proof_bytes': empty['proof_bytes'],
+              'record_count': empty['record_count'],
+              'empty_clause_addition_count': empty['empty_clause_addition_count'],
+              'empty_clause_addition_offsets': empty['empty_clause_addition_offsets'],
               'checker': 'drat-trim',
               'checker_revision': os.environ['DRAT_TRIM_REVISION'],
               'checker_binary_sha256': os.environ['EXPECTED_CHECKER_SHA256'],
-              'original_verdict': 's VERIFIED',
-              'original_exit_status': int((result / 'original-exit-status.txt').read_text()),
-              'original_stdout_sha256': sha256(result / 'original.stdout'),
-              'original_stderr_sha256': sha256(result / 'original.stderr'),
-              'original_time_sha256': sha256(result / 'original-time.txt'),
-              'control_attempts': attempts,
-              'selected_preceding_record_count': selected,
-              'selected_negative_proof_sha256': selected_meta['negative_proof_sha256'],
-              'selected_negative_proof_bytes': selected_meta['negative_proof_bytes'],
-              'selected_negative_verdict': 's NOT VERIFIED',
+              'original': {
+                  'verdict': (result / 'original-verdict.txt').read_text().strip(),
+                  'exit_status': int((result / 'original-exit-status.txt').read_text()),
+                  'stdout_sha256': sha256(result / 'original.stdout'),
+                  'stderr_sha256': sha256(result / 'original.stderr'),
+                  'time_sha256': sha256(result / 'original-time.txt'),
+              },
+              'empty_clause_removed_control': {
+                  'preceding_records_removed': 0,
+                  'negative_proof_sha256': empty['negative_proof_sha256'],
+                  'negative_proof_bytes': empty['negative_proof_bytes'],
+                  'truncation_offset': empty['truncation_offset'],
+                  'verdict': (result / 'empty-clause-verdict.txt').read_text().strip(),
+                  'exit_status': int((result / 'empty-clause-exit-status.txt').read_text()),
+                  'stdout_sha256': sha256(result / 'empty-clause.stdout'),
+                  'stderr_sha256': sha256(result / 'empty-clause.stderr'),
+                  'time_sha256': sha256(result / 'empty-clause-time.txt'),
+              },
+              'rejecting_boundary_control': {
+                  'preceding_records_removed': boundary['preceding_records_removed'],
+                  'removed_record_count_at_boundary': boundary['removed_record_count_at_boundary'],
+                  'negative_proof_sha256': boundary['negative_proof_sha256'],
+                  'negative_proof_bytes': boundary['negative_proof_bytes'],
+                  'truncation_offset': boundary['truncation_offset'],
+                  'verdict': (result / 'boundary-verdict.txt').read_text().strip(),
+                  'exit_status': int((result / 'boundary-exit-status.txt').read_text()),
+                  'stdout_sha256': sha256(result / 'boundary.stdout'),
+                  'stderr_sha256': sha256(result / 'boundary.stderr'),
+                  'time_sha256': sha256(result / 'boundary-time.txt'),
+              },
               'certificate_state': 'PROOF_CHECKED_UNSAT',
               'repository_status_changed': False,
               'cruthunas_evidence_registered': False,
               'case_status_changed': False,
               'bounded_claim': (
                   'The exact frozen q00 CNF has a pinned drat-trim verdict of '
-                  's VERIFIED, while a deterministic record-aligned proof prefix '
-                  'before the checker acceptance boundary has verdict s NOT VERIFIED.'
+                  's VERIFIED. The exact empty-clause-removal outcome is recorded '
+                  'without assumption, and a deterministic record-aligned prefix '
+                  '256 records earlier has verdict s NOT VERIFIED.'
               ),
               'limitation': (
                   'This establishes UNSAT only for the exact frozen CNF. It does '
@@ -245,11 +285,12 @@ jobs:
           )
           PY
           sha256sum "$result"/* >"$result/result-sha256.txt"
+          du -ah "$result" | sort -h | tail -20
 
-      - name: Upload boundary metadata
+      - name: Upload compact boundary metadata
         uses: actions/upload-artifact@v4
         with:
-          name: q00-proof-acceptance-boundary
+          name: q00-proof-acceptance-boundary-v2
           path: q00-boundary-result/
           if-no-files-found: error
           retention-days: 90
@@ -257,7 +298,8 @@ jobs:
       - name: Report scoped status
         run: |
           echo 'Original q00 proof: s VERIFIED'
-          echo "Selected predecessor count: $(cat q00-boundary-result/selected-predecessor-count.txt)"
-          echo 'Selected record-aligned prefix: s NOT VERIFIED'
+          echo "Exact empty-clause removal: $(cat q00-boundary-result/empty-clause-verdict.txt)"
+          echo '256-predecessor record-aligned control: s NOT VERIFIED'
+          echo 'No Cruthúnas evidence or status was registered by this workflow.'
           echo 'q00 remains UNKNOWN as a legal Borsuk case.'
           echo 'n11-k6-full remains Gate 2; MATHEMATICAL; [UNCHECKED]; OPEN.'
