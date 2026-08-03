@@ -1,46 +1,71 @@
 # Borsuk Conjecture Research
 
-This repository is the top-level research archive for the 0/1-Borsuk program centered on finite-combinatorial reductions, verifier artifacts, and independently checkable proof packages.
+This repository is a certificate-first research workspace for finite-combinatorial work on the 0/1-Borsuk problem.
 
-The project is intentionally organized as a collection of reproducible investigation units rather than a single monolithic build. Each subdirectory packages a specific mathematical claim, witness, obstruction, or independent reconstruction around a finite Borsuk instance.
+The immediate program targets dimension 11. Candidate proof packages exist for diameters 4 and 8. The diameter-6 subcase remains open and is the active theorem target.
 
-## Research scope
+## Exact current status
 
-The active work in this archive targets the combinatorial and SAT-based side of the 0/1-Borsuk problem, especially the finite reductions relevant to the $n=11$ and related diameter cases.
+- `borsuk_n10_k4_reproduction/` — independently reconstructs the published coloring computation within its stated scope.
+- `borsuk_11_k4_candidate/` — candidate proof with explicit witnesses and independent verifiers.
+- `borsuk_11_k8_candidate/` — candidate proof with an explicit 12-coloring and independent verifiers.
+- `borsuk_11_k6_attack_surface/` — canonical 692-vertex one-base reduction for the remaining diameter-6 work.
+- `borsuk_11_k6_trim_unsat_certificate/` — independently checked UNSAT certificate showing the coarse trim graph is not 12-colorable.
 
-The repository currently contains the following major investigation packages:
+The k=6 UNSAT result does **not** settle the theorem target. The trim graph contains pairs farther than 6 apart, so it is a universal cover rather than a legal diameter-6 set. The next layer must enforce diameter compatibility.
 
-- `borsuk_11_k4_candidate/` — candidate proof package for the diameter-4, dimension-11 case.
-- `borsuk_11_k6_attack_surface/` — attack-surface reduction package that records a symmetry-broken finite attack instance.
-- `borsuk_11_k6_trim_unsat_certificate/` — UNSAT-certificate-oriented artifact for the coarser trim instance.
-- `borsuk_11_k8_candidate/` — independent candidate package for the diameter-8 case.
-- `borsuk_n10_k4_reproduction/` — independent reconstruction of the $n=10, k=4$ result.
-- `archive/` — historical or packaged artifacts retained for provenance.
+The machine-readable source of truth is [`research/claims.json`](research/claims.json). Candidate packages must not be promoted beyond the status recorded there.
 
-## Project status
+## Verification
 
-This repository should be treated as a research workspace and artifact registry rather than a finished theorem publication. The mathematical status of each package is documented in the package-local README files and proof notes.
+Run the standard lightweight verification suite:
 
-## Repository conventions
+```bash
+make validate
+make verify
+make status
+```
 
-- Every package should keep its own local `README.md`, verification instructions, and hash manifest.
-- New mathematical claims should be recorded in a dedicated subdirectory with a minimal provenance trail.
-- Reproducibility and independent checking are priority concerns.
+Recheck the larger stored k=6 proof certificate separately:
+
+```bash
+make verify-k6-certificate
+```
+
+CI runs the lightweight suite on pushes and pull requests. The certificate check is available as a manual workflow.
+
+## Active k=6 method
+
+The exact-distance-6 coloring graph and the distance-greater-than-6 incompatibility graph are maintained on the same canonical vertex set.
+
+At each search node:
+
+1. a verified 12-coloring closes the node and every descendant;
+2. a proof-checked UNSAT result must branch on an incompatible pair;
+3. timeout, crash, or missing certificate remains `UNKNOWN` and cannot close a branch;
+4. certified UNSAT with no incompatible pair is a legal counterexample candidate.
+
+The full certificate-producing plan is documented in [`docs/K6-EXECUTION-PLAN.md`](docs/K6-EXECUTION-PLAN.md).
+
+## Repository rules
+
+- Work on branches, not directly on `main`.
+- Keep claims, witnesses, certificates, generators, and verifiers logically separate.
+- Preserve provenance and SHA-256 hashes for important artifacts.
+- Require complete SAT witnesses or checked UNSAT proofs.
+- Export complete branch-coverage manifests for exhaustive computations.
+- Treat literature novelty and external mathematical review as separate from CI success.
+
+Agent-specific operating constraints are in [`AGENTS.md`](AGENTS.md).
 
 ## Documentation
 
-- [docs/RESEARCH-ROADMAP.md](docs/RESEARCH-ROADMAP.md) — strategic plan for the project.
-- [docs/VERIFICATION.md](docs/VERIFICATION.md) — cross-package verification expectations.
-- [docs/PROJECT-STATUS.md](docs/PROJECT-STATUS.md) — living status ledger for the project.
+- [`docs/PROJECT-STATUS.md`](docs/PROJECT-STATUS.md) — human-readable claim ledger.
+- [`docs/RESEARCH-ROADMAP.md`](docs/RESEARCH-ROADMAP.md) — phased research plan.
+- [`docs/VERIFICATION.md`](docs/VERIFICATION.md) — verification and certificate policy.
+- [`docs/K6-EXECUTION-PLAN.md`](docs/K6-EXECUTION-PLAN.md) — exact remaining search architecture.
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) — contribution workflow.
 
-## Contributing
+## Citation and license
 
-Please see [CONTRIBUTING.md](CONTRIBUTING.md) for the recommended workflow for adding new mathematical note packages, verification scripts, witnesses, or reproducibility data.
-
-## Citation
-
-If you use this repository as a research artifact, please cite the repository metadata in [CITATION.cff](CITATION.cff).
-
-## License
-
-This project is licensed under the MIT license. See [LICENSE](LICENSE).
+Citation metadata is in [`CITATION.cff`](CITATION.cff). The repository is licensed under the MIT license; see [`LICENSE`](LICENSE).
