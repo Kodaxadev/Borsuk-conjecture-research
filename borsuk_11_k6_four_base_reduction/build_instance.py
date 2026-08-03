@@ -49,20 +49,10 @@ def build_graph(case: dict[str, object]) -> tuple[list[int], list[tuple[int, int
     return vertices, edges
 
 
-def variable(vertex_index: int, color: int) -> int:
-    return vertex_index * COLORS + color + 1
-
-
 def fixed_clique_for(
     vertices: list[int], node_limit: int = CLIQUE_SEARCH_NODE_LIMIT
 ) -> list[int]:
-    """Find a deterministic symmetry-breaking clique of size at most COLORS.
-
-    A bounded exact search first tries to find a full 12-clique. If that search
-    exhausts its deterministic node budget, the routine falls back to the
-    historical root clique intersected with the trim and extends it greedily.
-    Either result is independently checked before it is used in the encoding.
-    """
+    """Find a deterministic symmetry-breaking clique of size at most COLORS."""
 
     vertex_count = len(vertices)
     adjacency = [0] * vertex_count
@@ -135,22 +125,79 @@ def fixed_clique_for(
     return clique
 
 
-def formula_counts(vertex_count: int, edge_count: int, fixed_count: int) -> tuple[int, int]:
-    variables = vertex_count * COLORS
-    clauses_per_vertex = 1 + math.comb(COLORS, 2)
-    clauses = vertex_count * clauses_per_vertex + edge_count * COLORS + fixed_count
+def allowed_colors_for(
+    vertices: list[int], fixed_clique: list[int]
+) -> dict[int, tuple[int, ...]]:
+    """Return the sound list-color domain after fixing the clique labels.
+
+    Every proper coloring gives distinct colors to clique vertices. A global
+    color permutation therefore lets us assign clique vertex i color i. A
+    non-clique vertex cannot use the color of any fixed clique neighbor, so
+    those variables can be deleted before CNF generation.
+    """
+
+    assigned = {vertex: color for color, vertex in enumerate(fixed_clique)}
+    domains: dict[int, tuple[int, ...]] = {}
+    for vertex in vertices:
+        if vertex in assigned:
+            domains[vertex] = (assigned[vertex],)
+        else:
+            domains[vertex] = tuple(
+                color
+                for color in range(COLORS)
+                if color >= len(fixed_clique)
+                or distance(vertex, fixed_clique[color]) != K
+            )
+        if not domains[vertex]:
+            raise SystemExit(f"fixed clique leaves vertex {vertex} with an empty color domain")
+    return domains
+
+
+def variable_map_for(
+    vertices: list[int], domains: dict[int, tuple[int, ...]]
+) -> tuple[dict[tuple[int, int], int], dict[int, tuple[int, int]]]:
+    pair_to_variable: dict[tuple[int, int], int] = {}
+    variable_to_pair: dict[int, tuple[int, int]] = {}
+    next_variable = 1
+    for vertex in vertices:
+        for color in domains[vertex]:
+            pair_to_variable[(vertex, color)] = next_variable
+            variable_to_pair[next_variable] = (vertex, color)
+            next_variable += 1
+    return pair_to_variable, variable_to_pair
+
+
+def domain_mask(domain: tuple[int, ...]) -> int:
+    return sum(1 << color for color in domain)
+
+
+def formula_counts(
+    vertices: list[int],
+    edges: list[tuple[int, int]],
+    domains: dict[int, tuple[int, ...]],
+) -> tuple[int, int]:
+    variables = sum(len(domains[vertex]) for vertex in vertices)
+    clauses = sum(1 + math.comb(len(domains[vertex]), 2) for vertex in vertices)
+    masks = {vertex: domain_mask(domains[vertex]) for vertex in vertices}
+    clauses += sum((masks[left] & masks[right]).bit_count() for left, right in edges)
     return variables, clauses
 
 
-def mapping_document(vertices: list[int], fixed_clique: list[int], clauses: int) -> dict[str, object]:
+def mapping_document(
+    vertices: list[int],
+    fixed_clique: list[int],
+    domains: dict[int, tuple[int, ...]],
+    clauses: int,
+) -> dict[str, object]:
+    _, variable_to_pair = variable_map_for(vertices, domains)
     return {
-        "schema": "borsuk-color-variable-map-v1",
+        "schema": "borsuk-list-color-variable-map-v2",
         "colors": COLORS,
         "vertices": vertices,
         "fixed_clique": fixed_clique,
-        "variable_formula": "vertex_index * 12 + color + 1",
+        "allowed_colors": {str(vertex): list(domains[vertex]) for vertex in vertices},
+        "variables": len(variable_to_pair),
         "clauses": clauses,
-        "variables": len(vertices) * COLORS,
     }
 
 
@@ -159,10 +206,12 @@ def instance_metadata(
     vertices: list[int],
     edges: list[tuple[int, int]],
     fixed_clique: list[int],
+    domains: dict[int, tuple[int, ...]],
 ) -> dict[str, object]:
-    variables, clauses = formula_counts(len(vertices), len(edges), len(fixed_clique))
+    variables, clauses = formula_counts(vertices, edges, domains)
+    domain_sizes = sorted({len(domain) for domain in domains.values()})
     return {
-        "schema": "borsuk-four-base-sat-instance-v1",
+        "schema": "borsuk-four-base-list-color-instance-v2",
         "case_id": case["id"],
         "canonical_case_list_sha256": EXPECTED_CANONICAL_CSV_SHA256,
         "representative_case": case["representative_case"],
@@ -172,42 +221,62 @@ def instance_metadata(
         "edges": len(edges),
         "colors": COLORS,
         "fixed_clique": fixed_clique,
+        "domain_size_histogram": {
+            str(size): sum(len(domain) == size for domain in domains.values())
+            for size in domain_sizes
+        },
         "variables": variables,
         "clauses": clauses,
         "result_state": "UNKNOWN",
     }
 
 
-def emit_cnf(stream: TextIO, vertices: list[int], edges: list[tuple[int, int]], fixed_clique: list[int]) -> None:
-    variables, clauses = formula_counts(len(vertices), len(edges), len(fixed_clique))
-    index = {vertex: position for position, vertex in enumerate(vertices)}
+def emit_cnf(
+    stream: TextIO,
+    vertices: list[int],
+    edges: list[tuple[int, int]],
+    fixed_clique: list[int],
+    domains: dict[int, tuple[int, ...]],
+) -> None:
+    pair_to_variable, _ = variable_map_for(vertices, domains)
+    variables, clauses = formula_counts(vertices, edges, domains)
 
-    stream.write("c Borsuk n=11 k=6 canonical four-base trim 12-colorability\n")
-    stream.write("c Variable x_(vertex_index,color) = vertex_index*12 + color + 1.\n")
-    stream.write("c Exactly one color is selected per vertex.\n")
-    stream.write("c Unit clauses assign distinct colors to a deterministic contained clique.\n")
+    stream.write("c Borsuk n=11 k=6 compact 12-list-coloring encoding\n")
+    stream.write("c Fixed clique colors are removed from incompatible vertex domains.\n")
+    stream.write("c Variables are assigned by vertex order, then allowed color order.\n")
     stream.write(f"p cnf {variables} {clauses}\n")
 
-    for vertex_index in range(len(vertices)):
-        ids = [variable(vertex_index, color) for color in range(COLORS)]
-        stream.write(" ".join(map(str, ids)) + " 0\n")
-        for left_color in range(COLORS):
-            for right_color in range(left_color + 1, COLORS):
-                stream.write(f"-{ids[left_color]} -{ids[right_color]} 0\n")
+    for vertex in vertices:
+        identifiers = [pair_to_variable[(vertex, color)] for color in domains[vertex]]
+        stream.write(" ".join(map(str, identifiers)) + " 0\n")
+        for left_index in range(len(identifiers)):
+            for right_index in range(left_index + 1, len(identifiers)):
+                stream.write(
+                    f"-{identifiers[left_index]} -{identifiers[right_index]} 0\n"
+                )
 
+    masks = {vertex: domain_mask(domains[vertex]) for vertex in vertices}
     for left, right in edges:
-        left_index = index[left]
-        right_index = index[right]
-        for color in range(COLORS):
-            stream.write(f"-{variable(left_index, color)} -{variable(right_index, color)} 0\n")
+        common = masks[left] & masks[right]
+        while common:
+            bit = common & -common
+            color = bit.bit_length() - 1
+            common -= bit
+            stream.write(
+                f"-{pair_to_variable[(left, color)]} "
+                f"-{pair_to_variable[(right, color)]} 0\n"
+            )
 
-    for color, vertex in enumerate(fixed_clique):
-        stream.write(f"{variable(index[vertex], color)} 0\n")
 
-
-def write_cnf(path: Path, vertices: list[int], edges: list[tuple[int, int]], fixed_clique: list[int]) -> str:
+def write_cnf(
+    path: Path,
+    vertices: list[int],
+    edges: list[tuple[int, int]],
+    fixed_clique: list[int],
+    domains: dict[int, tuple[int, ...]],
+) -> str:
     with path.open("w", encoding="ascii", newline="") as stream:
-        emit_cnf(stream, vertices, edges, fixed_clique)
+        emit_cnf(stream, vertices, edges, fixed_clique, domains)
     return sha256_bytes(path.read_bytes())
 
 
@@ -228,7 +297,8 @@ def main() -> int:
     case = get_case(args.case_id)
     vertices, edges = build_graph(case)
     fixed_clique = fixed_clique_for(vertices)
-    metadata = instance_metadata(case, vertices, edges, fixed_clique)
+    domains = allowed_colors_for(vertices, fixed_clique)
+    metadata = instance_metadata(case, vertices, edges, fixed_clique, domains)
 
     if args.metadata_only:
         print(json.dumps(metadata, indent=2, sort_keys=True))
@@ -240,11 +310,19 @@ def main() -> int:
     map_path = args.output_dir / f"{args.case_id}_variable_map.json"
     metadata_path = args.output_dir / f"{args.case_id}_metadata.json"
 
-    mapping = mapping_document(vertices, fixed_clique, int(metadata["clauses"]))
-    map_path.write_text(json.dumps(mapping, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    metadata["cnf_sha256"] = write_cnf(cnf_path, vertices, edges, fixed_clique)
+    mapping = mapping_document(
+        vertices, fixed_clique, domains, int(metadata["clauses"])
+    )
+    map_path.write_text(
+        json.dumps(mapping, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    metadata["cnf_sha256"] = write_cnf(
+        cnf_path, vertices, edges, fixed_clique, domains
+    )
     metadata["variable_map_sha256"] = sha256_bytes(map_path.read_bytes())
-    metadata_path.write_text(json.dumps(metadata, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    metadata_path.write_text(
+        json.dumps(metadata, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     print(json.dumps(metadata, indent=2, sort_keys=True))
     return 0
 
