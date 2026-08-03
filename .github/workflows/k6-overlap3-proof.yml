@@ -7,6 +7,12 @@ on:
     paths:
       - 'borsuk_11_k6_second_base/**'
       - '.github/workflows/k6-overlap3-proof.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'borsuk_11_k6_second_base/**'
+      - '.github/workflows/k6-overlap3-proof.yml'
   workflow_dispatch:
 
 jobs:
