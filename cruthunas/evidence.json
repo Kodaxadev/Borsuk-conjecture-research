@@ -215,6 +215,44 @@
         }
       ],
       "limitations": "The reduction is exhaustive, but all 58 solver-frontier types remain UNKNOWN at certificate level."
+    },
+    {
+      "id": "E-K6-SAT-LANE",
+      "claim_id": "n11-k6-four-base-reduction",
+      "type": "SEARCH_INFRASTRUCTURE",
+      "epistemic_class": "HYBRID",
+      "verification_state": "INDEPENDENTLY_REPRODUCED",
+      "paths": [
+        "borsuk_11_k6_four_base_reduction/SAT-WORKFLOW.md",
+        "borsuk_11_k6_four_base_reduction/build_inventory.py",
+        "borsuk_11_k6_four_base_reduction/build_instance.py",
+        "borsuk_11_k6_four_base_reduction/verify_model.py",
+        "borsuk_11_k6_four_base_reduction/verify_sat_lane.py",
+        "borsuk_11_k6_four_base_reduction/case_status.json",
+        "borsuk_11_k6_four_base_reduction/verify_status.py"
+      ],
+      "commands": [
+        "cd borsuk_11_k6_four_base_reduction && python build_inventory.py",
+        "cd borsuk_11_k6_four_base_reduction && python build_instance.py q00 --metadata-only",
+        "cd borsuk_11_k6_four_base_reduction && python verify_sat_lane.py"
+      ],
+      "environment": {
+        "python": ">=3.11",
+        "external_dependencies": []
+      },
+      "source_revision": "research-workspace-hardening",
+      "clean_room_verifier": true,
+      "artifact_hashes": [
+        {
+          "artifact": "q00 deterministic 12-color CNF smoke test",
+          "sha256": "b07c254b71ae0964851afb8dd9f7fa8a728433e27ae76a327e5c10a6e6e7df55"
+        },
+        {
+          "artifact": "q00 variable map smoke test",
+          "sha256": "742bf72f1ae30dc207e22a0c7efe1033ee6e4a5361987ed9e2f8ed3e2b85ed7d"
+        }
+      ],
+      "limitations": "This verifies deterministic instance generation and model-checking infrastructure only. It does not resolve q00 or any of the 58 canonical trim types; every case remains UNKNOWN until certificate-backed evidence is stored and checked."
     }
   ]
 }
