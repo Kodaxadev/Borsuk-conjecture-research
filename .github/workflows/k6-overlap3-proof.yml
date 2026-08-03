@@ -1,0 +1,127 @@
+name: k6-overlap3-proof
+
+on:
+  push:
+    branches:
+      - research/k6-second-base-orbits
+    paths:
+      - 'borsuk_11_k6_second_base/**'
+      - '.github/workflows/k6-overlap3-proof.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'borsuk_11_k6_second_base/**'
+      - '.github/workflows/k6-overlap3-proof.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  certify-overlap-3:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Generate exact overlap-3 CNF
+        run: |
+          python borsuk_11_k6_second_base/enumerate_second_base.py \
+            --out generated_second_base \
+            --emit-cnf
+          sha256sum generated_second_base/k6_second_base_overlap_3.cnf
+
+      - name: Install CaDiCaL and compile independent checker
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cadical
+          g++ -O3 -std=c++17 \
+            borsuk_11_k6_trim_unsat_certificate/drup_check.cpp \
+            -o drup_check
+
+      - name: Produce UNSAT proof
+        shell: bash
+        run: |
+          set +e
+          cadical \
+            generated_second_base/k6_second_base_overlap_3.cnf \
+            overlap_3.drat \
+            > overlap_3_solver.out \
+            2> overlap_3_solver.log
+          code=$?
+          set -e
+          echo "solver_exit_code=$code" | tee overlap_3_status.txt
+          test "$code" = "20"
+          grep -F 's UNSATISFIABLE' overlap_3_solver.out
+
+      - name: Verify proof independently
+        run: |
+          ./drup_check \
+            generated_second_base/k6_second_base_overlap_3.cnf \
+            overlap_3.drat \
+            | tee overlap_3_drup_check.out
+          grep -F 's VERIFIED UNSAT' overlap_3_drup_check.out
+
+      - name: Test certificate corruption rejection
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          source = Path('overlap_3.drat')
+          lines = source.read_text(encoding='ascii').splitlines()
+          for index, line in enumerate(lines):
+              stripped = line.strip()
+              if stripped and not stripped.startswith('d ') and stripped != '0':
+                  tokens = stripped.split()
+                  tokens[0] = str(-int(tokens[0]))
+                  lines[index] = ' '.join(tokens)
+                  break
+          Path('overlap_3_corrupt.drat').write_text(
+              '\n'.join(lines) + '\n', encoding='ascii'
+          )
+          PY
+          set +e
+          ./drup_check \
+            generated_second_base/k6_second_base_overlap_3.cnf \
+            overlap_3_corrupt.drat \
+            > overlap_3_corrupt_check.out 2>&1
+          code=$?
+          set -e
+          echo "corrupt_checker_exit_code=$code" | tee -a overlap_3_status.txt
+          test "$code" != "0"
+
+      - name: Compress and hash certificate
+        run: |
+          gzip -9 overlap_3.drat
+          sha256sum \
+            generated_second_base/k6_second_base_overlap_3.cnf \
+            overlap_3.drat.gz \
+            overlap_3_drup_check.out \
+            > overlap_3_SHA256SUMS.txt
+          cat overlap_3_SHA256SUMS.txt
+
+      - name: Upload certificate evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-overlap3-unsat-certificate
+          retention-days: 30
+          if-no-files-found: error
+          path: |
+            generated_second_base/k6_second_base_overlap_3.cnf
+            overlap_3.drat.gz
+            overlap_3_solver.out
+            overlap_3_solver.log
+            overlap_3_drup_check.out
+            overlap_3_corrupt_check.out
+            overlap_3_status.txt
+            overlap_3_SHA256SUMS.txt
