@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT / "cruthunas" / "project.json"
 ALLOWED_TYPES = {"BOUNDED_SOLVER_PROBE", "HEURISTIC_SEARCH", "NEGATIVE_CONTROL", "BENCHMARK"}
 ALLOWED_STATES = {"UNKNOWN", "OBSERVED_SAT_UNREGISTERED", "OBSERVED_UNSAT_UNVERIFIED"}
+NON_EVIDENTIARY_PROBE_SCHEMA = "borsuk-non-evidentiary-probe-v1"
 
 
 def load(path: Path) -> dict[str, Any]:
@@ -67,6 +68,7 @@ def validate() -> list[str]:
         return ["observations must be an array"]
 
     observation_ids: set[str] = set()
+    registered_artifact_paths: set[str] = set()
     for index, record in enumerate(records):
         context = f"observations[{index}]"
         if not isinstance(record, dict):
@@ -101,6 +103,9 @@ def validate() -> list[str]:
         if not isinstance(artifact_path, str) or not artifact_path:
             add(errors, f"{context}: artifact_path must be a non-empty string")
             continue
+        if artifact_path in registered_artifact_paths:
+            add(errors, f"duplicate observation artifact path: {artifact_path}")
+        registered_artifact_paths.add(artifact_path)
         artifact = ROOT / artifact_path
         if not artifact.is_file():
             add(errors, f"{context}: artifact does not exist: {artifact_path}")
@@ -146,6 +151,18 @@ def validate() -> list[str]:
         if observation_id in evidence_ids or observation_id in linked_evidence_ids:
             add(errors, f"{context}: observation id must never appear as evidence")
 
+    for artifact in sorted(ROOT.glob("**/probe-history/*.json")):
+        try:
+            payload = load(artifact)
+        except ValueError as exc:
+            add(errors, str(exc))
+            continue
+        if payload.get("schema") != NON_EVIDENTIARY_PROBE_SCHEMA:
+            continue
+        relative = artifact.relative_to(ROOT).as_posix()
+        if relative not in registered_artifact_paths:
+            add(errors, f"unregistered non-evidentiary probe artifact: {relative}")
+
     return errors
 
 
@@ -157,7 +174,7 @@ def main() -> int:
             print(f"- {error}", file=sys.stderr)
         return 1
     print("Cruthúnas non-evidentiary observations are internally consistent.")
-    print("No observation contributes evidence or changes claim status.")
+    print("Every stored non-evidentiary probe is registered and contributes no evidence or status change.")
     return 0
 
 
