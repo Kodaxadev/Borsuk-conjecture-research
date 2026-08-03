@@ -20,23 +20,26 @@ any third vertex falls into five cases up to the setwise symmetry that exchanges
 
 For each third vertex `B`, the pointwise stabilizer of `{0,A,B}` classifies a fourth vertex `C` by coordinate-block counts. Setwise symmetries of the unordered base reduce 149 pointwise classes to 101 cases.
 
-Every component with at most three vertices is trivially 12-colorable. Every larger component is contained in one of the 101 listed four-base trims.
+Every component with at most three vertices is trivially 12-colorable. Every larger component is contained in one of the 101 four-base trims.
 
 ## Reproduce
 
 ```bash
-python generate_cases.py
+python generate_cases.py --output case_representatives.csv
 node verify_independent.js
+sha256sum case_representatives.csv
 ```
 
-Both implementations verify:
+Both implementations independently regenerate and verify:
 
 - pointwise fourth-vertex orbits: 149;
 - setwise four-base cases: 101;
 - trim size range: 436–612 vertices;
-- every stored representative's vertex count, exact-distance-6 edge count, incompatibility count, and canonical vertex hash.
+- every representative's vertex count, exact-distance-6 edge count, incompatibility count, and canonical vertex hash;
+- canonical LF-normalized CSV SHA-256:
+  `e60f5f81120e42c8c7eae2da299105e802266f6e92629cd6ac6ee24bcef9db19`.
 
-`case_representatives.csv` is the canonical branch list for downstream coloring and certificate work.
+The CSV is generated rather than checked in so the branch list has two independent executable definitions instead of one trusted data file.
 
 ## Status boundary
 
