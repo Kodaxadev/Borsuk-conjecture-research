@@ -19,11 +19,7 @@ jobs:
   record-crosswalk:
     if: >-
       github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.event == 'push' &&
-      github.event.workflow_run.workflow_id == 326360034 &&
-      github.event.workflow_run.head_branch == 'research/q00-five-base-crosswalk-verifier' &&
-      github.event.workflow_run.repository.full_name == github.repository &&
-      github.event.workflow_run.head_repository.full_name == github.repository
+      github.event.workflow_run.event == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
@@ -58,7 +54,7 @@ jobs:
           from typing import Any
 
           API_VERSION = "2022-11-28"
-          MAX_ARCHIVE_BYTES = 2_000_000
+          MAX_API_BYTES = 2_000_000
           MAX_JSON_BYTES = 1_000_000
 
           token = os.environ["GH_TOKEN"]
@@ -78,6 +74,19 @@ jobs:
 
           def fail(message: str) -> None:
               raise SystemExit(message)
+
+          class SafeRedirectHandler(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  redirected = super().redirect_request(req, fp, code, msg, headers, newurl)
+                  if redirected is None:
+                      return None
+                  old_host = urllib.parse.urlparse(req.full_url).netloc
+                  new_host = urllib.parse.urlparse(newurl).netloc
+                  if old_host != new_host:
+                      redirected.remove_header("Authorization")
+                  return redirected
+
+          opener = urllib.request.build_opener(SafeRedirectHandler())
 
           def api_request(
               method: str,
@@ -101,18 +110,17 @@ jobs:
                   headers["Content-Type"] = "application/json"
               request = urllib.request.Request(url, data=body, headers=headers, method=method)
               try:
-                  with urllib.request.urlopen(request, timeout=30) as response:
-                      raw = response.read(MAX_ARCHIVE_BYTES + 1)
-                      if len(raw) > MAX_ARCHIVE_BYTES:
-                          fail(f"API response exceeded {MAX_ARCHIVE_BYTES} bytes")
+                  with opener.open(request, timeout=30) as response:
+                      raw = response.read(MAX_API_BYTES + 1)
+                      if len(raw) > MAX_API_BYTES:
+                          fail(f"response exceeded {MAX_API_BYTES} bytes")
                       response_headers = dict(response.headers.items())
               except urllib.error.HTTPError as error:
                   detail = error.read(8192).decode("utf-8", "replace")
                   fail(f"GitHub API {method} {url} failed: {error.code}: {detail}")
               if not raw:
                   return None, response_headers
-              content_type = response_headers.get("Content-Type", "")
-              if "json" not in content_type:
+              if "json" not in response_headers.get("Content-Type", ""):
                   return raw, response_headers
               return json.loads(raw), response_headers
 
@@ -120,18 +128,17 @@ jobs:
               event = json.load(event_file)
           event_run = event.get("workflow_run") or {}
           if event_run.get("id") != run_id:
-              fail("event workflow_run ID mismatch")
+              fail("event workflow-run ID mismatch")
 
-          run, _ = api_request(
-              "GET", f"/repos/{repository}/actions/runs/{run_id}"
-          )
+          run, _ = api_request("GET", f"/repos/{repository}/actions/runs/{run_id}")
           if not isinstance(run, dict):
               fail("workflow-run response is not an object")
 
-          run_path = str(run.get("path", "")).split("@", 1)[0]
-          head_repository = run.get("head_repository") or {}
           run_repository = run.get("repository") or {}
-          trusted_identity = {
+          head_repository = run.get("head_repository") or {}
+          run_path = str(run.get("path", "")).split("@", 1)[0]
+          head_sha = str(run.get("head_sha", ""))
+          identity_checks = {
               "id": run.get("id") == run_id,
               "workflow_id": run.get("workflow_id") == expected_workflow_id,
               "name": run.get("name") == expected_workflow_name,
@@ -141,15 +148,14 @@ jobs:
               "event": run.get("event") == "push",
               "repository": run_repository.get("full_name") == repository,
               "head_repository": head_repository.get("full_name") == repository,
-              "head_repository_id": head_repository.get("id") == run_repository.get("id"),
+              "repository_id": head_repository.get("id") == run_repository.get("id"),
               "head_branch": run.get("head_branch") == expected_head_branch,
-              "head_sha": bool(commit_re.fullmatch(str(run.get("head_sha", "")))),
+              "head_sha": bool(commit_re.fullmatch(head_sha)),
           }
-          failed_identity = [key for key, value in trusted_identity.items() if not value]
-          if failed_identity:
-              fail(f"untrusted workflow-run identity fields: {failed_identity}")
+          failures = [key for key, value in identity_checks.items() if not value]
+          if failures:
+              fail(f"untrusted workflow-run identity fields: {failures}")
 
-          head_sha = str(run["head_sha"])
           for key in (
               "id",
               "workflow_id",
@@ -164,32 +170,27 @@ jobs:
           if (event_run.get("repository") or {}).get("full_name") != repository:
               fail("event repository mismatch")
           if (event_run.get("head_repository") or {}).get("full_name") != repository:
-              fail("event head repository mismatch")
+              fail("event head-repository mismatch")
 
           artifacts, _ = api_request(
-              "GET",
-              f"/repos/{repository}/actions/runs/{run_id}/artifacts?per_page=100",
+              "GET", f"/repos/{repository}/actions/runs/{run_id}/artifacts?per_page=100"
           )
-          if (
-              not isinstance(artifacts, dict)
-              or artifacts.get("total_count") != 1
-              or len(artifacts.get("artifacts", [])) != 1
-          ):
+          artifact_list = artifacts.get("artifacts", []) if isinstance(artifacts, dict) else []
+          if artifacts.get("total_count") != 1 or len(artifact_list) != 1:
               fail("expected exactly one artifact for the verified run")
-          artifact = artifacts["artifacts"][0]
+          artifact = artifact_list[0]
           artifact_run = artifact.get("workflow_run") or {}
-          if artifact.get("name") != expected_artifact_name:
-              fail("unexpected artifact name")
-          if artifact.get("expired") is not False:
-              fail("artifact is expired or expiration state is missing")
-          if artifact_run.get("id") != run_id:
-              fail("artifact is not associated with the exact workflow run")
-          if artifact_run.get("head_sha") != head_sha:
-              fail("artifact head SHA does not match the verified run")
-          if artifact_run.get("repository_id") != run_repository.get("id"):
-              fail("artifact repository ID mismatch")
-          if artifact_run.get("head_repository_id") != head_repository.get("id"):
-              fail("artifact head repository ID mismatch")
+          artifact_checks = {
+              "name": artifact.get("name") == expected_artifact_name,
+              "not_expired": artifact.get("expired") is False,
+              "run_id": artifact_run.get("id") == run_id,
+              "head_sha": artifact_run.get("head_sha") == head_sha,
+              "repository_id": artifact_run.get("repository_id") == run_repository.get("id"),
+              "head_repository_id": artifact_run.get("head_repository_id") == head_repository.get("id"),
+          }
+          failures = [key for key, value in artifact_checks.items() if not value]
+          if failures:
+              fail(f"untrusted artifact identity fields: {failures}")
 
           digest_field = str(artifact.get("digest", ""))
           if not digest_field.startswith("sha256:"):
@@ -201,11 +202,8 @@ jobs:
           archive, _ = api_request("GET", str(artifact["archive_download_url"]))
           if not isinstance(archive, bytes):
               fail("artifact download did not return bytes")
-          archive_digest = hashlib.sha256(archive).hexdigest()
-          if archive_digest != trusted_digest:
-              fail(
-                  f"artifact digest mismatch: API={trusted_digest} downloaded={archive_digest}"
-              )
+          if hashlib.sha256(archive).hexdigest() != trusted_digest:
+              fail("downloaded artifact digest does not match the run artifact digest")
 
           try:
               with zipfile.ZipFile(io.BytesIO(archive), "r") as bundle:
@@ -213,35 +211,32 @@ jobs:
                   if len(members) != 1:
                       fail("artifact archive must contain exactly one member")
                   member = members[0]
-                  if member.filename != expected_artifact_file:
-                      fail(f"unexpected artifact member: {member.filename!r}")
-                  if (
-                      member.is_dir()
+                  mode = (member.external_attr >> 16) & 0xFFFF
+                  unsafe = (
+                      member.filename != expected_artifact_file
+                      or member.is_dir()
                       or member.filename.startswith(("/", "\\"))
                       or "\\" in member.filename
                       or ".." in member.filename.split("/")
                       or "\x00" in member.filename
-                  ):
-                      fail("artifact member path is unsafe")
-                  mode = (member.external_attr >> 16) & 0xFFFF
-                  if stat.S_ISLNK(mode):
-                      fail("artifact member is a symbolic link")
-                  if mode and not stat.S_ISREG(mode):
-                      fail(f"artifact member is not a regular file: mode={mode:o}")
-                  if member.file_size > MAX_JSON_BYTES:
-                      fail("artifact JSON is too large")
+                      or stat.S_ISLNK(mode)
+                      or (mode != 0 and not stat.S_ISREG(mode))
+                      or member.file_size > MAX_JSON_BYTES
+                  )
+                  if unsafe:
+                      fail("artifact member is not the one expected regular JSON file")
                   result_bytes = bundle.read(member)
           except zipfile.BadZipFile as error:
               fail(f"artifact is not a valid ZIP archive: {error}")
 
           if len(result_bytes) > MAX_JSON_BYTES:
-              fail("artifact JSON exceeds size limit")
+              fail("artifact JSON exceeds the size limit")
           try:
               result_text = result_bytes.decode("utf-8")
           except UnicodeDecodeError as error:
               fail(f"artifact JSON is not valid UTF-8: {error}")
           if result_text.startswith("\ufeff"):
-              fail("artifact JSON must not contain a BOM")
+              fail("artifact JSON contains a BOM")
 
           def reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
               output: dict[str, Any] = {}
@@ -256,9 +251,9 @@ jobs:
           except json.JSONDecodeError as error:
               fail(f"artifact JSON is invalid: {error}")
           if not isinstance(result, dict):
-              fail("artifact JSON root must be an object")
+              fail("artifact JSON root is not an object")
 
-          top_level_keys = {
+          required_keys = {
               "all_transformed_child_vertex_sets_equal",
               "candidate_count",
               "child_status_changed",
@@ -286,12 +281,8 @@ jobs:
               "verified_workflow_id",
               "verified_workflow_path",
           }
-          if set(result) != top_level_keys:
-              fail(
-                  "artifact JSON top-level schema mismatch: "
-                  f"missing={sorted(top_level_keys - set(result))} "
-                  f"extra={sorted(set(result) - top_level_keys)}"
-              )
+          if set(result) != required_keys:
+              fail("artifact JSON top-level schema mismatch")
 
           expected_values = {
               "schema": "borsuk-q00-five-base-crosswalk-v2",
@@ -372,16 +363,16 @@ jobs:
               if not isinstance(governed_id, str) or not isinstance(differential_id, str):
                   fail("crosswalk IDs must be strings")
               if governed_id in observed_map:
-                  fail(f"duplicate governed ID: {governed_id}")
+                  fail("duplicate governed ID")
               observed_map[governed_id] = differential_id
               signature = row.get("canonical_signature")
               if not isinstance(signature, str) or signature in observed_signatures:
                   fail("canonical signatures must be unique strings")
               observed_signatures.add(signature)
               if row.get("transformed_child_vertex_sets_equal") is not True:
-                  fail("a transformed child set is not equal")
+                  fail("a transformed child set differs")
               if row.get("governed_D") != row.get("differential_D"):
-                  fail("matched representatives differ unexpectedly")
+                  fail("matched representatives differ")
               for count_key in (
                   "vertices",
                   "exact_distance_edges",
@@ -389,7 +380,7 @@ jobs:
                   "orbit_size",
               ):
                   if not isinstance(row.get(count_key), int) or row[count_key] < 0:
-                      fail(f"invalid {count_key} in crosswalk row")
+                      fail(f"invalid {count_key}")
               orbit_total += row["orbit_size"]
               if not sha256_re.fullmatch(str(row.get("vertex_sha256", ""))):
                   fail("invalid child vertex digest")
@@ -404,16 +395,13 @@ jobs:
                   fail("expected identity point map")
 
           if observed_map != expected_id_map:
-              fail(f"crosswalk bijection mismatch: {observed_map}")
-          if len(set(observed_map.values())) != 12:
-              fail("differential IDs are not a bijection")
-          if orbit_total != 432:
-              fail(f"orbit coverage total is {orbit_total}, expected 432")
+              fail("crosswalk bijection mismatch")
+          if len(set(observed_map.values())) != 12 or orbit_total != 432:
+              fail("crosswalk coverage is not a complete 12-class bijection")
 
-          canonical_text = json.dumps(result, indent=2, sort_keys=True) + "\n"
-          canonical_bytes = canonical_text.encode("utf-8")
+          canonical_bytes = (json.dumps(result, indent=2, sort_keys=True) + "\n").encode("utf-8")
           if canonical_bytes != result_bytes:
-              fail("artifact JSON is not in the required canonical encoding")
+              fail("artifact JSON is not canonically encoded")
 
           encoded_branch = urllib.parse.quote(expected_head_branch, safe="")
           branch_ref, _ = api_request(
@@ -445,9 +433,7 @@ jobs:
               "branch": expected_head_branch,
           }
           updated, _ = api_request(
-              "PUT",
-              f"/repos/{repository}/contents/{encoded_destination}",
-              update_payload,
+              "PUT", f"/repos/{repository}/contents/{encoded_destination}", update_payload
           )
           new_commit_sha = str((updated.get("commit") or {}).get("sha", ""))
           if not commit_re.fullmatch(new_commit_sha):
@@ -459,9 +445,6 @@ jobs:
           parents = commit.get("parents") or []
           if len(parents) != 1 or parents[0].get("sha") != head_sha:
               fail("recording commit was not created directly on the verified SHA")
-          changed_tree = commit.get("tree") or {}
-          if not changed_tree.get("sha"):
-              fail("recording commit has no tree SHA")
 
           final_ref, _ = api_request(
               "GET", f"/repos/{repository}/git/ref/heads/{encoded_branch}"
