@@ -1,0 +1,85 @@
+{
+  "covers": {
+    "star_plus_even_ball": {
+      "color_class_sizes": {
+        "0": 11,
+        "1": 9,
+        "2": 8,
+        "3": 7,
+        "4": 8,
+        "5": 6,
+        "6": 5,
+        "7": 4,
+        "8": 3,
+        "9": 3
+      },
+      "colors": 10,
+      "edge_list_sha256": "f1091bb7264047b12be4b2f79fbd3e471ad2968285c4425221327c9baa0217aa",
+      "edges": 1222,
+      "verified_by": [
+        "edge scan",
+        "color-class diameter scan"
+      ],
+      "vertices": 64
+    },
+    "top_plus_even_ball": {
+      "color_class_sizes": {
+        "0": 11,
+        "1": 9,
+        "2": 8,
+        "3": 7,
+        "4": 7,
+        "5": 9,
+        "6": 3,
+        "7": 4,
+        "8": 3
+      },
+      "colors": 9,
+      "edge_list_sha256": "89645e86980d44c265c0655b43eadb8cccfbd77a833d72010260e58f46871ca7",
+      "edges": 1135,
+      "verified_by": [
+        "edge scan",
+        "color-class diameter scan"
+      ],
+      "vertices": 61
+    },
+    "triangle_trim_even": {
+      "color_class_sizes": {
+        "0": 16,
+        "1": 10,
+        "10": 3,
+        "11": 1,
+        "2": 6,
+        "3": 11,
+        "4": 8,
+        "5": 16,
+        "6": 16,
+        "7": 16,
+        "8": 3,
+        "9": 3
+      },
+      "colors": 12,
+      "edge_list_sha256": "caf1fd38548e14bf1bfedf46695701c49666ae48f0d8aff715e0378e0ced6576",
+      "edges": 3123,
+      "verified_by": [
+        "edge scan",
+        "color-class diameter scan"
+      ],
+      "vertices": 109
+    }
+  },
+  "diameter": 4,
+  "johnson_J_11_4": {
+    "edges": 4620,
+    "maximal_cliques": 627,
+    "size_distribution": {
+      "5": 462,
+      "8": 165
+    },
+    "star_cliques": 165,
+    "top_cliques": 462,
+    "vertices": 330
+  },
+  "n": 11,
+  "status": "all checks passed"
+}

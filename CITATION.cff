@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use this repository as a research artifact, please cite it using the metadata below."
+title: "Borsuk Conjecture Research"
+abstract: "Research archive for finite-combinatorial and SAT-based investigation of Borsuk-type problems, including candidate proofs, attack-surface reductions, and verification artifacts."
+version: "0.1.0"
+date-released: 2026-08-02
+license: "MIT"
+url: "https://github.com/Kodaxadev/Borsuk-conjecture-research"
+authors:
+  - family-names: Research
+    given-names: Team
+    affiliation: "Borsuk Conjecture Research"
+repository-code: "https://github.com/Kodaxadev/Borsuk-conjecture-research"
+type: software
+keywords:
+  - mathematics
+  - combinatorics
+  - borsuk-conjecture
+  - finite-geometry
+  - verification

@@ -1,0 +1,36 @@
+{
+  "coloring": {
+    "class_sizes": {
+      "0": 106,
+      "1": 126,
+      "2": 94,
+      "3": 109,
+      "4": 77,
+      "5": 84,
+      "6": 76,
+      "7": 86,
+      "8": 64,
+      "9": 77,
+      "10": 63,
+      "11": 51
+    },
+    "colors_used": 12,
+    "monochromatic_edges": 0
+  },
+  "cover_graph": {
+    "edges": 82665,
+    "graph_sha256": "32ed0ca436667ccbd7d026cc06d0990e31350684b2d0136cc93f7c3225294952",
+    "vertices": 1013,
+    "weight_distribution": {
+      "0": 1,
+      "2": 55,
+      "4": 330,
+      "6": 462,
+      "8": 165
+    }
+  },
+  "diameter": 8,
+  "dimension": 11,
+  "logical_scope": "Every connected component of every diameter-at-most-8 subset translates into the cover graph. This establishes only the k=8 subcase.",
+  "status": "candidate independently verified by two implementations"
+}

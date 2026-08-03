@@ -1,0 +1,86 @@
+{
+  "root_claim": "BORSUK_11_4",
+  "nodes": [
+    {
+      "id": "PARITY_COMPONENTS",
+      "kind": "mathematical",
+      "claim": "Each connected component of an exact-distance-4 graph has one parity after translation."
+    },
+    {
+      "id": "SHELL_REDUCTION",
+      "kind": "mathematical",
+      "claim": "A translated component of diameter at most 4 uses only weights 0,2,4."
+    },
+    {
+      "id": "TRIANGLE_NORMAL_FORM",
+      "kind": "mathematical",
+      "claim": "Every distance-4 triangle is cube-isometric to the canonical triangle T."
+    },
+    {
+      "id": "TRIANGLE_COLORING",
+      "kind": "computational-witness",
+      "claim": "The canonical triangle trim is 12-colorable.",
+      "artifact": "witness.json#triangle_trim_even"
+    },
+    {
+      "id": "JOHNSON_CLASSIFICATION",
+      "kind": "mathematical+enumerated-check",
+      "claim": "Every clique in J(11,4) lies in a 3-star or 5-top."
+    },
+    {
+      "id": "STAR_COLORING",
+      "kind": "computational-witness",
+      "claim": "The canonical star cover is 10-colorable.",
+      "artifact": "witness.json#star_plus_even_ball"
+    },
+    {
+      "id": "TOP_COLORING",
+      "kind": "computational-witness",
+      "claim": "The canonical top cover is 9-colorable.",
+      "artifact": "witness.json#top_plus_even_ball"
+    },
+    {
+      "id": "BORSUK_11_4",
+      "kind": "theorem",
+      "claim": "Every diameter-4 subset of the 11-cube has exact-diameter graph chromatic number at most 12."
+    }
+  ],
+  "edges": [
+    [
+      "PARITY_COMPONENTS",
+      "SHELL_REDUCTION"
+    ],
+    [
+      "SHELL_REDUCTION",
+      "TRIANGLE_NORMAL_FORM"
+    ],
+    [
+      "TRIANGLE_NORMAL_FORM",
+      "TRIANGLE_COLORING"
+    ],
+    [
+      "SHELL_REDUCTION",
+      "JOHNSON_CLASSIFICATION"
+    ],
+    [
+      "JOHNSON_CLASSIFICATION",
+      "STAR_COLORING"
+    ],
+    [
+      "JOHNSON_CLASSIFICATION",
+      "TOP_COLORING"
+    ],
+    [
+      "TRIANGLE_COLORING",
+      "BORSUK_11_4"
+    ],
+    [
+      "STAR_COLORING",
+      "BORSUK_11_4"
+    ],
+    [
+      "TOP_COLORING",
+      "BORSUK_11_4"
+    ]
+  ]
+}

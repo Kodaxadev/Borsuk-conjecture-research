@@ -1,0 +1,22 @@
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Node artifacts
+node_modules/
+*.log
+
+# Local tooling
+.env
+.env.*
+
+# Generated verification outputs
+solver_output.txt
+*.tmp
+*.bak
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,58 @@
+{
+  "nodes": [
+    {
+      "id": "D1",
+      "type": "definition",
+      "claim": "Exact-distance-8 graph encodes the required partition."
+    },
+    {
+      "id": "L1",
+      "type": "lemma",
+      "claim": "Distance-8 edges preserve parity."
+    },
+    {
+      "id": "L2",
+      "type": "lemma",
+      "claim": "Translating a connected component by one vertex places it in the even-weight radius-8 ball."
+    },
+    {
+      "id": "O1",
+      "type": "finite_object",
+      "claim": "The cover graph has exactly 1,013 vertices and 82,665 edges.",
+      "artifact": "verify.py / verify_independent.js"
+    },
+    {
+      "id": "C1",
+      "type": "certificate",
+      "claim": "The cover graph has an explicit proper 12-coloring.",
+      "artifact": "witness.json"
+    },
+    {
+      "id": "T1",
+      "type": "theorem_candidate",
+      "claim": "Every subset of the 11-cube of diameter at most 8 partitions into 12 subsets of smaller diameter."
+    }
+  ],
+  "edges": [
+    {
+      "from": "D1",
+      "to": "T1"
+    },
+    {
+      "from": "L1",
+      "to": "L2"
+    },
+    {
+      "from": "L2",
+      "to": "T1"
+    },
+    {
+      "from": "O1",
+      "to": "C1"
+    },
+    {
+      "from": "C1",
+      "to": "T1"
+    }
+  ]
+}
