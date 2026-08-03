@@ -1,0 +1,276 @@
+name: certify-f11
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: certify-f11-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  solve-and-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CASE_ID: f11
+      EXPECTED_CNF_SHA256: 4341c1d9ba4b293f79e48b7a094e757d0c09aa46024d67e9a6f4556f3d3c2388
+      EXPECTED_MAP_SHA256: ff5b5f9df7c3364d79dcdf0942cc7ee58fb63a7d1911e7fa2ed4bb60da511f20
+      KISSAT_ARCHIVE_MD5: 89801fadc6d7a2ee1519a9cccf0c9029
+      DRAT_TRIM_REVISION: 2e3b2dc0ecf938addbd779d42877b6ed69d9a985
+      SOLVER_LIMIT_SECONDS: 900
+      CRUTHUNAS_CLAIM_ID: n11-k6-q00-fifth-base-reduction
+      CRUTHUNAS_EVIDENCE_ID: E-K6-Q00-FIFTH-BASE-SAT-LANE
+
+    steps:
+      - name: Checkout governed branch
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate Cruthúnas and registered solver lane
+        run: |
+          set -euo pipefail
+          python scripts/cruthunas.py check --all
+          python scripts/cruthunas.py adapters check
+          python scripts/validate_cruthunas_transactions.py
+          python scripts/validate_cruthunas_observations.py
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          evidence = json.loads(Path('cruthunas/evidence.json').read_text())['evidence']
+          record = next((item for item in evidence if item['id'] == os.environ['CRUTHUNAS_EVIDENCE_ID']), None)
+          if record is None:
+              raise SystemExit('f11 solver lane is not registered as Cruthúnas evidence')
+          if record['claim_id'] != os.environ['CRUTHUNAS_CLAIM_ID']:
+              raise SystemExit('f11 solver-lane claim boundary mismatch')
+          print('PASS registered f11 solver lane')
+          PY
+
+      - name: Regenerate exact f11 instance and verifier controls
+        working-directory: borsuk_11_k6_q00_fifth_base_reduction
+        run: |
+          set -euo pipefail
+          rm -rf work/f11-certificate
+          python verify_child_model.py --self-test
+          python build_child_instance.py f11 --output-dir work/f11-certificate \
+            >work/f11-certificate/build.out
+          echo "$EXPECTED_CNF_SHA256  work/f11-certificate/f11_12color.cnf" | sha256sum --check --strict
+          echo "$EXPECTED_MAP_SHA256  work/f11-certificate/f11_variable_map.json" | sha256sum --check --strict
+
+      - name: Build pinned Kissat 4.0.0
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 \
+            'https://zenodo.org/records/13081405/files/arminbiere/kissat-rel-4.0.0.zip?download=1' \
+            --output /tmp/kissat-rel-4.0.0.zip
+          echo "$KISSAT_ARCHIVE_MD5  /tmp/kissat-rel-4.0.0.zip" | md5sum --check --strict
+          rm -rf /tmp/kissat-source
+          mkdir /tmp/kissat-source
+          unzip -q /tmp/kissat-rel-4.0.0.zip -d /tmp/kissat-source
+          configure_path="$(find /tmp/kissat-source -type f -name configure | head -n 1)"
+          test -n "$configure_path"
+          source_dir="$(dirname "$configure_path")"
+          cd "$source_dir"
+          ./configure
+          make -j2
+          test -x build/kissat
+          cp build/kissat /tmp/kissat-4.0.0
+          /tmp/kissat-4.0.0 --version | tee "$GITHUB_WORKSPACE/borsuk_11_k6_q00_fifth_base_reduction/work/f11-certificate/solver-version.txt"
+          sha256sum /tmp/kissat-4.0.0 | tee "$GITHUB_WORKSPACE/borsuk_11_k6_q00_fifth_base_reduction/work/f11-certificate/solver-binary.sha256"
+
+      - name: Build pinned independent DRAT checker
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/drat-trim
+          git clone --filter=blob:none https://github.com/marijnheule/drat-trim.git /tmp/drat-trim
+          cd /tmp/drat-trim
+          git checkout --detach "$DRAT_TRIM_REVISION"
+          make -j2
+          test -x drat-trim
+          git rev-parse HEAD | tee "$GITHUB_WORKSPACE/borsuk_11_k6_q00_fifth_base_reduction/work/f11-certificate/checker-revision.txt"
+          sha256sum drat-trim | tee "$GITHUB_WORKSPACE/borsuk_11_k6_q00_fifth_base_reduction/work/f11-certificate/checker-binary.sha256"
+
+      - name: Run bounded proof-producing solve
+        id: solve
+        working-directory: borsuk_11_k6_q00_fifth_base_reduction
+        shell: bash
+        run: |
+          set -u
+          work=work/f11-certificate
+          cnf="$work/f11_12color.cnf"
+          proof="$work/f11.drat"
+          started="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          set +e
+          /usr/bin/time -v timeout --signal=TERM --kill-after=30s "$SOLVER_LIMIT_SECONDS" \
+            /tmp/kissat-4.0.0 "$cnf" "$proof" \
+            >"$work/solver.out" 2>"$work/solver.err"
+          solver_status=$?
+          set -e
+          finished="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          state=UNKNOWN
+          if [ "$solver_status" -eq 10 ]; then
+            rm -f "$proof"
+            state=SAT_MODEL_UNCHECKED
+          elif [ "$solver_status" -eq 20 ] && [ -s "$proof" ]; then
+            state=UNSAT_PROOF_UNCHECKED
+          else
+            rm -f "$proof"
+          fi
+          export SOLVER_STATUS="$solver_status" RESULT_STATE="$state" STARTED_UTC="$started" FINISHED_UTC="$finished"
+          python - "$work/run-result.json" <<'PY'
+          import json, os, sys
+          from pathlib import Path
+          Path(sys.argv[1]).write_text(json.dumps({
+              'schema': 'borsuk-f11-certificate-attempt-v1',
+              'case_id': os.environ['CASE_ID'],
+              'claim_id': os.environ['CRUTHUNAS_CLAIM_ID'],
+              'evidence_id': os.environ['CRUTHUNAS_EVIDENCE_ID'],
+              'cnf_sha256': os.environ['EXPECTED_CNF_SHA256'],
+              'variable_map_sha256': os.environ['EXPECTED_MAP_SHA256'],
+              'solver': 'Kissat 4.0.0',
+              'solver_limit_seconds': int(os.environ['SOLVER_LIMIT_SECONDS']),
+              'solver_exit_status': int(os.environ['SOLVER_STATUS']),
+              'started_utc': os.environ['STARTED_UTC'],
+              'finished_utc': os.environ['FINISHED_UTC'],
+              'state': os.environ['RESULT_STATE'],
+              'repository_status_changed': False,
+              'cruthunas_result_evidence_registered': False,
+              'child_status_changed': False,
+              'theorem_status_changed': False,
+          }, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          PY
+          echo "solver_status=$solver_status" >> "$GITHUB_OUTPUT"
+          echo "result_state=$state" >> "$GITHUB_OUTPUT"
+
+      - name: Independently verify SAT model
+        id: sat_check
+        if: steps.solve.outputs.result_state == 'SAT_MODEL_UNCHECKED'
+        working-directory: borsuk_11_k6_q00_fifth_base_reduction
+        run: |
+          set -euo pipefail
+          work=work/f11-certificate
+          python verify_child_model.py f11 "$work/solver.out" \
+            --output "$work/f11_verified_coloring.json" \
+            | tee "$work/model-checker.out"
+          echo 'result_state=SAT_MODEL_VERIFIED' >> "$GITHUB_OUTPUT"
+
+      - name: Independently verify UNSAT proof
+        id: unsat_check
+        if: steps.solve.outputs.result_state == 'UNSAT_PROOF_UNCHECKED'
+        working-directory: borsuk_11_k6_q00_fifth_base_reduction
+        shell: bash
+        run: |
+          set -euo pipefail
+          work=work/f11-certificate
+          cnf="$work/f11_12color.cnf"
+          proof="$work/f11.drat"
+          /usr/bin/time -v /tmp/drat-trim/drat-trim "$cnf" "$proof" -v \
+            >"$work/proof-checker.out" 2>"$work/proof-checker.err"
+          cat "$work/proof-checker.out" "$work/proof-checker.err" | tr -d '\r' \
+            >"$work/proof-checker.combined.txt"
+          grep -Eq '^[[:space:]]*s VERIFIED[[:space:]]*$' "$work/proof-checker.combined.txt"
+          if grep -Eq '^[[:space:]]*s NOT VERIFIED[[:space:]]*$' "$work/proof-checker.combined.txt"; then
+            echo 'proof checker produced contradictory verdicts' >&2
+            exit 1
+          fi
+
+          python - "$proof" "$work/f11-corrupt-first-record.drat" "$work/negative-control-mutation.json" <<'PY'
+          import hashlib, json, sys
+          from pathlib import Path
+          source, damaged, report = map(Path, sys.argv[1:])
+          data = bytearray(source.read_bytes())
+          original = data[0]
+          if original not in (0x61, 0x64):
+              raise SystemExit(f'unexpected first binary DRAT operation: 0x{original:02x}')
+          data[0] = 0x62
+          damaged.write_bytes(data)
+          report.write_text(json.dumps({
+              'schema': 'binary-drat-corruption-control-v1',
+              'mutation': 'first operation byte changed to invalid 0x62',
+              'original_first_byte': f'0x{original:02x}',
+              'source_sha256': hashlib.sha256(source.read_bytes()).hexdigest(),
+              'damaged_sha256': hashlib.sha256(data).hexdigest(),
+              'bytes': len(data),
+          }, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          PY
+          set +e
+          /tmp/drat-trim/drat-trim "$cnf" "$work/f11-corrupt-first-record.drat" -v \
+            >"$work/negative-checker.out" 2>"$work/negative-checker.err"
+          negative_status=$?
+          set -e
+          echo "$negative_status" >"$work/negative-checker.exit-status"
+          cat "$work/negative-checker.out" "$work/negative-checker.err" | tr -d '\r' \
+            >"$work/negative-checker.combined.txt"
+          test "$negative_status" -ne 0
+          if grep -Eq '^[[:space:]]*s VERIFIED[[:space:]]*$' "$work/negative-checker.combined.txt"; then
+            echo 'corrupted proof was accepted' >&2
+            exit 1
+          fi
+          rm -f "$work/f11-corrupt-first-record.drat"
+          gzip -9 "$proof"
+          echo 'result_state=UNSAT_PROOF_CHECKED' >> "$GITHUB_OUTPUT"
+
+      - name: Write bounded result metadata
+        if: always()
+        working-directory: borsuk_11_k6_q00_fifth_base_reduction
+        run: |
+          set -euo pipefail
+          work=work/f11-certificate
+          final_state=UNKNOWN
+          if [ "${{ steps.sat_check.outputs.result_state }}" = SAT_MODEL_VERIFIED ]; then
+            final_state=SAT_MODEL_VERIFIED
+          elif [ "${{ steps.unsat_check.outputs.result_state }}" = UNSAT_PROOF_CHECKED ]; then
+            final_state=UNSAT_PROOF_CHECKED
+          fi
+          export FINAL_STATE="$final_state"
+          python - "$work/certificate-result.json" <<'PY'
+          import hashlib, json, os, sys
+          from pathlib import Path
+          root = Path(sys.argv[1]).parent
+          files = {}
+          for path in sorted(root.iterdir()):
+              if path.is_file():
+                  files[path.name] = {'bytes': path.stat().st_size, 'sha256': hashlib.sha256(path.read_bytes()).hexdigest()}
+          Path(sys.argv[1]).write_text(json.dumps({
+              'schema': 'borsuk-f11-checked-result-v1',
+              'case_id': os.environ['CASE_ID'],
+              'claim_id': os.environ['CRUTHUNAS_CLAIM_ID'],
+              'cnf_sha256': os.environ['EXPECTED_CNF_SHA256'],
+              'variable_map_sha256': os.environ['EXPECTED_MAP_SHA256'],
+              'result_state': os.environ['FINAL_STATE'],
+              'files': files,
+              'repository_status_changed': False,
+              'cruthunas_result_evidence_registered': False,
+              'child_status_changed': False,
+              'theorem_status_changed': False,
+              'interpretation': 'SAT closes f11 only after result registration. Proof-checked UNSAT remains a scoped child-trim obstruction requiring further refinement. UNKNOWN has no epistemic effect.',
+          }, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          PY
+          sha256sum "$work"/* >"$work/artifact-sha256.txt"
+
+      - name: Upload f11 certificate attempt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: f11-certificate-attempt
+          path: borsuk_11_k6_q00_fifth_base_reduction/work/f11-certificate/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+
+      - name: Report bounded state
+        if: always()
+        run: |
+          if [ "${{ steps.sat_check.outputs.result_state }}" = SAT_MODEL_VERIFIED ]; then
+            echo 'f11 produced an independently verified SAT coloring. No status changed in this workflow.'
+          elif [ "${{ steps.unsat_check.outputs.result_state }}" = UNSAT_PROOF_CHECKED ]; then
+            echo 'f11 produced an independently checked UNSAT proof. It remains a scoped trim obstruction pending registration and refinement.'
+          else
+            echo 'f11 remains UNKNOWN; no certificate-backed result was produced.'
+          fi
