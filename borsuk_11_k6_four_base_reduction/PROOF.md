@@ -68,9 +68,9 @@ Exhaustive enumeration gives:
 | `(3,3)` | 35 |
 | **Total** | **149** |
 
-The base set is unordered. Every affine cube isometry that permutes the metric triple `{0,A,B}` acts on these pointwise classes. Quotienting by the full setwise stabilizer gives:
+Quotienting by the setwise stabilizer of each chosen metric triple `{0,A,B}` gives 101 intermediate four-base cases:
 
-| Third-vertex family | Setwise four-base cases |
+| Third-vertex family | Intermediate cases |
 |---|---:|
 | `(1,1)` | 19 |
 | `(2,0)` | 19 |
@@ -79,13 +79,28 @@ The base set is unordered. Every affine cube isometry that permutes the metric t
 | `(3,3)` | 14 |
 | **Total** | **101** |
 
-For every representative base `{0,A,B,C}`, define its trim as all even cube vertices within distance 6 of all four base vertices. Every actual component containing those base vertices is a subset of that trim.
+## Full four-base isometry canonicalization
 
-Thus every component with at least four vertices is isometric to a subset of one of the 101 canonical trims recorded in `case_representatives.csv`.
+The choice of which nonzero point is called `B` is artificial. To quotient the complete unordered base `{P_0,P_1,P_2,P_3}`, use the following exact invariant.
+
+Choose each base point in turn as the translation origin. Permute the remaining three points in all six ways. After translation, every coordinate contributes one of eight three-bit column signatures. Coordinate permutations preserve only the multiplicities of these eight signatures. For each origin and labeling, form the eight-entry multiplicity tuple and take the lexicographically least tuple.
+
+This tuple is a complete affine-cube-isometry invariant for an unordered four-point set:
+
+- translation is exhausted by the four origin choices;
+- relabeling is exhausted by the six permutations;
+- coordinate permutations act only by reordering columns;
+- equal column multiplicities give an explicit coordinate permutation between the translated labeled bases.
+
+Applying this invariant to all 101 intermediate cases produces exactly **58 full-isometry classes**. The member counts sum to 101, so no intermediate case is lost.
+
+For every representative base `{0,A,B,C}`, define its trim as all even cube vertices within distance 6 of all four base vertices. Affine cube isometries preserve parity differences, Hamming distances, exact-distance graphs, and diameter incompatibilities. Therefore isometric bases produce isometric trims, and one representative per full base class is sufficient.
+
+Thus every component with at least four vertices is isometric to a subset of one of **58 canonical trims**. The 101-case list remains an independently hashed intermediate coverage layer; the 58-case list is the solver frontier.
 
 ## What remains
 
-This is a covering reduction only. The trims have 436–612 vertices and may contain mutually incompatible pairs farther than 6 apart.
+This is a covering reduction only. The canonical trims have 436–612 vertices and may contain mutually incompatible pairs farther than 6 apart.
 
 For each trim:
 
