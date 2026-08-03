@@ -2,121 +2,112 @@
 
 ## Current state
 
-Let `T` be the 692-vertex canonical one-base trim set recorded in
-`borsuk_11_k6_attack_surface/`. Its exact-distance-6 graph is not 12-colorable,
-and the separate certificate package verifies that negative result.
+Let `T` be the 692-vertex canonical one-base trim set recorded in `borsuk_11_k6_attack_surface/`. Its exact-distance-6 graph is not 12-colorable, and the separate certificate package verifies that negative result.
 
-This does not settle the theorem target because `T` contains incompatible pairs
-at Hamming distance greater than 6. A legal normalized component must be a
-subset of `T` containing no such pair.
+This does not settle the theorem target because `T` contains incompatible pairs at Hamming distance greater than 6. A legal normalized component must be a subset of `T` containing no such pair.
 
-The remaining task is therefore not to color `T`. It is to prove that every
-**diameter-compatible subset** of `T` is 12-colorable, or to find a legal subset
-that is not.
+The remaining task is to prove that every diameter-compatible subset of `T` is 12-colorable, or to find a legal subset that is not.
 
-## Two graphs on the same vertex set
+## Exhaustive compressed front
 
-Maintain two independently generated graphs on `T`:
+Do not begin by branching the full 692-vertex root arbitrarily.
 
-- `G6`: vertices are adjacent when their Hamming distance is exactly 6. This is
-  the graph that must be 12-colored.
-- `D`: vertices are adjacent when their Hamming distance is greater than 6.
-  A legal diameter-6 set is an independent set in `D`.
+The four-base reduction proves:
 
-The theorem target for this normalized branch is:
+1. components with at most three vertices are trivially 12-colorable;
+2. every larger normalized component lies in one of 101 intermediate four-base cases;
+3. full canonicalization of the unordered four-point base under affine cube isometries reduces these to **58 trim types**.
 
-> Every independent set `S` of `D` induces a 12-colorable graph `G6[S]`.
+The 101-case hash is the exhaustive audit layer. The 58-type hash is the solver frontier. `case_status.json` must account for all 58 types and defaults every unverified type to `UNKNOWN`.
 
-## Certificate-producing branch algorithm
+## Two graphs on every trim
 
-At a search node, let `U` be the currently allowed subset of `T`.
+For each canonical trim `U`, maintain two independently generated graphs:
+
+- `G6[U]`: vertices are adjacent when their Hamming distance is exactly 6. This is the graph that must be 12-colored.
+- `D[U]`: vertices are adjacent when their Hamming distance is greater than 6. A legal diameter-6 set is an independent set in `D[U]`.
+
+The local theorem target is:
+
+> Every independent set `S` of `D[U]` induces a 12-colorable graph `G6[S]`.
+
+## Certificate-producing decision algorithm
+
+At a trim or descendant node `U`:
 
 1. Ask whether `G6[U]` is 12-colorable.
-2. If SAT, store and independently verify the coloring. The entire branch is
-   closed because every descendant is an induced subgraph of a colorable graph.
-3. If UNSAT, require a checked proof trace. Then search `D[U]` for an
-   incompatibility edge `{u,v}`.
-4. If such an edge exists, branch into `U - {u}` and `U - {v}`. Every legal
-   subset of `U` lies in at least one child because it cannot contain both ends.
-5. If no incompatibility edge exists, `U` is itself a legal diameter-6 set.
-   Certified UNSAT at this node is a genuine counterexample candidate and must
-   trigger immediate independent reconstruction.
+2. If SAT, store and independently verify the complete coloring. The whole node closes because every descendant is an induced subgraph of a colorable graph.
+3. If UNSAT, require a checked proof trace before refining the node.
+4. Prefer adding a fifth compatible base vertex and quotienting its orbits when that gives fewer exhaustive children.
+5. Otherwise choose an incompatibility edge `{u,v}` of `D[U]` and branch into `U-{u}` and `U-{v}`. Every legal subset lies in at least one child.
+6. If `D[U]` has no edge, `U` is itself a legal diameter-6 set. Certified UNSAT is then a genuine counterexample candidate and must trigger immediate independent reconstruction.
 
-This creates an exact coverage tree. No timeout or heuristic failure closes a
-branch.
+No timeout, heuristic failure, crash, or missing certificate closes a node.
 
-## Required node states
+## Required result states
 
-Every node must end in exactly one machine-readable state:
+Top-level four-base types use:
 
-- `SAT_CLOSED`: complete coloring witness verified independently.
-- `UNSAT_BRANCHED`: checked UNSAT proof plus a recorded incompatibility edge and
-  two child identifiers.
-- `LEGAL_UNSAT`: checked UNSAT proof and no incompatibility edge; potential
-  counterexample.
-- `UNKNOWN`: timeout, crash, missing proof, checker failure, or incomplete work.
+- `SAT_CLOSED`: complete coloring witness independently verified.
+- `UNSAT_REFINED`: checked UNSAT proof plus exhaustive child coverage.
+- `LEGAL_UNSAT`: checked UNSAT proof and no incompatibility edge.
+- `UNKNOWN`: timeout, crash, heuristic failure, missing proof, checker failure, or incomplete work.
 
-`UNKNOWN` nodes remain open and block any theorem-level conclusion.
+Descendant branch nodes may use `UNSAT_BRANCHED` when the refinement is a binary incompatibility deletion. Every non-SAT UNSAT state requires a checked proof trace.
+
+`UNKNOWN` nodes block any theorem-level conclusion.
 
 ## Search compression
 
 Apply compression only when it preserves the certificate chain:
 
-1. Canonicalize `U` under the stabilizer of the fixed normalized base
-   configuration `{0,A}`.
-2. Memoize canonical node hashes.
-3. Prefer incompatibility edges with high symmetry orbit size or high incidence
-   in the current UNSAT core.
-4. Extract smaller UNSAT induced cores when possible, but retain a verified
-   mapping from the core to `U`.
-5. Reuse a SAT coloring only after independently checking it on the exact node.
+1. Canonicalize full unordered base configurations, not only a chosen ordered prefix.
+2. Memoize canonical vertex-set or base-signature hashes.
+3. Prefer fifth-base or incompatibility orbits with high symmetry and strong UNSAT-core incidence.
+4. Extract smaller UNSAT induced cores only with a verified embedding into the parent node.
+5. Reuse a SAT coloring only after checking it on the exact canonical representative.
+6. Map every closed canonical representative back to all intermediate cases in its isometry class.
 
-A quotient or orbit computation is an optimization, not a proof by itself.
+A quotient computation is an optimization and coverage lemma, not a coloring proof by itself.
 
 ## Coverage manifest
 
-The final proof artifact must include a manifest containing, for every node:
+The final artifact must include, for every canonical type and descendant node:
 
-- canonical node id and SHA-256 vertex-set hash;
-- parent id and branch deletion;
-- vertex and edge counts for both `G6[U]` and `D[U]`;
-- terminal state;
+- canonical id and SHA-256 vertex-set or base-signature hash;
+- all covered intermediate case ids;
+- parent id and refinement condition;
+- vertex and edge counts for both graph relations;
+- result state;
 - solver name, version, seed, command, and resource limits;
 - model or proof-trace hash;
 - independent checker output hash;
-- child ids for branched nodes.
+- complete child ids for refined nodes.
 
 A separate verifier must check:
 
+- regeneration of the 101 intermediate cases and 58 canonical types;
+- complete mapping of all 101 cases to the 58 types;
 - graph regeneration from bit masks;
 - every SAT coloring;
 - every UNSAT proof;
-- every branch edge is genuinely incompatible;
-- child sets equal the parent with the stated endpoint removed;
-- every nonterminal node has both children;
-- no `UNKNOWN` node remains;
-- all referenced artifact hashes match.
+- every fifth-base or incompatibility refinement is exhaustive;
+- all parent-child restrictions and hashes;
+- no `UNKNOWN` remains;
+- all artifact hashes match.
 
-## First implementation milestone
+## Immediate implementation milestone
 
-Do not begin with a full uncontrolled solver run. Implement and verify:
+1. Keep the 101 intermediate and 58 canonical hashes stable in two implementations.
+2. Generate a static difficulty inventory for `q00` through `q57`.
+3. Run witness-only heuristics only for scheduling; record no failure as evidence.
+4. Produce deterministic CNFs with a documented variable map.
+5. Resolve the easiest canonical type to `SAT_CLOSED` with an independently verified model.
+6. Resolve one hard type through proof-producing SAT or certified refinement.
+7. Add negative tests that corrupt a coloring, proof reference, canonical mapping, and child hash.
 
-1. deterministic generation of `T`, `G6`, and `D`;
-2. canonical vertex-set serialization and hashing;
-3. one root-node record matching the existing 692-vertex artifacts;
-4. proof-checked root UNSAT import;
-5. deterministic selection of one incompatibility edge;
-6. creation of the first two child-node records;
-7. a manifest verifier that rejects missing children, altered hashes, and an
-   intentionally corrupted witness or proof reference.
-
-Only after this seven-step loop is green should long-running branching begin.
+Only after this loop is green should long-running parallel classification begin.
 
 ## Logical boundary
 
-A complete tree with only `SAT_CLOSED` and correctly expanded
-`UNSAT_BRANCHED` leaves proves the normalized one-base case. The surrounding
-mathematical reduction must still establish that every nontrivial diameter-6
-component is isometric to a subset represented by the root trim instance.
-That reduction is recorded separately and must remain an explicit dependency
-in any theorem claim.
+The full `n=11, k=6` claim remains open until all 58 canonical types have complete certificate-backed coverage and all 101 intermediate cases are verified to map into those types. External mathematical review of the normalization and canonicalization remains a separate dependency before public theorem promotion.
