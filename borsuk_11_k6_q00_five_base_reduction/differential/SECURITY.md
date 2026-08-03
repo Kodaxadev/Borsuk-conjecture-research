@@ -32,3 +32,15 @@ The recorder then uses GitHub's contents API to replace only:
 It supplies the existing blob SHA and refuses to derive the destination, branch, workflow identity, or authoritative commit identity from the artifact. The artifact's embedded run metadata is only cross-checked against the trusted event and API values.
 
 The recorder does not rerun the crosswalk implementation. Its commit contains the exact canonical bytes downloaded from the verified artifact.
+
+## Exercised handoff
+
+The final recorded handoff was exercised with:
+
+- verified source head: `6772ac59d93edca2a1c5ede0005cd7629800b4ef`;
+- read-only push verification run: `30836218474`;
+- immutable artifact ID: `8864924329`;
+- artifact SHA-256: `c19250a90f79f88fec3f5e638b9481a9d0458af106b5eab05c28fba08478a4f1`;
+- single-file contents-API recording commit: `be69152285ead6cdb37aa98f415992ae4d20fc43`.
+
+The recording commit changed only `crosswalk-result.json` and replaced it with the canonical artifact bytes bound to that exact successful run and source head.
