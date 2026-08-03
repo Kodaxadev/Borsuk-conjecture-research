@@ -81,6 +81,15 @@
       "allowed_claim_ids": [
         "n11-k6-q00-trim-unsat"
       ]
+    },
+    {
+      "id": "SRC-K6-Q00-FIFTH-BASE",
+      "kind": "repository-document",
+      "path": "borsuk_11_k6_q00_fifth_base_reduction/PROOF.md",
+      "revision_pin": "4173574f32991d14c3557e4ad2f9cebf007aceb6",
+      "allowed_claim_ids": [
+        "n11-k6-q00-fifth-base-reduction"
+      ]
     }
   ]
 }

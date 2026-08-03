@@ -308,6 +308,66 @@
         }
       ],
       "limitations": "This certificate proves UNSAT only for the q00 universal trim CNF. It does not settle a legal diameter-6 instance, q00 refinement, or the full theorem; the Actions proof artifact expires on 2026-11-01 unless archived durably."
+    },
+    {
+      "id": "E-K6-Q00-FIFTH-BASE",
+      "claim_id": "n11-k6-q00-fifth-base-reduction",
+      "type": "SYMMETRY_REDUCTION",
+      "epistemic_class": "HYBRID",
+      "verification_state": "INDEPENDENTLY_REPRODUCED",
+      "paths": [
+        "borsuk_11_k6_q00_fifth_base_reduction/README.md",
+        "borsuk_11_k6_q00_fifth_base_reduction/PROOF.md",
+        "borsuk_11_k6_q00_fifth_base_reduction/generate_fifth_base_cases.py",
+        "borsuk_11_k6_q00_fifth_base_reduction/verify_independent.js",
+        "borsuk_11_k6_q00_fifth_base_reduction/build_child_instance.py",
+        "borsuk_11_k6_q00_fifth_base_reduction/canonical_12.csv",
+        "borsuk_11_k6_q00_fifth_base_reduction/report.json",
+        "borsuk_11_k6_q00_fifth_base_reduction/child_status.json",
+        "borsuk_11_k6_q00_fifth_base_reduction/verify_status.py",
+        "borsuk_11_k6_q00_fifth_base_reduction/SHA256SUMS"
+      ],
+      "commands": [
+        "cd borsuk_11_k6_q00_fifth_base_reduction && python generate_fifth_base_cases.py --output canonical_12.csv --report report.json",
+        "cd borsuk_11_k6_q00_fifth_base_reduction && node verify_independent.js",
+        "cd borsuk_11_k6_q00_fifth_base_reduction && python verify_status.py",
+        "cd borsuk_11_k6_q00_fifth_base_reduction && sha256sum -c SHA256SUMS",
+        "cd borsuk_11_k6_q00_fifth_base_reduction && python build_child_instance.py f11 --metadata-only"
+      ],
+      "environment": {
+        "python": ">=3.11",
+        "node": ">=20",
+        "external_dependencies": []
+      },
+      "source_revision": "4173574f32991d14c3557e4ad2f9cebf007aceb6",
+      "clean_room_verifier": true,
+      "artifact_hashes": [
+        {
+          "artifact": "canonical fifth-base case list",
+          "sha256": "01b3ee2e629788037f1ccd6906140302abddd1ae1c077aa8cf7e8f619adb807a"
+        },
+        {
+          "artifact": "Python fifth-base generator",
+          "sha256": "a9bd046824a9be2727184a1a27ed9785e755d4ae9f7067c561fe835e71ec43f9"
+        },
+        {
+          "artifact": "independent JavaScript verifier",
+          "sha256": "8121c3cfd5e970b0b41a50bb61807dad1388755412b221278968c34b87536ac4"
+        },
+        {
+          "artifact": "fifth-base completeness proof",
+          "sha256": "65be383913cfaaace50650334360f76e845489e1fdb56a649d7ca1edeff525a7"
+        },
+        {
+          "artifact": "f11 compact CNF smoke test",
+          "sha256": "4341c1d9ba4b293f79e48b7a094e757d0c09aa46024d67e9a6f4556f3d3c2388"
+        },
+        {
+          "artifact": "f11 variable map smoke test",
+          "sha256": "ff5b5f9df7c3364d79dcdf0942cc7ee58fb63a7d1911e7fa2ed4bb60da511f20"
+        }
+      ],
+      "limitations": "This evidence establishes only the exhaustive 12-child fifth-base cover. It resolves no child, does not change q00 case status, and does not promote the full theorem."
     }
   ]
 }
