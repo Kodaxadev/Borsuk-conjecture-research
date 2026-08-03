@@ -76,3 +76,11 @@ This package creates universal trim certificates only.
 - `q00r00` remains `UNKNOWN`.
 - `q00` remains `UNKNOWN`.
 - `n11-k6-full` remains Gate 2 / `OPEN`.
+
+## Execution binding and repository archive
+
+The governed child-trim package is bound to successful workflow run `30851783510`, job `91813267533`, source commit `aad27339d6e689afdb50dbb8c280a76230b915fc`, and artifact `q00r00-sixth-base-child-trims` (`8870872535`).
+
+The exact downloaded artifact ZIP is preserved at `evidence/artifacts/q00r00-sixth-base-child-trims-run-30851783510.zip` with SHA-256 `a1862053e19a4341b941e62181c180805fb59a7969241d473705635dd04d0505`, matching GitHub's artifact digest. Complete machine-readable provenance is recorded in `EXECUTION_BINDING.json`.
+
+This closes the trim-generation work unit without changing any child or parent mathematical status.

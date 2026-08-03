@@ -1,0 +1,66 @@
+{
+  "artifact": {
+    "created_at": "2026-08-03T20:47:29Z",
+    "downloaded_archive_sha256": "a1862053e19a4341b941e62181c180805fb59a7969241d473705635dd04d0505",
+    "downloaded_archive_sha256_verified": true,
+    "expired_when_archived": false,
+    "expires_at": "2026-11-01T20:47:07Z",
+    "github_digest": "sha256:a1862053e19a4341b941e62181c180805fb59a7969241d473705635dd04d0505",
+    "id": 8870872535,
+    "name": "q00r00-sixth-base-child-trims",
+    "repository_archive_path": "evidence/artifacts/q00r00-sixth-base-child-trims-run-30851783510.zip",
+    "size_in_bytes_compressed": 2025068
+  },
+  "certificates": {
+    "aggregate_manifest_sha256": "559f83e4eb245902b9ec1808812248694c7931a535213c45b50d7a89a461e5fa",
+    "archive_file_count": 184,
+    "canonical_checksum_manifest_sha256": "45e96e2b460d6f968ed664b06ec59adc6091040273acf9cfbc022d3a1586654c",
+    "child_count": 36,
+    "generated_file_count_before_comparison": 183,
+    "total_distance6_edges_across_children": 611145,
+    "total_incompatible_pairs_across_children": 178886,
+    "total_vertices_across_children": 10513
+  },
+  "claim_id": "n11-k6-q00r00-sixth-base-child-trims",
+  "evidence_state": [
+    "COMPUTATIONAL",
+    "DUAL_IMPLEMENTATION_REPRODUCED",
+    "CI_INDEPENDENTLY_REPRODUCED",
+    "EXECUTION_BOUND",
+    "WORKING"
+  ],
+  "job": {
+    "conclusion": "success",
+    "id": 91813267533,
+    "name": "generate-and-verify",
+    "steps": {
+      "Generate and independently verify all 36 trims": "success",
+      "Upload complete child-trim certificates": "success"
+    }
+  },
+  "mathematical_status": {
+    "n11-k6-full": "Gate 2 / OPEN",
+    "q00": "UNKNOWN",
+    "q00r00": "UNKNOWN",
+    "sixth_base_children": "UNKNOWN"
+  },
+  "parent_classification": {
+    "artifact_archive_sha256": "0f45e952cda60a47f01fb0a415de07438cc9bc32f3d4811c8d17ce1cb2982a7d",
+    "artifact_id": 8867349456,
+    "governed_head": "bb2fb6879805d1d7f024c67554dae4784ebab219",
+    "source_commit": "1cee54611bf414f7961cbdd43f5fc2b867b3230d",
+    "workflow_run_id": 30842512224
+  },
+  "schema": "borsuk-q00r00-sixth-base-child-trims-execution-binding-v1",
+  "source": {
+    "branch": "research/q00r00-sixth-base-child-trims",
+    "commit": "aad27339d6e689afdb50dbb8c280a76230b915fc"
+  },
+  "status": "PASS",
+  "workflow": {
+    "conclusion": "success",
+    "event": "push",
+    "name": "verify-q00r00-sixth-base-child-trims",
+    "run_id": 30851783510
+  }
+}
