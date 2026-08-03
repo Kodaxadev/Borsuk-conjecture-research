@@ -50,6 +50,30 @@ requires byte-for-byte agreement. It writes the complete `generated/orbits.json`
 `generated/stabilizer.json` certificates locally; CI uploads the regenerated directory as
 an immutable workflow artifact.
 
+## Execution binding
+
+The classification is bound to workflow run `30842512224`, successful job
+`classify` (`91782782478`), source commit
+`1cee54611bf414f7961cbdd43f5fc2b867b3230d`, and artifact
+`q00r00-sixth-base-classification` (`8867349456`).
+
+The downloaded archive SHA-256 is
+`0f45e952cda60a47f01fb0a415de07438cc9bc32f3d4811c8d17ce1cb2982a7d`,
+matching the GitHub artifact digest. See `EXECUTION_BINDING.json` for the complete
+machine-readable binding.
+
+Evidence state:
+
+```text
+COMPUTATIONAL / CI_INDEPENDENTLY_REPRODUCED / EXECUTION_BOUND / WORKING
+```
+
+## Next governed work
+
+The next work unit is generation and independent verification of the 36 compatible
+sixth-base child trims. See `NEXT_WORK_UNIT.md`. Classification is complete; solving or
+further refining the children is outside this package.
+
 ## Mathematical boundary
 
 This is a finite classification result for fixed base `q00r00`, not a coloring result.
