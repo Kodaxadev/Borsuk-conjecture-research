@@ -26,33 +26,55 @@ The package contains a structural proof, explicit coloring witnesses, and indepe
 
 The package contains an explicit 12-coloring of the universal even-weight cover and independent Python and JavaScript verification. It remains a candidate proof pending external mathematical and priority review.
 
-### n=11, k=6 attack surface
+### n=11, k=6 one-base attack surface
 
-The one-base normalization produces a canonical trim graph with 692 vertices and 104,606 exact-distance-6 edges. This is a universal cover for possible normalized components, not a legal diameter-6 set.
+The one-base normalization produces a canonical trim graph with:
+
+- 692 vertices;
+- 104,606 exact-distance-6 coloring edges;
+- 37,470 distance-greater-than-6 incompatibility pairs.
+
+This is a universal cover for possible normalized components, not a legal diameter-6 set.
 
 ### n=11, k=6 certified obstruction
 
 The canonical trim graph has a checked UNSAT certificate for 12-colorability. This proves that the one-base cover is too coarse. It does **not** disprove or settle the diameter-6 theorem target because the trim graph contains pairs farther than 6 apart.
 
-### n=11, k=6 branch-search scaffold
+### n=11, k=6 generic branch scaffold
 
-The root is independently regenerated with:
+The branch-search package independently regenerates both graph relations and verifies the exact rule that proof-checked UNSAT must branch on an incompatibility pair. Its first two root children remain `UNKNOWN` and are retained as a test of generic coverage-manifest infrastructure.
 
-- 692 vertices;
-- 104,606 exact-distance-6 coloring edges;
-- 37,470 distance-greater-than-6 incompatibility edges;
-- matching Python and JavaScript SHA-256 hashes.
+### n=11, k=6 four-base reduction
 
-The initial coverage manifest imports the root certified obstruction by claim reference and branches on the lexicographically first incompatibility edge `003--0fc`, whose Hamming distance is 8. The two 691-vertex children are recorded with verified vertex-set hashes and remain `UNKNOWN`.
+The preferred execution frontier is now smaller:
+
+- 5 third-vertex symmetry families;
+- 149 pointwise fourth-vertex orbits;
+- 101 intermediate cases after stabilizers of the selected metric triples;
+- 58 full unordered four-base isometry types;
+- trim sizes 436–612 vertices.
+
+The complete unordered-base invariant is the lexicographically least eight-entry coordinate-pattern multiplicity tuple over all four translation origins and all six labelings of the remaining three points. Equal tuples give an explicit affine cube isometry.
+
+Independent Python and JavaScript implementations agree on:
+
+```text
+intermediate 101: e60f5f81120e42c8c7eae2da299105e802266f6e92629cd6ac6ee24bcef9db19
+canonical 58:    08913feaddbc0f930b6ef90a1677fbc4577cb23dcb6f4dac8987e37056d34742
+```
+
+`case_status.json` currently records all 58 types as `UNKNOWN`.
 
 ## Current research frontier
 
-The next exact layer must resolve those two first-level child nodes and then continue recursively:
+Resolve the 58 canonical trim types:
 
-- a verified SAT coloring closes a node and every descendant;
-- a proof-checked UNSAT node must branch on a remaining distance-greater-than-6 pair;
+- a verified SAT coloring closes an entire isometry type and every descendant;
+- a proof-checked UNSAT trim must be refined by a fifth compatible base or an exact incompatibility branch;
 - a legal proof-checked UNSAT node is a counterexample candidate;
-- a timeout, crash, or missing certificate remains `UNKNOWN`.
+- timeout, crash, heuristic failure, or missing certificate remains `UNKNOWN`.
+
+The 101 intermediate cases remain the exhaustive coverage audit beneath the 58-type solver frontier.
 
 Full details are in [`K6-EXECUTION-PLAN.md`](K6-EXECUTION-PLAN.md).
 
@@ -60,7 +82,7 @@ Full details are in [`K6-EXECUTION-PLAN.md`](K6-EXECUTION-PLAN.md).
 
 No repository summary, paper draft, social post, or release should claim that the full dimension-11 Boolean-cube result is solved unless:
 
-1. the diameter-compatible k=6 coverage tree is complete;
+1. all 58 canonical k=6 types have complete diameter-compatible coverage;
 2. every SAT leaf has an independently checked coloring;
 3. every UNSAT branch has an independently checked proof trace;
 4. no branch remains `UNKNOWN`;
