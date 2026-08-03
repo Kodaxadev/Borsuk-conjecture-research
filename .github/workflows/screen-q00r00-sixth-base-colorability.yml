@@ -284,6 +284,20 @@ jobs:
             exit 1
           fi
           sha256sum "$proof" > "$result_dir/proof.sha256"
+          : > "$result_dir/empty-proof.drat"
+          set +e
+          "$PACKAGE/work/input/toolchain/drat-trim" "$cnf" "$result_dir/empty-proof.drat" \
+            >"$result_dir/negative-control.out" 2>"$result_dir/negative-control.err"
+          negative_status=$?
+          set -e
+          printf '%s\n' "$negative_status" > "$result_dir/negative-control.exit-status.txt"
+          cat "$result_dir/negative-control.out" "$result_dir/negative-control.err" | tr -d '\r' \
+            >"$result_dir/negative-control.normalized.txt"
+          if grep -Eq '^[[:space:]]*s VERIFIED[[:space:]]*$' "$result_dir/negative-control.normalized.txt"; then
+            echo 'empty proof negative control was accepted' >&2
+            exit 1
+          fi
+          rm -f "$result_dir/empty-proof.drat"
           gzip -1 "$proof"
 
       - name: Write bounded case result
@@ -315,6 +329,10 @@ jobs:
             --started "${STARTED:-UNKNOWN}" \
             --finished "${FINISHED:-UNKNOWN}" \
             --solver-limit-seconds "$SOLVER_LIMIT_SECONDS" \
+            --workflow-run-id "${{ github.run_id }}" \
+            --workflow-run-attempt "${{ github.run_attempt }}" \
+            --workflow-sha "${{ github.sha }}" \
+            --workflow-ref "${{ github.ref }}" \
             | tee "$result_dir/finalize.out"
 
       - name: Upload bounded case artifact
