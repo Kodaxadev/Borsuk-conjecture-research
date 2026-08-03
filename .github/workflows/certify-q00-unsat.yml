@@ -2,9 +2,9 @@ name: certify-q00-unsat
 
 on:
   workflow_dispatch:
-  push:
+  pull_request:
     branches:
-      - research-workspace-hardening
+      - main
     paths:
       - .github/workflows/certify-q00-unsat.yml
 
@@ -40,6 +40,7 @@ jobs:
           python scripts/cruthunas.py check --all
           python scripts/cruthunas.py adapters check
           python scripts/validate_cruthunas_transactions.py
+          python scripts/validate_cruthunas_observations.py
 
       - name: Regenerate and freeze exact q00 instance
         working-directory: borsuk_11_k6_four_base_reduction
@@ -155,10 +156,11 @@ jobs:
           negative_status=$?
           set -e
           rm -f "$work/q00-truncated-negative-control.drat"
-          if [ "$negative_status" -eq 0 ]; then
+          if grep -Eq 's VERIFIED|VERIFIED' "$work/negative-control.out" "$work/negative-control.err"; then
             echo 'truncated proof was unexpectedly accepted' >&2
             exit 1
           fi
+          echo "$negative_status" >"$work/negative-control.exit-status"
 
           python - "$work/certificate-result.json" <<'PY'
           import hashlib, json, os, sys
