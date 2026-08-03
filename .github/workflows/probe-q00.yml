@@ -1,15 +1,6 @@
-name: probe-q00
+name: probe-four-base-case
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - '.github/workflows/probe-q00.yml'
-      - 'borsuk_11_k6_four_base_reduction/**'
-      - 'cruthunas/**'
-      - 'research/claims.json'
-      - 'scripts/cruthunas.py'
-      - 'scripts/validate_cruthunas_transactions.py'
   workflow_dispatch:
     inputs:
       case_id:
@@ -20,6 +11,11 @@ on:
         description: Wall-clock solver limit in seconds, at most 900
         required: true
         default: '180'
+      produce_proof:
+        description: Generate a proof trace; use only for an intended UNSAT run
+        required: true
+        type: boolean
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -30,8 +26,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      CASE_ID: ${{ github.event_name == 'workflow_dispatch' && inputs.case_id || 'q00' }}
-      LIMIT_SECONDS: ${{ github.event_name == 'workflow_dispatch' && inputs.limit_seconds || '180' }}
+      CASE_ID: ${{ inputs.case_id }}
+      LIMIT_SECONDS: ${{ inputs.limit_seconds }}
+      PRODUCE_PROOF: ${{ inputs.produce_proof }}
       CRUTHUNAS_CLAIM_ID: n11-k6-four-base-reduction
     steps:
       - name: Checkout repository
@@ -66,6 +63,10 @@ jobs:
             echo "limit must be between 1 and 900 seconds" >&2
             exit 2
           fi
+          case "$PRODUCE_PROOF" in
+            true|false) ;;
+            *) echo "produce_proof must be true or false" >&2; exit 2 ;;
+          esac
 
       - name: Generate deterministic CNF
         working-directory: borsuk_11_k6_four_base_reduction
@@ -102,10 +103,15 @@ jobs:
           work="work/$CASE_ID"
           cnf="$work/${CASE_ID}_12color.cnf"
           proof="$work/${CASE_ID}.drat"
+          solver_args=("$cnf")
+          if [ "$PRODUCE_PROOF" = true ]; then
+            solver_args+=("$proof")
+          fi
+
           started="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           set +e
-          timeout --signal=TERM "$LIMIT_SECONDS" \
-            /tmp/kissat-4.0.0 "$cnf" "$proof" \
+          timeout --signal=TERM --kill-after=10s "$LIMIT_SECONDS" \
+            /tmp/kissat-4.0.0 "${solver_args[@]}" \
             >"$work/solver.out" 2>"$work/solver.err"
           solver_status=$?
           set -e
@@ -113,6 +119,7 @@ jobs:
 
           state=UNKNOWN
           invalid_model=0
+          partial_proof_discarded=false
           if [ "$solver_status" -eq 10 ]; then
             set +e
             python verify_model.py "$CASE_ID" "$work/solver.out" \
@@ -129,10 +136,15 @@ jobs:
             fi
           elif [ "$solver_status" -eq 20 ]; then
             state=UNSAT_UNVERIFIED
-            test -s "$proof" || state=UNKNOWN
+            if [ "$PRODUCE_PROOF" = true ] && [ ! -s "$proof" ]; then
+              state=UNKNOWN
+            fi
+          elif [ -s "$proof" ]; then
+            rm -f "$proof"
+            partial_proof_discarded=true
           fi
 
-          if [ -s "$proof" ]; then
+          if [ "$solver_status" -eq 20 ] && [ -s "$proof" ]; then
             gzip -9 "$proof"
           fi
 
@@ -140,6 +152,7 @@ jobs:
           export RESULT_STATE="$state"
           export STARTED_UTC="$started"
           export FINISHED_UTC="$finished"
+          export PARTIAL_PROOF_DISCARDED="$partial_proof_discarded"
           python - "$work/probe-result.json" <<'PY'
           import json, os, sys
           from pathlib import Path
@@ -150,8 +163,10 @@ jobs:
               'claim_id': os.environ['CRUTHUNAS_CLAIM_ID'],
               'cruthunas_state': 'PROBE_ONLY_NOT_REGISTERED_EVIDENCE',
               'limit_seconds': int(os.environ['LIMIT_SECONDS']),
+              'produce_proof': os.environ['PRODUCE_PROOF'] == 'true',
               'solver_exit_status': int(os.environ['SOLVER_STATUS']),
               'state': os.environ['RESULT_STATE'],
+              'partial_proof_discarded': os.environ['PARTIAL_PROOF_DISCARDED'] == 'true',
               'started_utc': os.environ['STARTED_UTC'],
               'finished_utc': os.environ['FINISHED_UTC'],
               'repository_status_changed': False,
