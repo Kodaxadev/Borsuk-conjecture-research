@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - .github/workflows/check-q00-proof-artifact-v4.yml
+      - scripts/drat_empty_clause_control.py
   workflow_dispatch:
 
 permissions:
@@ -55,72 +56,149 @@ jobs:
           run-id: ${{ env.SOURCE_RUN_ID }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Validate frozen instance and preserved proof
+      - name: Validate frozen source artifact
         run: |
           set -euo pipefail
+          result="$GITHUB_WORKSPACE/q00-check-result-v4"
+          mkdir -p "$result"
           test -s /tmp/q00-source/q00_12color.cnf
           test -s /tmp/q00-source/q00_variable_map.json
           test -s /tmp/q00-source/q00.drat
+          test -s /tmp/q00-source/artifact-index.json
           echo "$EXPECTED_CNF_SHA256  /tmp/q00-source/q00_12color.cnf" | sha256sum --check --strict
           echo "$EXPECTED_MAP_SHA256  /tmp/q00-source/q00_variable_map.json" | sha256sum --check --strict
           grep -Eq '^s UNSATISFIABLE' /tmp/q00-source/solver.out
+          sha256sum /tmp/q00-source/q00_12color.cnf \
+                    /tmp/q00-source/q00_variable_map.json \
+                    /tmp/q00-source/q00.drat \
+            | tee "$result/source-artifact-sha256.txt"
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          proof = Path('/tmp/q00-source/q00.drat')
+          index = json.loads(Path('/tmp/q00-source/artifact-index.json').read_text())
+          expected = index['files']['q00.drat']['sha256']
+          digest = hashlib.sha256()
+          with proof.open('rb') as handle:
+              for chunk in iter(lambda: handle.read(1024 * 1024), b''):
+                  digest.update(chunk)
+          actual = digest.hexdigest()
+          if actual != expected:
+              raise SystemExit(f'preserved proof hash mismatch: {actual} != {expected}')
+          print(f'preserved proof hash confirmed: {actual}')
+          PY
 
       - name: Build pinned drat-trim
         run: |
           set -euo pipefail
+          result="$GITHUB_WORKSPACE/q00-check-result-v4"
           rm -rf /tmp/drat-trim
           git clone --filter=blob:none https://github.com/marijnheule/drat-trim.git /tmp/drat-trim
           cd /tmp/drat-trim
           git checkout --detach "$DRAT_TRIM_REVISION"
           make -j2
           test -x drat-trim
-          mkdir -p "$GITHUB_WORKSPACE/q00-check-result"
-          git rev-parse HEAD | tee "$GITHUB_WORKSPACE/q00-check-result/checker-revision.txt"
-          sha256sum drat-trim | tee "$GITHUB_WORKSPACE/q00-check-result/checker-binary.sha256"
+          git rev-parse HEAD | tee "$result/checker-revision.txt"
+          sha256sum drat-trim | tee "$result/checker-binary.sha256"
+          printf 'drat-trim revision %s\n' "$DRAT_TRIM_REVISION" >"$result/checker-version.txt"
 
-      - name: Require exact VERIFIED verdict for full proof
+      - name: Create format-aware negative proof
         run: |
           set -euo pipefail
+          result="$GITHUB_WORKSPACE/q00-check-result-v4"
+          proof=/tmp/q00-source/q00.drat
+          bad=/tmp/q00-empty-clause-removed.drat
+          python scripts/drat_empty_clause_control.py \
+            "$proof" \
+            "$bad" \
+            "$result/negative-control.json" \
+            | tee "$result/negative-control-generation.out"
+          test -s "$bad"
+          python - "$result/negative-control.json" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          payload = json.loads(Path(sys.argv[1]).read_text())
+          if payload['empty_clause_addition_count'] < 1:
+              raise SystemExit('no empty-clause additions were found')
+          if payload['negative_proof_bytes'] != payload['truncation_offset']:
+              raise SystemExit('negative proof was not truncated at the first empty clause')
+          print(
+              'format-aware control:',
+              payload['proof_format'],
+              payload['empty_clause_addition_count'],
+              payload['truncation_offset'],
+          )
+          PY
+
+      - name: Check original proof
+        run: |
+          set -euo pipefail
+          result="$GITHUB_WORKSPACE/q00-check-result-v4"
           cnf=/tmp/q00-source/q00_12color.cnf
           proof=/tmp/q00-source/q00.drat
-          result="$GITHUB_WORKSPACE/q00-check-result"
-          /usr/bin/time -v /tmp/drat-trim/drat-trim "$cnf" "$proof" -v \
-            >"$result/checker.out" 2>"$result/checker.err"
-          tr -d '\r' <"$result/checker.out" >"$result/checker.normalized.out"
-          grep -Eq '^[[:space:]]*s VERIFIED[[:space:]]*$' "$result/checker.normalized.out"
-          if grep -Eq '^[[:space:]]*s NOT VERIFIED[[:space:]]*$' "$result/checker.normalized.out"; then
-            echo 'full proof produced contradictory checker verdicts' >&2
-            exit 1
-          fi
-
-      - name: Require exact NOT VERIFIED verdict for empty proof
-        run: |
-          set -euo pipefail
-          cnf=/tmp/q00-source/q00_12color.cnf
-          empty=/tmp/q00-empty-control.drat
-          result="$GITHUB_WORKSPACE/q00-check-result"
-          : >"$empty"
+          printf '%s\n' \
+            "/tmp/drat-trim/drat-trim $cnf $proof -v" \
+            >"$result/original-command.txt"
+          date -u +%Y-%m-%dT%H:%M:%SZ >"$result/original-started-utc.txt"
           set +e
-          /usr/bin/time -v /tmp/drat-trim/drat-trim "$cnf" "$empty" -v \
-            >"$result/negative-control.out" 2>"$result/negative-control.err"
-          negative_status=$?
+          /usr/bin/time -v -o "$result/original-time.txt" \
+            /tmp/drat-trim/drat-trim "$cnf" "$proof" -v \
+            >"$result/original.stdout" 2>"$result/original.stderr"
+          status=$?
           set -e
-          echo "$negative_status" >"$result/negative-control.exit-status"
-          test "$negative_status" -ne 0
-          tr -d '\r' <"$result/negative-control.out" >"$result/negative-control.normalized.out"
-          grep -Eq '^[[:space:]]*s NOT VERIFIED[[:space:]]*$' "$result/negative-control.normalized.out"
-          if grep -Eq '^[[:space:]]*s VERIFIED[[:space:]]*$' "$result/negative-control.normalized.out"; then
-            echo 'empty proof was accepted' >&2
+          date -u +%Y-%m-%dT%H:%M:%SZ >"$result/original-finished-utc.txt"
+          printf '%s\n' "$status" >"$result/original-exit-status.txt"
+          {
+            tr -d '\r' <"$result/original.stdout"
+            tr -d '\r' <"$result/original.stderr"
+          } >"$result/original.normalized.txt"
+          grep -Eq '^[[:space:]]*s VERIFIED[[:space:]]*$' "$result/original.normalized.txt"
+          if grep -Eq '^[[:space:]]*s NOT VERIFIED[[:space:]]*$' "$result/original.normalized.txt"; then
+            echo 'original proof produced s NOT VERIFIED' >&2
             exit 1
           fi
-          rm -f "$empty"
 
-      - name: Write checked-certificate metadata
+      - name: Check empty-clause-removed proof
         run: |
           set -euo pipefail
-          result="$GITHUB_WORKSPACE/q00-check-result"
+          result="$GITHUB_WORKSPACE/q00-check-result-v4"
+          cnf=/tmp/q00-source/q00_12color.cnf
+          bad=/tmp/q00-empty-clause-removed.drat
+          printf '%s\n' \
+            "/tmp/drat-trim/drat-trim $cnf $bad -v" \
+            >"$result/negative-command.txt"
+          date -u +%Y-%m-%dT%H:%M:%SZ >"$result/negative-started-utc.txt"
+          set +e
+          /usr/bin/time -v -o "$result/negative-time.txt" \
+            /tmp/drat-trim/drat-trim "$cnf" "$bad" -v \
+            >"$result/negative.stdout" 2>"$result/negative.stderr"
+          status=$?
+          set -e
+          date -u +%Y-%m-%dT%H:%M:%SZ >"$result/negative-finished-utc.txt"
+          printf '%s\n' "$status" >"$result/negative-exit-status.txt"
+          {
+            tr -d '\r' <"$result/negative.stdout"
+            tr -d '\r' <"$result/negative.stderr"
+          } >"$result/negative.normalized.txt"
+          if grep -Eq '^[[:space:]]*s VERIFIED[[:space:]]*$' "$result/negative.normalized.txt"; then
+            echo 'empty-clause-removed proof was unexpectedly verified' >&2
+            exit 1
+          fi
+          grep -Eq '^[[:space:]]*s NOT VERIFIED[[:space:]]*$' "$result/negative.normalized.txt"
+
+      - name: Write bounded certificate metadata
+        run: |
+          set -euo pipefail
+          result="$GITHUB_WORKSPACE/q00-check-result-v4"
           python - "$result/certificate-result.json" <<'PY'
-          import hashlib, json, os, sys
+          import hashlib
+          import json
+          import os
+          import sys
           from pathlib import Path
 
           def sha256(path: Path) -> str:
@@ -130,11 +208,10 @@ jobs:
                       digest.update(chunk)
               return digest.hexdigest()
 
-          source = Path('/tmp/q00-source')
           result = Path(sys.argv[1]).parent
-          proof = source / 'q00.drat'
+          control = json.loads((result / 'negative-control.json').read_text())
           payload = {
-              'schema': 'borsuk-proof-checked-unsat-result-v1',
+              'schema': 'borsuk-q00-frozen-cnf-unsat-certificate-v1',
               'case_id': 'q00',
               'claim_id': os.environ['CRUTHUNAS_CLAIM_ID'],
               'source_workflow_run_id': int(os.environ['SOURCE_RUN_ID']),
@@ -142,42 +219,63 @@ jobs:
               'source_artifact_digest': 'sha256:' + os.environ['SOURCE_ARTIFACT_DIGEST'],
               'cnf_sha256': os.environ['EXPECTED_CNF_SHA256'],
               'variable_map_sha256': os.environ['EXPECTED_MAP_SHA256'],
-              'proof_format': 'binary DRAT',
-              'proof_sha256': sha256(proof),
-              'proof_bytes': proof.stat().st_size,
+              'proof_format': control['proof_format'],
+              'proof_sha256': control['proof_sha256'],
+              'proof_bytes': control['proof_bytes'],
+              'empty_clause_addition_count': control['empty_clause_addition_count'],
+              'empty_clause_addition_offsets': control['empty_clause_addition_offsets'],
+              'negative_control_strategy': control['truncation_strategy'],
+              'negative_proof_sha256': control['negative_proof_sha256'],
+              'negative_proof_bytes': control['negative_proof_bytes'],
               'checker': 'drat-trim',
               'checker_revision': os.environ['DRAT_TRIM_REVISION'],
               'checker_binary_sha256': (result / 'checker-binary.sha256').read_text().split()[0],
-              'checker_output_sha256': sha256(result / 'checker.out'),
-              'checker_stderr_sha256': sha256(result / 'checker.err'),
-              'checker_verdict': 's VERIFIED',
-              'negative_control': 'empty proof',
-              'negative_control_exit_status': int((result / 'negative-control.exit-status').read_text()),
-              'negative_control_output_sha256': sha256(result / 'negative-control.out'),
-              'negative_control_stderr_sha256': sha256(result / 'negative-control.err'),
-              'negative_control_verdict': 's NOT VERIFIED',
+              'original_exit_status': int((result / 'original-exit-status.txt').read_text()),
+              'original_verdict': 's VERIFIED',
+              'original_stdout_sha256': sha256(result / 'original.stdout'),
+              'original_stderr_sha256': sha256(result / 'original.stderr'),
+              'original_time_sha256': sha256(result / 'original-time.txt'),
+              'negative_exit_status': int((result / 'negative-exit-status.txt').read_text()),
+              'negative_verdict': 's NOT VERIFIED',
+              'negative_stdout_sha256': sha256(result / 'negative.stdout'),
+              'negative_stderr_sha256': sha256(result / 'negative.stderr'),
+              'negative_time_sha256': sha256(result / 'negative-time.txt'),
               'certificate_state': 'PROOF_CHECKED_UNSAT',
-              'proof_check_tier': 'manual-heavy',
               'repository_status_changed': False,
               'cruthunas_evidence_registered': False,
               'case_status_changed': False,
-              'interpretation': 'The exact q00 compact trim CNF is proof-checked UNSAT. This is a scoped trim obstruction and not a legal diameter-6 theorem conclusion.',
-              'next_required_step': 'Register a dedicated q00 certificate claim and typed evidence, then construct exhaustive refinement children before changing case_status.json.',
+              'bounded_claim': (
+                  'The exact frozen q00 SAT encoding is UNSAT: Kissat produced '
+                  'the preserved DRAT proof and the pinned drat-trim binary '
+                  'returned s VERIFIED; the format-aware proof prefix ending '
+                  'before the first empty-clause addition returned s NOT VERIFIED.'
+              ),
+              'limitation': (
+                  'This establishes UNSAT only for the exact frozen CNF artifact. '
+                  'It does not establish the correctness of the encoding-to-Borsuk '
+                  'correspondence, resolve the legal diameter-6 q00 case, or alter '
+                  'the full n=11,k=6 theorem status.'
+              ),
           }
-          Path(sys.argv[1]).write_text(json.dumps(payload, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          Path(sys.argv[1]).write_text(
+              json.dumps(payload, indent=2, sort_keys=True) + '\n',
+              encoding='utf-8',
+          )
           PY
           sha256sum "$result"/* >"$result/result-sha256.txt"
+          rm -f /tmp/q00-empty-clause-removed.drat
 
       - name: Upload compact checked metadata
         uses: actions/upload-artifact@v4
         with:
           name: q00-proof-checked-metadata-v4
-          path: q00-check-result/
+          path: q00-check-result-v4/
           if-no-files-found: error
           retention-days: 90
 
       - name: Report bounded result
         run: |
-          echo 'Full q00 proof verdict: s VERIFIED'
-          echo 'Empty-proof control verdict: s NOT VERIFIED'
-          echo 'No claim, ledger, case status, or theorem gate changed.'
+          echo 'Original frozen q00 proof: s VERIFIED'
+          echo 'Format-aware empty-clause-removed proof: s NOT VERIFIED'
+          echo 'q00 remains UNKNOWN as a legal Borsuk case.'
+          echo 'n11-k6-full remains Gate 2; MATHEMATICAL; [UNCHECKED]; OPEN.'
