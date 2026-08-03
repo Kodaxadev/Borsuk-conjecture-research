@@ -6,12 +6,13 @@ This integration is deliberately marked **CR-0**. It is a working repository-loc
 
 ## Canonical records
 
-- `project.json` — framework state, gates, policies, and adapter locations.
+- `project.json` — framework state, gates, policies, adapter locations, and transaction plans.
 - `ledger.json` — current gate, epistemic class, verification state, and lifecycle state for every registered claim.
 - `sources.json` — source-document boundaries and permitted claim IDs.
 - `evidence.json` — typed evidence, paths, commands, environments, hashes, and limitations.
 - `transitions.json` — contiguous status histories; every Gate 3 → Gate 4 move is explicitly registered.
-- `schemas/` — typed evidence and transition schemas.
+- `transactions/` — serializable dry-run status-change plans.
+- `schemas/` — typed evidence, transition, and transaction schemas.
 - `skills/cruthunas-govern/SKILL.md` — canonical governance instructions.
 - `.claude/skills/...` and `.codex/skills/...` — generated adapters checked for drift.
 
@@ -25,6 +26,7 @@ python scripts/cruthunas.py check --changed
 python scripts/cruthunas.py status
 python scripts/cruthunas.py adapters sync
 python scripts/cruthunas.py adapters check
+python scripts/validate_cruthunas_transactions.py
 ```
 
 At CR-0, `check --changed` intentionally falls back to the complete governance check. This is slower but prevents an incomplete changed-file calculation from bypassing a cross-claim dependency or source-boundary violation.
@@ -48,7 +50,7 @@ The full `n11-k6-full` theorem target is intentionally held at:
 Gate 2; MATHEMATICAL; [UNCHECKED]; OPEN
 ```
 
-The checked reductions, search scaffolds, and root UNSAT certificate are separate Gate 4 claims. Their evidence does not automatically transfer to the full theorem claim.
+The checked reductions, search scaffolds, root UNSAT certificate, and deterministic SAT lane are separate Gate 4 claims or evidence records. Their evidence does not automatically transfer to the full theorem claim.
 
 ## Status-change procedure
 
@@ -65,6 +67,27 @@ A status change must be prepared as a serializable dry-run transaction before ed
 
 No freehand gate edits are permitted.
 
+## Bounded solver probes
+
+The q00–q57 workflow performs bounded exact solver probes only after Cruthúnas preflight passes. Its output is marked:
+
+```text
+PROBE_ONLY_NOT_REGISTERED_EVIDENCE
+```
+
+The workflow cannot alter `case_status.json`, `research/claims.json`, or the Cruthúnas ledger. A material SAT or UNSAT result must be preserved, hashed, independently checked, and registered through the normal evidence and transition process.
+
+## Known CR-0 limitations
+
+- Bootstrap `source_revision` values currently identify the active research branch. They should be replaced or supplemented by immutable commit or release hashes when the branch is frozen.
+- The JSON schemas document the intended record contracts, while the standard-library validators enforce the active repository rules. No external Cruthúnas conformance suite exists yet.
+- `check --changed` intentionally performs a full check rather than a minimal dependency-aware incremental calculation.
+- The adapter system currently targets Claude and Codex only.
+- No cryptographic signing, transparency log, external timestamping, or remote artifact registry is implemented.
+- No Gate 5 or Gate 6 claim exists in this repository.
+
+These limitations are reasons to retain the CR-0 label, not silent promises of future functionality.
+
 ## Trust boundary
 
-Cruthúnas checks repository coherence, including claim registration, dependency acyclicity, evidence typing, transition continuity, artifact existence, adapter synchronization, and support matching. It does not establish mathematical correctness, novelty, priority, or external acceptance.
+Cruthúnas checks repository coherence, including claim registration, dependency acyclicity, evidence typing, transition continuity, artifact existence, transaction consistency, adapter synchronization, and support matching. It does not establish mathematical correctness, novelty, priority, external acceptance, publication readiness, CR-1, or framework maturity.
