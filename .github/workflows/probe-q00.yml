@@ -6,6 +6,10 @@ on:
     paths:
       - '.github/workflows/probe-q00.yml'
       - 'borsuk_11_k6_four_base_reduction/**'
+      - 'cruthunas/**'
+      - 'research/claims.json'
+      - 'scripts/cruthunas.py'
+      - 'scripts/validate_cruthunas_transactions.py'
   workflow_dispatch:
     inputs:
       case_id:
@@ -17,6 +21,10 @@ on:
         required: true
         default: '180'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   exact-solver-probe:
     runs-on: ubuntu-latest
@@ -24,6 +32,7 @@ jobs:
     env:
       CASE_ID: ${{ github.event_name == 'workflow_dispatch' && inputs.case_id || 'q00' }}
       LIMIT_SECONDS: ${{ github.event_name == 'workflow_dispatch' && inputs.limit_seconds || '180' }}
+      CRUTHUNAS_CLAIM_ID: n11-k6-four-base-reduction
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -32,6 +41,12 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
+      - name: Validate Cruthúnas governance
+        run: |
+          python scripts/cruthunas.py check --all
+          python scripts/cruthunas.py adapters check
+          python scripts/validate_cruthunas_transactions.py
 
       - name: Validate requested inputs
         run: |
@@ -132,6 +147,8 @@ jobs:
           path.write_text(json.dumps({
               'schema': 'borsuk-bounded-solver-probe-v1',
               'case_id': os.environ['CASE_ID'],
+              'claim_id': os.environ['CRUTHUNAS_CLAIM_ID'],
+              'cruthunas_state': 'PROBE_ONLY_NOT_REGISTERED_EVIDENCE',
               'limit_seconds': int(os.environ['LIMIT_SECONDS']),
               'solver_exit_status': int(os.environ['SOLVER_STATUS']),
               'state': os.environ['RESULT_STATE'],
@@ -170,6 +187,8 @@ jobs:
           Path(sys.argv[1]).write_text(json.dumps({
               'schema': 'borsuk-probe-artifact-index-v1',
               'case_id': os.environ['CASE_ID'],
+              'claim_id': os.environ['CRUTHUNAS_CLAIM_ID'],
+              'cruthunas_state': 'PROBE_ONLY_NOT_REGISTERED_EVIDENCE',
               'solver_report': sys.argv[2],
               'files': files,
               'repository_status_changed': False,
