@@ -113,26 +113,27 @@
       ],
       "limitations": [
         "Both first-level child nodes remain UNKNOWN.",
-        "The package establishes search correctness infrastructure, not a complete diameter-6 proof.",
+        "The package establishes generic search correctness infrastructure, not the preferred compressed execution frontier.",
         "The root UNSAT state is linked to the existing certified obstruction claim rather than duplicating its proof trace."
       ],
       "public_claim_allowed": true
     },
     {
       "id": "n11-k6-four-base-reduction",
-      "title": "Exhaustive 101-case four-base reduction for n=11, k=6",
+      "title": "Exhaustive 58-type four-base reduction for n=11, k=6",
       "type": "symmetry-reduction",
       "status": "attack-surface",
       "package": "borsuk_11_k6_four_base_reduction",
-      "claim": "Every normalized diameter-6 component with at least four vertices is contained in one of 101 canonical four-base trims, while smaller components are trivially 12-colorable.",
+      "claim": "Every normalized diameter-6 component with at least four vertices is contained in one of 58 canonical four-base trim types, while smaller components are trivially 12-colorable.",
       "evidence_commands": [
         "cd borsuk_11_k6_four_base_reduction && python generate_cases.py",
-        "cd borsuk_11_k6_four_base_reduction && node verify_independent.js"
+        "cd borsuk_11_k6_four_base_reduction && node verify_independent.js",
+        "cd borsuk_11_k6_four_base_reduction && python verify_status.py"
       ],
       "limitations": [
-        "The 101 trims have not yet been resolved by certified SAT or UNSAT results.",
+        "All 58 trim types remain UNKNOWN at certificate level.",
         "Each trim may contain pairs farther than 6 apart and is therefore a cover rather than a legal theorem instance.",
-        "The reduction narrows the exhaustive search but does not settle the diameter-6 case."
+        "The 101 intermediate cases are retained as the exhaustive audit layer beneath the 58-type solver frontier."
       ],
       "public_claim_allowed": true
     },
@@ -151,7 +152,7 @@
       ],
       "evidence_commands": [],
       "limitations": [
-        "All 101 canonical four-base trims remain unresolved at certificate level; no complete diameter-compatible coverage proof exists."
+        "All 58 canonical four-base trim types remain UNKNOWN; no complete diameter-compatible coverage proof exists."
       ],
       "public_claim_allowed": false
     }
