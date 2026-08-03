@@ -100,19 +100,39 @@
       "public_claim_allowed": true
     },
     {
+      "id": "n11-k6-branch-search-scaffold",
+      "title": "Certificate-producing branch-search scaffold for n=11, k=6",
+      "type": "search-infrastructure",
+      "status": "attack-surface",
+      "package": "borsuk_11_k6_branch_search",
+      "claim": "The canonical root, exact-distance graph, incompatibility graph, first valid branch, and initial coverage manifest are independently reproducible.",
+      "evidence_commands": [
+        "cd borsuk_11_k6_branch_search && python generate_root.py --write-report root_report.json",
+        "cd borsuk_11_k6_branch_search && node verify_root_independent.js",
+        "cd borsuk_11_k6_branch_search && python verify_manifest.py"
+      ],
+      "limitations": [
+        "Both first-level child nodes remain UNKNOWN.",
+        "The package establishes search correctness infrastructure, not a complete diameter-6 proof.",
+        "The root UNSAT state is linked to the existing certified obstruction claim rather than duplicating its proof trace."
+      ],
+      "public_claim_allowed": true
+    },
+    {
       "id": "n11-k6-full",
       "title": "Full n=11, k=6 Boolean-cube Borsuk subcase",
       "type": "theorem-target",
       "status": "open",
-      "package": "borsuk_11_k6_attack_surface",
+      "package": "borsuk_11_k6_branch_search",
       "claim": "Every diameter-6 subset of the 11-dimensional Boolean cube can be partitioned into at most 12 subsets of smaller diameter.",
       "depends_on": [
         "n11-k6-trim-attack-surface",
-        "n11-k6-trim-unsat"
+        "n11-k6-trim-unsat",
+        "n11-k6-branch-search-scaffold"
       ],
       "evidence_commands": [],
       "limitations": [
-        "No complete diameter-compatible branch covering and certificate manifest currently exists."
+        "The initial coverage manifest has two UNKNOWN leaves and no complete diameter-compatible branch proof."
       ],
       "public_claim_allowed": false
     }
