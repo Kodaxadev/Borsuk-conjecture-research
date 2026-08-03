@@ -1,0 +1,273 @@
+name: finalize-q00-proof-certificate
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/finalize-q00-proof-certificate.yml
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: finalize-q00-proof-certificate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  finalize-certificate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SOURCE_RUN_ID: 30822622138
+      SOURCE_ARTIFACT_ID: 8859778824
+      SOURCE_ARTIFACT_DIGEST: e75f4a6571a22bef7f686ec6f91037f17598fecf19872d1c085113f706be2351
+      EXPECTED_CNF_SHA256: 36da8f78ae376b370f119d1fa16a58f6504607d949ac8315648fdbda52450299
+      EXPECTED_MAP_SHA256: 5f94c619b6a5996c54f269a88de5bfaff042e4c855ea8543869b84009c7dae45
+      EXPECTED_PROOF_SHA256: 59bf62a00d0c63b5ced7967c33421d953af5b96e423cc93dc862e595d08561b5
+      EXPECTED_CHECKER_SHA256: 92f0aa9575ed519d66a99b8b1b3dde6ece4618ae4c202a3a4b200265dda0aa7a
+      DRAT_TRIM_REVISION: 2e3b2dc0ecf938addbd779d42877b6ed69d9a985
+      CRUTHUNAS_CLAIM_ID: n11-k6-four-base-reduction
+
+    steps:
+      - name: Checkout governed branch
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate Cruthúnas governance
+        run: |
+          set -euo pipefail
+          python scripts/cruthunas.py check --all
+          python scripts/cruthunas.py adapters check
+          python scripts/validate_cruthunas_transactions.py
+          python scripts/validate_cruthunas_observations.py
+
+      - name: Download preserved proof-producing run
+        uses: actions/download-artifact@v4
+        with:
+          name: q00-certificate-attempt
+          path: /tmp/q00-source
+          repository: Kodaxadev/Borsuk-conjecture-research
+          run-id: ${{ env.SOURCE_RUN_ID }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate source artifact and positive checker record
+        run: |
+          set -euo pipefail
+          source=/tmp/q00-source
+          result="$GITHUB_WORKSPACE/q00-final"
+          mkdir -p "$result"
+          test -s "$source/q00_12color.cnf"
+          test -s "$source/q00_variable_map.json"
+          test -s "$source/q00.drat"
+          test -s "$source/checker.out"
+          test -s "$source/checker.err"
+          echo "$EXPECTED_CNF_SHA256  $source/q00_12color.cnf" | sha256sum --check --strict
+          echo "$EXPECTED_MAP_SHA256  $source/q00_variable_map.json" | sha256sum --check --strict
+          echo "$EXPECTED_PROOF_SHA256  $source/q00.drat" | sha256sum --check --strict
+          test "$(cat "$source/checker-revision.txt" | tr -d '[:space:]')" = "$DRAT_TRIM_REVISION"
+          test "$(awk '{print $1}' "$source/checker-binary.sha256")" = "$EXPECTED_CHECKER_SHA256"
+          grep -Eq '^s UNSATISFIABLE([[:space:]]|$)' "$source/solver.out"
+          cat "$source/checker.out" "$source/checker.err" | tr -d '\r' >"$result/positive-checker.combined.txt"
+          grep -Eq '^[[:space:]]*s VERIFIED[[:space:]]*$' "$result/positive-checker.combined.txt"
+          if grep -Eq '^[[:space:]]*s NOT VERIFIED[[:space:]]*$' "$result/positive-checker.combined.txt"; then
+            echo 'preserved positive check contains NOT VERIFIED' >&2
+            exit 1
+          fi
+          grep -E '^[[:space:]]*s (NOT )?VERIFIED[[:space:]]*$' "$result/positive-checker.combined.txt"
+
+      - name: Build the identical pinned checker
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/drat-trim
+          git clone --filter=blob:none https://github.com/marijnheule/drat-trim.git /tmp/drat-trim
+          cd /tmp/drat-trim
+          git checkout --detach "$DRAT_TRIM_REVISION"
+          make -j2
+          test -x drat-trim
+          test "$(sha256sum drat-trim | awk '{print $1}')" = "$EXPECTED_CHECKER_SHA256"
+          git rev-parse HEAD | tee "$GITHUB_WORKSPACE/q00-final/checker-revision.txt"
+          sha256sum drat-trim | tee "$GITHUB_WORKSPACE/q00-final/checker-binary.sha256"
+
+      - name: Remove every binary empty-clause addition
+        run: |
+          set -euo pipefail
+          python - /tmp/q00-source/q00.drat /tmp/q00-no-empty.drat "$GITHUB_WORKSPACE/q00-final/negative-control-mutation.json" <<'PY'
+          import hashlib
+          import json
+          import sys
+          from pathlib import Path
+
+          source = Path(sys.argv[1])
+          destination = Path(sys.argv[2])
+          report = Path(sys.argv[3])
+          data = source.read_bytes()
+          output = bytearray()
+          offset = 0
+          records = 0
+          removed = 0
+
+          while offset < len(data):
+              start = offset
+              operation = data[offset]
+              offset += 1
+              if operation not in (0x61, 0x64):
+                  raise SystemExit(f'invalid binary DRAT operation 0x{operation:02x} at byte {start}')
+              literals = 0
+              while True:
+                  if offset >= len(data):
+                      raise SystemExit(f'truncated binary DRAT record at byte {start}')
+                  byte = data[offset]
+                  offset += 1
+                  if byte == 0:
+                      break
+                  literals += 1
+                  while byte & 0x80:
+                      if offset >= len(data):
+                          raise SystemExit(f'truncated binary DRAT varint at byte {start}')
+                      byte = data[offset]
+                      offset += 1
+              records += 1
+              if operation == 0x61 and literals == 0:
+                  removed += 1
+              else:
+                  output.extend(data[start:offset])
+
+          if removed < 1:
+              raise SystemExit('no empty-clause additions found')
+          destination.write_bytes(output)
+          payload = {
+              'schema': 'binary-drat-negative-control-v1',
+              'records': records,
+              'empty_clause_additions_removed': removed,
+              'source_bytes': len(data),
+              'mutated_bytes': len(output),
+              'source_sha256': hashlib.sha256(data).hexdigest(),
+              'mutated_sha256': hashlib.sha256(output).hexdigest(),
+          }
+          report.write_text(json.dumps(payload, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          print(json.dumps(payload, sort_keys=True))
+          PY
+          test -s /tmp/q00-no-empty.drat
+
+      - name: Require rejection of the damaged proof
+        run: |
+          set -uo pipefail
+          result="$GITHUB_WORKSPACE/q00-final"
+          set +e
+          /usr/bin/time -v /tmp/drat-trim/drat-trim \
+            /tmp/q00-source/q00_12color.cnf /tmp/q00-no-empty.drat -v \
+            >"$result/negative-checker.out" 2>"$result/negative-checker.err"
+          checker_status=$?
+          set -e
+          echo "$checker_status" >"$result/negative-checker.exit-status"
+          cat "$result/negative-checker.out" "$result/negative-checker.err" | tr -d '\r' \
+            >"$result/negative-checker.combined.txt"
+          grep -E '^[[:space:]]*s (NOT )?VERIFIED[[:space:]]*$' "$result/negative-checker.combined.txt" || true
+          if grep -Eq '^[[:space:]]*s VERIFIED[[:space:]]*$' "$result/negative-checker.combined.txt"; then
+            echo 'damaged proof was accepted' >&2
+            exit 1
+          fi
+          if [ "$checker_status" -eq 0 ]; then
+            echo 'damaged proof checker unexpectedly returned success' >&2
+            exit 1
+          fi
+          grep -Eq '^[[:space:]]*s NOT VERIFIED[[:space:]]*$' "$result/negative-checker.combined.txt"
+          rm -f /tmp/q00-no-empty.drat
+
+      - name: Write certificate metadata
+        run: |
+          set -euo pipefail
+          python - "$GITHUB_WORKSPACE/q00-final/certificate-result.json" <<'PY'
+          import hashlib
+          import json
+          import os
+          import sys
+          from pathlib import Path
+
+          def sha256(path: Path) -> str:
+              digest = hashlib.sha256()
+              with path.open('rb') as handle:
+                  for chunk in iter(lambda: handle.read(1024 * 1024), b''):
+                      digest.update(chunk)
+              return digest.hexdigest()
+
+          source = Path('/tmp/q00-source')
+          result = Path(sys.argv[1]).parent
+          mutation = json.loads((result / 'negative-control-mutation.json').read_text())
+          payload = {
+              'schema': 'borsuk-proof-checked-unsat-result-v1',
+              'case_id': 'q00',
+              'claim_id': os.environ['CRUTHUNAS_CLAIM_ID'],
+              'source_workflow_run_id': int(os.environ['SOURCE_RUN_ID']),
+              'source_artifact_id': int(os.environ['SOURCE_ARTIFACT_ID']),
+              'source_artifact_digest': 'sha256:' + os.environ['SOURCE_ARTIFACT_DIGEST'],
+              'cnf_sha256': os.environ['EXPECTED_CNF_SHA256'],
+              'variable_map_sha256': os.environ['EXPECTED_MAP_SHA256'],
+              'proof_format': 'binary DRAT',
+              'proof_sha256': os.environ['EXPECTED_PROOF_SHA256'],
+              'proof_bytes': (source / 'q00.drat').stat().st_size,
+              'checker': 'drat-trim',
+              'checker_revision': os.environ['DRAT_TRIM_REVISION'],
+              'checker_binary_sha256': os.environ['EXPECTED_CHECKER_SHA256'],
+              'positive_verdict': 's VERIFIED',
+              'negative_verdict': 's NOT VERIFIED',
+              'negative_checker_exit_status': int((result / 'negative-checker.exit-status').read_text()),
+              'empty_clause_additions_removed': mutation['empty_clause_additions_removed'],
+              'certificate_state': 'PROOF_CHECKED_UNSAT',
+              'proof_check_tier': 'manual-heavy',
+              'repository_status_changed': False,
+              'cruthunas_evidence_registered': False,
+              'case_status_changed': False,
+              'interpretation': 'The exact q00 compact trim CNF is proof-checked UNSAT. This is a scoped trim obstruction, not a legal diameter-6 theorem conclusion.',
+              'next_required_step': 'Register typed q00 certificate evidence and construct exhaustive compatible refinements before changing case_status.json.',
+          }
+          Path(sys.argv[1]).write_text(json.dumps(payload, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          PY
+          sha256sum "$GITHUB_WORKSPACE/q00-final"/* >"$GITHUB_WORKSPACE/q00-final/result-sha256.txt"
+
+      - name: Compress certificate proof
+        run: |
+          set -euo pipefail
+          gzip -9 -c /tmp/q00-source/q00.drat > /tmp/q00.drat.gz
+          sha256sum /tmp/q00.drat.gz | tee "$GITHUB_WORKSPACE/q00-final/compressed-proof.sha256"
+          stat -c '%s' /tmp/q00.drat.gz | tee "$GITHUB_WORKSPACE/q00-final/compressed-proof.bytes"
+
+      - name: Upload checked metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: q00-proof-checked-metadata-final
+          path: q00-final/
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Upload compressed proof bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: q00-proof-checked-certificate-final
+          path: |
+            /tmp/q00.drat.gz
+            /tmp/q00-source/q00_12color.cnf
+            /tmp/q00-source/q00_variable_map.json
+            q00-final/certificate-result.json
+            q00-final/positive-checker.combined.txt
+            q00-final/negative-checker.combined.txt
+            q00-final/negative-checker.exit-status
+            q00-final/negative-control-mutation.json
+            q00-final/checker-revision.txt
+            q00-final/checker-binary.sha256
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+
+      - name: Report scoped result
+        run: |
+          echo 'q00 compact trim proof: s VERIFIED'
+          echo 'q00 proof with all empty clauses removed: s NOT VERIFIED'
+          echo 'No claim, case status, ledger, or theorem gate changed.'
