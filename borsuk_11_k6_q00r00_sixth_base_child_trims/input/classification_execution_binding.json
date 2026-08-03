@@ -1,0 +1,75 @@
+{
+  "artifact": {
+    "archive_sha256": "0f45e952cda60a47f01fb0a415de07438cc9bc32f3d4811c8d17ce1cb2982a7d",
+    "created_at": "2026-08-03T18:43:13Z",
+    "downloaded_archive_sha256_verified": true,
+    "expired": false,
+    "expires_at": "2026-11-01T18:43:01Z",
+    "id": 8867349456,
+    "members": {
+      "SHA256SUMS": {
+        "size_bytes": 423
+      },
+      "child_manifest.csv": {
+        "sha256": "180e8398807c95478ac7cb62262758314a9c49270a487de0370f384dff39efb5",
+        "size_bytes": 1229
+      },
+      "classification.json": {
+        "sha256": "ba6e09a0ae0125323dab047c1b2cd6dc98359e366141d36e3afbac3c1c2b2bbb",
+        "size_bytes": 1815
+      },
+      "compatible_candidates.txt": {
+        "sha256": "67b1aa6542de0af7db525681e1a0cbfbfe6e56e3cb56c781e09708b41fdcff80",
+        "size_bytes": 1316
+      },
+      "orbits.json": {
+        "sha256": "40b23c5c7c726a0526c501aa8b783c5b086d71fd2ffd7c7a3041b235293db1de",
+        "size_bytes": 207639
+      },
+      "stabilizer.json": {
+        "sha256": "93145769f74924b2ff823adbe6f3b2bf8886bb7165c5c5fbb644b1e0f079c33d",
+        "size_bytes": 11079
+      }
+    },
+    "name": "q00r00-sixth-base-classification",
+    "size_in_bytes_compressed": 10904,
+    "size_in_bytes_uncompressed": 223501
+  },
+  "classification": {
+    "canonical_sixth_base_cases": 36,
+    "compatible_candidates": 329,
+    "pointwise_negative_control_cases": 222,
+    "unordered_stabilizer_order": 24
+  },
+  "claim_id": "n11-k6-q00r00-sixth-base-classification",
+  "evidence_state": [
+    "COMPUTATIONAL",
+    "CI_INDEPENDENTLY_REPRODUCED",
+    "EXECUTION_BOUND",
+    "WORKING"
+  ],
+  "job": {
+    "conclusion": "success",
+    "id": 91782782478,
+    "name": "classify",
+    "steps": {
+      "Independently reproduce classification": "success",
+      "Upload complete certificates": "success"
+    }
+  },
+  "mathematical_status": {
+    "n11-k6-full": "Gate 2 / OPEN",
+    "q00": "UNKNOWN",
+    "q00r00": "UNKNOWN",
+    "sixth_base_children": "UNKNOWN"
+  },
+  "schema": "borsuk-q00r00-sixth-base-execution-binding-v1",
+  "source": {
+    "branch": "research/q00r00-sixth-base-refinement",
+    "commit": "1cee54611bf414f7961cbdd43f5fc2b867b3230d"
+  },
+  "status": "PASS",
+  "workflow": {
+    "run_id": 30842512224
+  }
+}
