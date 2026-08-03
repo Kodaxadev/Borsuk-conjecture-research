@@ -8,11 +8,29 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
-from generate_cases import EXPECTED_CSV_SHA256, generate, render_csv
+from generate_cases import (
+    EXPECTED_CANONICAL_CSV_SHA256,
+    canonical_classes,
+    generate_raw_cases,
+    render_csv,
+)
 
 PACKAGE = Path(__file__).resolve().parent
 STATUS_PATH = PACKAGE / "case_status.json"
 ALLOWED_STATES = {"UNKNOWN", "SAT_CLOSED", "UNSAT_REFINED", "LEGAL_UNSAT"}
+CANONICAL_FIELDS = [
+    "id",
+    "representative_case",
+    "members",
+    "member_count",
+    "B",
+    "C",
+    "vertices",
+    "exact_distance_edges",
+    "incompatible_pairs",
+    "vertex_sha256",
+    "base_signature",
+]
 
 
 def fail(errors: list[str], message: str) -> None:
@@ -29,14 +47,15 @@ def main() -> int:
     data = json.loads(STATUS_PATH.read_text(encoding="utf-8"))
     errors: list[str] = []
 
-    cases, _ = generate()
+    raw_cases, _ = generate_raw_cases()
+    cases = canonical_classes(raw_cases)
     case_ids = {str(case["id"]) for case in cases}
-    case_csv = render_csv(cases)
+    case_csv = render_csv(cases, CANONICAL_FIELDS)
     actual_hash = hashlib.sha256(case_csv.encode("ascii")).hexdigest()
 
     if data.get("schema_version") != 1:
         fail(errors, "schema_version must equal 1")
-    if actual_hash != EXPECTED_CSV_SHA256:
+    if actual_hash != EXPECTED_CANONICAL_CSV_SHA256:
         fail(errors, f"generator case-list hash changed: {actual_hash}")
     if data.get("case_list_sha256") != actual_hash:
         fail(errors, "case_status.json does not target the generated case list")
@@ -90,7 +109,7 @@ def main() -> int:
             print(f"- {error}", file=sys.stderr)
         return 1
 
-    print(f"Case status OK: {len(case_ids)} canonical cases")
+    print(f"Case status OK: {len(case_ids)} canonical trim types")
     for state in sorted(ALLOWED_STATES):
         print(f"- {state}: {states[state]}")
     if states["UNKNOWN"] > 0:
