@@ -177,6 +177,26 @@
         "The proof bundle is currently retained as a time-limited GitHub Actions artifact; durable archival remains pending."
       ],
       "public_claim_allowed": true
+    },
+    {
+      "id": "n11-k6-q00-five-base-reduction",
+      "title": "Exhaustive 12-type five-base reduction beneath q00",
+      "type": "symmetry-reduction",
+      "status": "open",
+      "package": "borsuk_11_k6_q00_five_base_reduction",
+      "claim": "Every legal q00 component with at least five vertices is contained in one of 12 canonical unordered five-base trims; smaller components are trivially 12-colorable.",
+      "depends_on": [
+        "n11-k6-four-base-reduction",
+        "n11-k6-q00-trim-unsat"
+      ],
+      "evidence_commands": [],
+      "limitations": [
+        "All 12 five-base child trims remain UNKNOWN.",
+        "The child trims remain universal covers and may contain pairs farther than Hamming distance 6.",
+        "This reduction does not close q00 or change the parent 58-type case status.",
+        "This reduction does not promote the full n=11,k=6 theorem target."
+      ],
+      "public_claim_allowed": false
     }
   ]
 }

@@ -308,6 +308,48 @@
         }
       ],
       "limitations": "This certificate proves UNSAT only for the q00 universal trim CNF. It does not settle a legal diameter-6 instance, q00 refinement, or the full theorem; the Actions proof artifact expires on 2026-11-01 unless archived durably."
+    },
+    {
+      "id": "E-K6-Q00-FIVE-BASE",
+      "claim_id": "n11-k6-q00-five-base-reduction",
+      "type": "SYMMETRY_REDUCTION",
+      "epistemic_class": "HYBRID",
+      "verification_state": "INDEPENDENTLY_REPRODUCED",
+      "paths": [
+        "borsuk_11_k6_q00_five_base_reduction/README.md",
+        "borsuk_11_k6_q00_five_base_reduction/PROOF.md",
+        "borsuk_11_k6_q00_five_base_reduction/generate_cases.py",
+        "borsuk_11_k6_q00_five_base_reduction/verify_independent.js",
+        "borsuk_11_k6_q00_five_base_reduction/case_status.json",
+        "borsuk_11_k6_q00_five_base_reduction/verify_status.py"
+      ],
+      "commands": [
+        "cd borsuk_11_k6_q00_five_base_reduction && python generate_cases.py",
+        "cd borsuk_11_k6_q00_five_base_reduction && node verify_independent.js",
+        "cd borsuk_11_k6_q00_five_base_reduction && python verify_status.py"
+      ],
+      "environment": {
+        "python": "3.11 standard library",
+        "node": "22 standard library",
+        "arithmetic": "exact integer enumeration"
+      },
+      "source_revision": "014378581f5a24ad8b7cc9748411c0ed0aad9105",
+      "clean_room_verifier": true,
+      "artifact_hashes": [
+        {
+          "artifact": "canonical 12-type case CSV",
+          "sha256": "d5b0825cd8645af2c595b3de3c851360e0b283d8ce61383482f76168e1ae9855"
+        },
+        {
+          "artifact": "complete fifth-vertex assignment",
+          "sha256": "6c94923a260290d59727bdcad68293b7f1962a7c5377885dd536fefa5962ffc7"
+        },
+        {
+          "artifact": "parent q00 compact CNF certificate dependency",
+          "sha256": "36da8f78ae376b370f119d1fa16a58f6504607d949ac8315648fdbda52450299"
+        }
+      ],
+      "limitations": "The reduction is exhaustive for five-point extensions of q00 but provides no SAT or UNSAT conclusion for any of the 12 child trims and no theorem-level promotion."
     }
   ]
 }
