@@ -6,17 +6,28 @@ This integration is deliberately marked **CR-0**. It is a working repository-loc
 
 ## Canonical records
 
-- `project.json` — framework state, gates, policies, adapter locations, and transaction plans.
+- `project.json` — framework state, gates, policies, adapter locations, observation registry, and transaction plans.
 - `ledger.json` — current gate, epistemic class, verification state, and lifecycle state for every registered claim.
 - `sources.json` — source-document boundaries and permitted claim IDs.
 - `evidence.json` — typed evidence, paths, commands, environments, hashes, and limitations.
+- `observations.json` — explicitly non-evidentiary probes, benchmarks, negative controls, and heuristic records.
 - `transitions.json` — contiguous status histories; every Gate 3 → Gate 4 move is explicitly registered.
 - `transactions/` — serializable dry-run status-change plans.
-- `schemas/` — typed evidence, transition, and transaction schemas.
+- `schemas/` — typed evidence, observation, transition, and transaction schemas.
 - `skills/cruthunas-govern/SKILL.md` — canonical governance instructions.
 - `.claude/skills/...` and `.codex/skills/...` — generated adapters checked for drift.
 
 `research/claims.json` remains the mathematical claim registry. Cruthúnas governs how those claims are supported and promoted.
+
+## Three record classes
+
+Cruthúnas keeps three materially different things separate:
+
+1. **Claims** — statements whose scope and status must be governed.
+2. **Evidence** — independently checkable support that may justify a gate transition.
+3. **Observations** — useful run history that carries no evidentiary weight and cannot change status.
+
+A timeout, partial proof, heuristic failure, benchmark, or bounded unresolved probe belongs in observations. It must not be smuggled into the ledger as evidence.
 
 ## Commands
 
@@ -27,6 +38,7 @@ python scripts/cruthunas.py status
 python scripts/cruthunas.py adapters sync
 python scripts/cruthunas.py adapters check
 python scripts/validate_cruthunas_transactions.py
+python scripts/validate_cruthunas_observations.py
 ```
 
 At CR-0, `check --changed` intentionally falls back to the complete governance check. This is slower but prevents an incomplete changed-file calculation from bypassing a cross-claim dependency or source-boundary violation.
@@ -75,6 +87,8 @@ The q00–q57 workflow performs bounded exact solver probes only after Cruthúna
 PROBE_ONLY_NOT_REGISTERED_EVIDENCE
 ```
 
+The first q00 Kissat 4.0.0 probe exhausted its 180-second limit and remains `UNKNOWN`. Its partial proof is not a certificate. It is registered in `observations.json` so future work can avoid repeating the same unproductive run without giving that timeout any evidentiary weight.
+
 The workflow cannot alter `case_status.json`, `research/claims.json`, or the Cruthúnas ledger. A material SAT or UNSAT result must be preserved, hashed, independently checked, and registered through the normal evidence and transition process.
 
 ## Known CR-0 limitations
@@ -90,4 +104,4 @@ These limitations are reasons to retain the CR-0 label, not silent promises of f
 
 ## Trust boundary
 
-Cruthúnas checks repository coherence, including claim registration, dependency acyclicity, evidence typing, transition continuity, artifact existence, transaction consistency, adapter synchronization, and support matching. It does not establish mathematical correctness, novelty, priority, external acceptance, publication readiness, CR-1, or framework maturity.
+Cruthúnas checks repository coherence, including claim registration, dependency acyclicity, evidence typing, observation separation, transition continuity, artifact existence, transaction consistency, adapter synchronization, and support matching. It does not establish mathematical correctness, novelty, priority, external acceptance, publication readiness, CR-1, or framework maturity.
