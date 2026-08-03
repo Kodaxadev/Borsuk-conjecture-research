@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "updated": "2026-08-02",
+  "project": "0/1-Borsuk investigation in dimension 11",
+  "active_target": "n11-k6-full",
+  "status_definitions": {
+    "reproduction-verified": "A published computation has been independently reconstructed within an explicitly limited scope.",
+    "candidate-proof": "A proof package and explicit witnesses pass repository checks but remain subject to external mathematical and priority review.",
+    "certified-obstruction": "A negative computational result has an independently checked proof certificate, but does not by itself settle the active theorem target.",
+    "attack-surface": "A finite reduction, graph, core, or search instance prepared for further work.",
+    "open": "The claim remains unresolved."
+  },
+  "claims": [
+    {
+      "id": "n10-k4-coloring-reproduction",
+      "title": "Independent reconstruction of the published n=10, k=4 coloring computation",
+      "type": "reproduction",
+      "status": "reproduction-verified",
+      "package": "borsuk_n10_k4_reproduction",
+      "claim": "The three cover graphs stated in Proposition 6 of Batmanov--Voronov admit the reported upper-bound colorings.",
+      "evidence_commands": [
+        "cd borsuk_n10_k4_reproduction && python reproduce_n10_k4.py"
+      ],
+      "limitations": [
+        "This package does not independently establish that the three sets form a universal covering system.",
+        "The observed color counts are upper bounds, not exact chromatic numbers."
+      ],
+      "public_claim_allowed": true
+    },
+    {
+      "id": "n11-k4-candidate",
+      "title": "Candidate proof for the n=11, k=4 Boolean-cube Borsuk subcase",
+      "type": "candidate-theorem",
+      "status": "candidate-proof",
+      "package": "borsuk_11_k4_candidate",
+      "claim": "Every diameter-4 subset of the 11-dimensional Boolean cube can be partitioned into at most 12 subsets of smaller diameter.",
+      "evidence_commands": [
+        "cd borsuk_11_k4_candidate && python verify.py",
+        "cd borsuk_11_k4_candidate && node verify_independent.js"
+      ],
+      "limitations": [
+        "The result has not completed external specialist review.",
+        "Novelty and priority have not been established by direct author or literature confirmation.",
+        "This claim addresses only diameter 4."
+      ],
+      "public_claim_allowed": false
+    },
+    {
+      "id": "n11-k8-candidate",
+      "title": "Candidate proof for the n=11, k=8 Boolean-cube Borsuk subcase",
+      "type": "candidate-theorem",
+      "status": "candidate-proof",
+      "package": "borsuk_11_k8_candidate",
+      "claim": "Every diameter-8 subset of the 11-dimensional Boolean cube can be partitioned into at most 12 subsets of smaller diameter.",
+      "evidence_commands": [
+        "cd borsuk_11_k8_candidate && python verify.py",
+        "cd borsuk_11_k8_candidate && node verify_independent.js"
+      ],
+      "limitations": [
+        "The result has not completed external specialist review.",
+        "Novelty and priority have not been established by direct author or literature confirmation.",
+        "The coloring is an upper-bound certificate, not an exact chromatic-number result."
+      ],
+      "public_claim_allowed": false
+    },
+    {
+      "id": "n11-k6-trim-attack-surface",
+      "title": "Canonical one-base attack surface for n=11, k=6",
+      "type": "reduction",
+      "status": "attack-surface",
+      "package": "borsuk_11_k6_attack_surface",
+      "claim": "Every normalized nontrivial diameter-6 component containing a fixed distance-6 neighbor lies inside a canonical 692-vertex trim graph.",
+      "evidence_commands": [
+        "cd borsuk_11_k6_attack_surface && python verify_structure.py",
+        "cd borsuk_11_k6_attack_surface && node verify_independent.js",
+        "cd borsuk_11_k6_attack_surface && sha256sum -c SHA256SUMS"
+      ],
+      "limitations": [
+        "The trim graph contains pairs farther than 6 apart and is not a legal theorem instance.",
+        "Colorability or uncolorability of the trim graph alone does not settle the diameter-6 case."
+      ],
+      "public_claim_allowed": true
+    },
+    {
+      "id": "n11-k6-trim-unsat",
+      "title": "Certified UNSAT result for 12-coloring the canonical n=11, k=6 trim graph",
+      "type": "certificate",
+      "status": "certified-obstruction",
+      "package": "borsuk_11_k6_trim_unsat_certificate",
+      "claim": "The 692-vertex universal trim graph is not 12-colorable under the recorded exact graph-coloring formulation.",
+      "evidence_commands": [
+        "cd borsuk_11_k6_trim_unsat_certificate && g++ -O3 -std=c++17 drup_check.cpp -o drup_check",
+        "cd borsuk_11_k6_trim_unsat_certificate && gunzip -c k6_trim_12color.drat.gz > proof.drat && ./drup_check k6_trim_12color.cnf proof.drat"
+      ],
+      "limitations": [
+        "This rejects the coarse universal cover only.",
+        "It neither disproves nor settles the n=11, k=6 Boolean-cube Borsuk case.",
+        "The next proof layer must enforce diameter compatibility or an equivalent structural restriction."
+      ],
+      "public_claim_allowed": true
+    },
+    {
+      "id": "n11-k6-full",
+      "title": "Full n=11, k=6 Boolean-cube Borsuk subcase",
+      "type": "theorem-target",
+      "status": "open",
+      "package": "borsuk_11_k6_attack_surface",
+      "claim": "Every diameter-6 subset of the 11-dimensional Boolean cube can be partitioned into at most 12 subsets of smaller diameter.",
+      "depends_on": [
+        "n11-k6-trim-attack-surface",
+        "n11-k6-trim-unsat"
+      ],
+      "evidence_commands": [],
+      "limitations": [
+        "No complete diameter-compatible branch covering and certificate manifest currently exists."
+      ],
+      "public_claim_allowed": false
+    }
+  ]
+}
