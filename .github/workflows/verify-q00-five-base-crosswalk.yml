@@ -1,0 +1,193 @@
+name: verify-q00-five-base-crosswalk
+
+on:
+  push:
+    branches:
+      - research/q00-five-base-crosswalk-verifier
+    paths:
+      - scripts/verify_q00_five_base_crosswalk.py
+      - borsuk_11_k6_q00_five_base_reduction/differential/generate_stabilizer_orbits.py
+      - borsuk_11_k6_q00_five_base_reduction/differential/verify_stabilizer_orbits.js
+      - borsuk_11_k6_q00_five_base_reduction/differential/README.md
+      - .github/workflows/verify-q00-five-base-crosswalk.yml
+  pull_request:
+    branches:
+      - research-workspace-hardening
+    paths:
+      - scripts/verify_q00_five_base_crosswalk.py
+      - borsuk_11_k6_q00_five_base_reduction/differential/**
+      - .github/workflows/verify-q00-five-base-crosswalk.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-q00-five-base-crosswalk-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify-crosswalk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout verifier branch without credentials
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+
+      - name: Freeze governed boundaries
+        run: |
+          set -euo pipefail
+          sha256sum \
+            research/claims.json \
+            cruthunas/ledger.json \
+            cruthunas/evidence.json \
+            cruthunas/sources.json \
+            cruthunas/transitions.json \
+            borsuk_11_k6_four_base_reduction/case_status.json \
+            borsuk_11_k6_q00_five_base_reduction/case_status.json \
+            > "$RUNNER_TEMP/governed-boundaries.sha256"
+
+      - name: Validate repository governance
+        run: |
+          set -euo pipefail
+          python scripts/validate_claims.py
+          python scripts/cruthunas.py check --all
+          python scripts/cruthunas.py adapters check
+          python scripts/validate_cruthunas_transactions.py
+          python scripts/validate_cruthunas_observations.py
+
+      - name: Reproduce the differential classification
+        working-directory: borsuk_11_k6_q00_five_base_reduction
+        run: |
+          set -euo pipefail
+          python generate_cases.py \
+            --output "$RUNNER_TEMP/governed-canonical-12.csv" \
+            --assignment-output "$RUNNER_TEMP/governed-fifth-assignments.csv"
+          python differential/generate_stabilizer_orbits.py \
+            --output "$RUNNER_TEMP/differential-canonical-12.csv" \
+            --report "$RUNNER_TEMP/differential-report.json"
+          node differential/verify_stabilizer_orbits.js
+          test "$(sha256sum "$RUNNER_TEMP/governed-canonical-12.csv" | awk '{print $1}')" = d5b0825cd8645af2c595b3de3c851360e0b283d8ce61383482f76168e1ae9855
+          test "$(sha256sum "$RUNNER_TEMP/governed-fifth-assignments.csv" | awk '{print $1}')" = 6c94923a260290d59727bdcad68293b7f1962a7c5377885dd536fefa5962ffc7
+          test "$(sha256sum "$RUNNER_TEMP/differential-canonical-12.csv" | awk '{print $1}')" = 01b3ee2e629788037f1ccd6906140302abddd1ae1c077aa8cf7e8f619adb807a
+
+      - name: Verify the complete affine-isometry crosswalk
+        run: |
+          set -euo pipefail
+          python scripts/verify_q00_five_base_crosswalk.py \
+            --output "$RUNNER_TEMP/q00-five-base-crosswalk.json"
+          python - "$RUNNER_TEMP/q00-five-base-crosswalk.json" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          result = json.loads(Path(sys.argv[1]).read_text())
+          expected = {
+              'status': 'PASS',
+              'governed_claim_id': 'n11-k6-q00-five-base-reduction',
+              'candidate_count': 432,
+              'class_count': 12,
+              'complete_bijection': True,
+              'coverage_assignments_equal_under_crosswalk': True,
+              'all_transformed_child_vertex_sets_equal': True,
+              'claim_status_changed': False,
+              'child_status_changed': False,
+              'parent_q00_status_changed': False,
+              'theorem_status_changed': False,
+          }
+          actual = {key: result[key] for key in expected}
+          if actual != expected:
+              raise SystemExit(f'crosswalk boundary mismatch: {actual}')
+          if len({row['governed_id'] for row in result['crosswalk']}) != 12:
+              raise SystemExit('governed IDs are not a bijection')
+          if len({row['historical_differential_id'] for row in result['crosswalk']}) != 12:
+              raise SystemExit('differential IDs are not a bijection')
+          if not all(row['transformed_child_vertex_sets_equal'] for row in result['crosswalk']):
+              raise SystemExit('a transformed child vertex set differs')
+          print('PASS complete 12 x 12 q00 five-base crosswalk')
+          PY
+
+      - name: Confirm unchanged boundaries
+        run: |
+          set -euo pipefail
+          sha256sum --check "$RUNNER_TEMP/governed-boundaries.sha256"
+          python scripts/validate_claims.py
+          python scripts/cruthunas.py check --all
+          python scripts/cruthunas.py adapters check
+          python scripts/validate_cruthunas_transactions.py
+          python scripts/validate_cruthunas_observations.py
+
+      - name: Bind result to the verified push run
+        if: github.event_name == 'push'
+        env:
+          VERIFIED_EVENT: ${{ github.event_name }}
+          VERIFIED_HEAD_SHA: ${{ github.sha }}
+          VERIFIED_REPOSITORY: ${{ github.repository }}
+          VERIFIED_RUN_ID: ${{ github.run_id }}
+          VERIFIED_WORKFLOW_ID: '326360034'
+          VERIFIED_WORKFLOW_PATH: .github/workflows/verify-q00-five-base-crosswalk.yml
+        run: |
+          set -euo pipefail
+          python - "$RUNNER_TEMP/q00-five-base-crosswalk.json" <<'PY'
+          import json
+          import os
+          import sys
+          from pathlib import Path
+
+          path = Path(sys.argv[1])
+          result = json.loads(path.read_text(encoding='utf-8'))
+          metadata_keys = {
+              'verified_event',
+              'verified_head_sha',
+              'verified_repository',
+              'verified_run_id',
+              'verified_workflow_id',
+              'verified_workflow_path',
+          }
+          if metadata_keys & result.keys():
+              raise SystemExit('crosswalk result unexpectedly contains recorder metadata')
+          result.update(
+              {
+                  'verified_event': os.environ['VERIFIED_EVENT'],
+                  'verified_head_sha': os.environ['VERIFIED_HEAD_SHA'],
+                  'verified_repository': os.environ['VERIFIED_REPOSITORY'],
+                  'verified_run_id': int(os.environ['VERIFIED_RUN_ID']),
+                  'verified_workflow_id': int(os.environ['VERIFIED_WORKFLOW_ID']),
+                  'verified_workflow_path': os.environ['VERIFIED_WORKFLOW_PATH'],
+              }
+          )
+          path.write_text(
+              json.dumps(result, indent=2, sort_keys=True) + '\n',
+              encoding='utf-8',
+              newline='',
+          )
+          print(
+              'PASS bound artifact to '
+              f"run={result['verified_run_id']} head={result['verified_head_sha']}"
+          )
+          PY
+
+      - name: Upload checked crosswalk result
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: q00-five-base-crosswalk-result
+          path: ${{ runner.temp }}/q00-five-base-crosswalk.json
+          if-no-files-found: error
+          compression-level: 0
+          overwrite: true
+          retention-days: 7
