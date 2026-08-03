@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "observations": [
+    {
+      "id": "O-K6-Q00-KISSAT-180S-20260803",
+      "claim_id": "n11-k6-four-base-reduction",
+      "type": "BOUNDED_SOLVER_PROBE",
+      "result_state": "UNKNOWN",
+      "epistemic_effect": "NONE",
+      "artifact_path": "borsuk_11_k6_four_base_reduction/probe-history/q00-kissat-4.0.0-180s-20260803.json",
+      "source_revision": "c031ab0cf32e6e15643583398b876f89e54cbf0e",
+      "workflow_run_id": 30785622311,
+      "case_id": "q00",
+      "solver": "Kissat 4.0.0",
+      "limit_seconds": 180,
+      "repository_status_changed": false,
+      "evidence_registered": false,
+      "certificate_present": false,
+      "interpretation": "The bounded run produced neither a verified SAT model nor a checked UNSAT conclusion.",
+      "repeat_guidance": "Do not repeat the identical proof-producing 180-second probe. Change the solver mode, encoding, solver, or justified resource budget."
+    }
+  ]
+}
