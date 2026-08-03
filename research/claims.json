@@ -119,20 +119,39 @@
       "public_claim_allowed": true
     },
     {
+      "id": "n11-k6-four-base-reduction",
+      "title": "Exhaustive 101-case four-base reduction for n=11, k=6",
+      "type": "symmetry-reduction",
+      "status": "attack-surface",
+      "package": "borsuk_11_k6_four_base_reduction",
+      "claim": "Every normalized diameter-6 component with at least four vertices is contained in one of 101 canonical four-base trims, while smaller components are trivially 12-colorable.",
+      "evidence_commands": [
+        "cd borsuk_11_k6_four_base_reduction && python generate_cases.py",
+        "cd borsuk_11_k6_four_base_reduction && node verify_independent.js"
+      ],
+      "limitations": [
+        "The 101 trims have not yet been resolved by certified SAT or UNSAT results.",
+        "Each trim may contain pairs farther than 6 apart and is therefore a cover rather than a legal theorem instance.",
+        "The reduction narrows the exhaustive search but does not settle the diameter-6 case."
+      ],
+      "public_claim_allowed": true
+    },
+    {
       "id": "n11-k6-full",
       "title": "Full n=11, k=6 Boolean-cube Borsuk subcase",
       "type": "theorem-target",
       "status": "open",
-      "package": "borsuk_11_k6_branch_search",
+      "package": "borsuk_11_k6_four_base_reduction",
       "claim": "Every diameter-6 subset of the 11-dimensional Boolean cube can be partitioned into at most 12 subsets of smaller diameter.",
       "depends_on": [
         "n11-k6-trim-attack-surface",
         "n11-k6-trim-unsat",
-        "n11-k6-branch-search-scaffold"
+        "n11-k6-branch-search-scaffold",
+        "n11-k6-four-base-reduction"
       ],
       "evidence_commands": [],
       "limitations": [
-        "The initial coverage manifest has two UNKNOWN leaves and no complete diameter-compatible branch proof."
+        "All 101 canonical four-base trims remain unresolved at certificate level; no complete diameter-compatible coverage proof exists."
       ],
       "public_claim_allowed": false
     }
