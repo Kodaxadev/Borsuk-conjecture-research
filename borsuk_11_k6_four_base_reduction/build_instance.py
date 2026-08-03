@@ -20,6 +20,7 @@ from generate_cases import (
 )
 
 COLORS = 12
+CLIQUE_SEARCH_NODE_LIMIT = 50_000
 ROOT_CLIQUE = [0, 63, 455, 748, 858, 945, 1241, 1396, 1450, 1635, 1686, 1805]
 
 
@@ -52,9 +53,79 @@ def variable(vertex_index: int, color: int) -> int:
     return vertex_index * COLORS + color + 1
 
 
-def fixed_clique_for(vertices: list[int]) -> list[int]:
-    present = set(vertices)
-    clique = [vertex for vertex in ROOT_CLIQUE if vertex in present]
+def fixed_clique_for(
+    vertices: list[int], node_limit: int = CLIQUE_SEARCH_NODE_LIMIT
+) -> list[int]:
+    """Find a deterministic symmetry-breaking clique of size at most COLORS.
+
+    A bounded exact search first tries to find a full 12-clique. If that search
+    exhausts its deterministic node budget, the routine falls back to the
+    historical root clique intersected with the trim and extends it greedily.
+    Either result is independently checked before it is used in the encoding.
+    """
+
+    vertex_count = len(vertices)
+    adjacency = [0] * vertex_count
+    for left_index, left in enumerate(vertices):
+        for right_index in range(left_index + 1, vertex_count):
+            if distance(left, vertices[right_index]) == K:
+                adjacency[left_index] |= 1 << right_index
+                adjacency[right_index] |= 1 << left_index
+
+    calls = 0
+
+    def search(candidates: int, clique: list[int]) -> list[int] | None:
+        nonlocal calls
+        calls += 1
+        if calls > node_limit:
+            return None
+        if len(clique) == COLORS:
+            return clique
+        if len(clique) + candidates.bit_count() < COLORS:
+            return None
+
+        ordered: list[tuple[int, int]] = []
+        remaining_bits = candidates
+        while remaining_bits:
+            bit = remaining_bits & -remaining_bits
+            vertex_index = bit.bit_length() - 1
+            remaining_bits -= bit
+            ordered.append((-(adjacency[vertex_index] & candidates).bit_count(), vertex_index))
+        ordered.sort()
+
+        remaining = candidates
+        for _, vertex_index in ordered:
+            if not ((remaining >> vertex_index) & 1):
+                continue
+            if len(clique) + remaining.bit_count() < COLORS:
+                return None
+            result = search(remaining & adjacency[vertex_index], clique + [vertex_index])
+            if result is not None:
+                return result
+            if calls > node_limit:
+                return None
+            remaining &= ~(1 << vertex_index)
+        return None
+
+    found = search((1 << vertex_count) - 1, [])
+    if found is not None:
+        clique = [vertices[index] for index in found]
+    else:
+        present = set(vertices)
+        clique = [vertex for vertex in ROOT_CLIQUE if vertex in present]
+        candidates = sorted(
+            (vertex for vertex in vertices if vertex not in clique),
+            key=lambda vertex: (
+                -sum(distance(vertex, other) == K for other in vertices),
+                vertex,
+            ),
+        )
+        for vertex in candidates:
+            if len(clique) == COLORS:
+                break
+            if all(distance(vertex, existing) == K for existing in clique):
+                clique.append(vertex)
+
     for left_index, left in enumerate(clique):
         for right in clique[left_index + 1 :]:
             if distance(left, right) != K:
