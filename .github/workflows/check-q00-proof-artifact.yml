@@ -92,17 +92,72 @@ jobs:
             >"$result/checker.out" 2>"$result/checker.err"
           grep -Eq 's VERIFIED|VERIFIED' "$result/checker.out" "$result/checker.err"
 
-      - name: Reject proof missing binary empty-clause record
+      - name: Reject proof with every empty clause removed
         run: |
           set -euo pipefail
           cnf=/tmp/q00-source/q00_12color.cnf
           proof=/tmp/q00-source/q00.drat
-          bad=/tmp/q00-missing-final-empty-clause.drat
+          bad=/tmp/q00-without-empty-clauses.drat
           result="$GITHUB_WORKSPACE/q00-check-result"
-          proof_size="$(stat -c %s "$proof")"
-          test "$proof_size" -gt 2
-          head -c "$((proof_size - 2))" "$proof" >"$bad"
-          test "$(stat -c %s "$bad")" -eq "$((proof_size - 2))"
+          python - "$proof" "$bad" "$result/negative-control-mutation.json" <<'PY'
+          import hashlib
+          import json
+          import sys
+          from pathlib import Path
+
+          source = Path(sys.argv[1])
+          destination = Path(sys.argv[2])
+          report = Path(sys.argv[3])
+          data = source.read_bytes()
+          output = bytearray()
+          offset = 0
+          records = 0
+          empty_additions = 0
+
+          while offset < len(data):
+              start = offset
+              operation = data[offset]
+              offset += 1
+              if operation not in (0x61, 0x64):
+                  raise SystemExit(f'invalid binary DRAT operation 0x{operation:02x} at byte {start}')
+
+              literals = 0
+              while True:
+                  if offset >= len(data):
+                      raise SystemExit(f'truncated binary DRAT record beginning at byte {start}')
+                  byte = data[offset]
+                  offset += 1
+                  if byte == 0:
+                      break
+                  literals += 1
+                  while byte & 0x80:
+                      if offset >= len(data):
+                          raise SystemExit(f'truncated binary DRAT varint beginning at byte {start}')
+                      byte = data[offset]
+                      offset += 1
+
+              records += 1
+              if operation == 0x61 and literals == 0:
+                  empty_additions += 1
+              else:
+                  output.extend(data[start:offset])
+
+          if empty_additions < 1:
+              raise SystemExit('no empty-clause additions were found')
+          destination.write_bytes(output)
+          payload = {
+              'schema': 'binary-drat-negative-control-v1',
+              'source_bytes': len(data),
+              'mutated_bytes': len(output),
+              'records': records,
+              'empty_clause_additions_removed': empty_additions,
+              'source_sha256': hashlib.sha256(data).hexdigest(),
+              'mutated_sha256': hashlib.sha256(output).hexdigest(),
+          }
+          report.write_text(json.dumps(payload, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          print(json.dumps(payload, sort_keys=True))
+          PY
+          test -s "$bad"
           set +e
           /usr/bin/time -v /tmp/drat-trim/drat-trim "$cnf" "$bad" -v \
             >"$result/negative-control.out" 2>"$result/negative-control.err"
@@ -110,7 +165,7 @@ jobs:
           set -e
           echo "$negative_status" >"$result/negative-control.exit-status"
           if grep -Eq 's VERIFIED|VERIFIED' "$result/negative-control.out" "$result/negative-control.err"; then
-            echo 'binary proof with final empty-clause record removed was unexpectedly accepted' >&2
+            echo 'binary proof with all empty-clause additions removed was unexpectedly accepted' >&2
             exit 1
           fi
           rm -f "$bad"
@@ -133,6 +188,7 @@ jobs:
           source = Path('/tmp/q00-source')
           result = Path(sys.argv[1]).parent
           proof = source / 'q00.drat'
+          mutation = json.loads((result / 'negative-control-mutation.json').read_text())
           payload = {
               'schema': 'borsuk-proof-checked-unsat-result-v1',
               'case_id': 'q00',
@@ -150,7 +206,8 @@ jobs:
               'checker_binary_sha256': (result / 'checker-binary.sha256').read_text().split()[0],
               'checker_output_sha256': sha256(result / 'checker.out'),
               'checker_stderr_sha256': sha256(result / 'checker.err'),
-              'negative_control': 'final binary addition-empty-clause record 0x61 0x00 removed and rejected',
+              'negative_control': 'every binary addition of the empty clause was removed and the resulting proof was rejected',
+              'empty_clause_additions_removed': mutation['empty_clause_additions_removed'],
               'negative_control_output_sha256': sha256(result / 'negative-control.out'),
               'negative_control_stderr_sha256': sha256(result / 'negative-control.err'),
               'certificate_state': 'PROOF_CHECKED_UNSAT',
@@ -193,6 +250,7 @@ jobs:
             q00-check-result/checker.err
             q00-check-result/checker-revision.txt
             q00-check-result/checker-binary.sha256
+            q00-check-result/negative-control-mutation.json
             q00-check-result/negative-control.out
             q00-check-result/negative-control.err
             q00-check-result/negative-control.exit-status
