@@ -1,0 +1,97 @@
+name: publish-q00-compact-probe-summary
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish-q00-compact-probe-summary.yml'
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+
+jobs:
+  publish-summary:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download completed compact probe artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api \
+            repos/${{ github.repository }}/actions/artifacts/8845500023/zip \
+            > /tmp/q00-compact-probe.zip
+          mkdir /tmp/probe
+          unzip -q /tmp/q00-compact-probe.zip -d /tmp/probe
+          find /tmp/probe -maxdepth 2 -type f -print
+
+      - name: Build non-evidentiary issue summary
+        run: |
+          set -euo pipefail
+          result="$(find /tmp/probe -name probe-result.json -type f | head -n 1)"
+          solver="$(find /tmp/probe -name solver.out -type f | head -n 1)"
+          metadata="$(find /tmp/probe -name q00_metadata.json -type f | head -n 1)"
+          test -n "$result"
+          test -n "$solver"
+          test -n "$metadata"
+
+          python - "$result" "$solver" "$metadata" > /tmp/issue-body.md <<'PY'
+          import json, sys
+          from pathlib import Path
+
+          result = json.loads(Path(sys.argv[1]).read_text(encoding='utf-8'))
+          solver_text = Path(sys.argv[2]).read_text(encoding='utf-8', errors='replace')
+          metadata = json.loads(Path(sys.argv[3]).read_text(encoding='utf-8'))
+
+          status_lines = [
+              line.strip()
+              for line in solver_text.splitlines()
+              if line.startswith('s ')
+          ]
+          statistic_lines = [
+              line.strip()
+              for line in solver_text.splitlines()
+              if any(key in line.lower() for key in (
+                  'conflicts', 'decisions', 'propagations', 'process time',
+                  'maximum resident set size'
+              ))
+          ]
+
+          print('## Compact q00 bounded probe result')
+          print()
+          print('This is operational history only. It does not update `case_status.json` or Cruthúnas evidence.')
+          print()
+          print('```json')
+          print(json.dumps(result, indent=2, sort_keys=True))
+          print('```')
+          print()
+          print('Instance:')
+          print()
+          print(f"- encoding: `{metadata.get('schema')}`")
+          print(f"- variables: {metadata.get('variables')}")
+          print(f"- clauses: {metadata.get('clauses')}")
+          print(f"- CNF SHA-256: `{metadata.get('cnf_sha256')}`")
+          print(f"- fixed clique size: {len(metadata.get('fixed_clique', []))}")
+          print()
+          print('Solver status lines:')
+          print()
+          print('```text')
+          print('\n'.join(status_lines) if status_lines else '<none>')
+          print('```')
+          if statistic_lines:
+              print()
+              print('Selected solver statistics:')
+              print()
+              print('```text')
+              print('\n'.join(statistic_lines[-12:]))
+              print('```')
+          print()
+          print('Artifact provenance: GitHub Actions artifact `8845500023`, workflow run `30786953379`.')
+          PY
+
+      - name: Comment on classification issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh issue comment 3 --body-file /tmp/issue-body.md
