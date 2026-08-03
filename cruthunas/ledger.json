@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "entries": [
+    {
+      "claim_id": "n10-k4-coloring-reproduction",
+      "gate": 4,
+      "epistemic_class": "COMPUTATIONAL",
+      "verification_state": "INDEPENDENTLY_REPRODUCED",
+      "lifecycle_state": "WORKING",
+      "source_ids": ["SRC-N10-K4"],
+      "evidence_ids": ["E-N10-K4-REPRO"],
+      "current_transition_id": "T-N10-K4-3-4"
+    },
+    {
+      "claim_id": "n11-k4-candidate",
+      "gate": 4,
+      "epistemic_class": "HYBRID",
+      "verification_state": "INTERNALLY_VERIFIED",
+      "lifecycle_state": "WORKING",
+      "source_ids": ["SRC-N11-K4"],
+      "evidence_ids": ["E-N11-K4-CANDIDATE"],
+      "current_transition_id": "T-N11-K4-3-4"
+    },
+    {
+      "claim_id": "n11-k8-candidate",
+      "gate": 4,
+      "epistemic_class": "HYBRID",
+      "verification_state": "INTERNALLY_VERIFIED",
+      "lifecycle_state": "WORKING",
+      "source_ids": ["SRC-N11-K8"],
+      "evidence_ids": ["E-N11-K8-CANDIDATE"],
+      "current_transition_id": "T-N11-K8-3-4"
+    },
+    {
+      "claim_id": "n11-k6-trim-attack-surface",
+      "gate": 4,
+      "epistemic_class": "COMPUTATIONAL",
+      "verification_state": "INDEPENDENTLY_REPRODUCED",
+      "lifecycle_state": "WORKING",
+      "source_ids": ["SRC-K6-ROOT"],
+      "evidence_ids": ["E-K6-ROOT-ATTACK"],
+      "current_transition_id": "T-K6-ROOT-3-4"
+    },
+    {
+      "claim_id": "n11-k6-trim-unsat",
+      "gate": 4,
+      "epistemic_class": "COMPUTATIONAL",
+      "verification_state": "CERTIFICATE_CHECKED",
+      "lifecycle_state": "WORKING",
+      "source_ids": ["SRC-K6-UNSAT"],
+      "evidence_ids": ["E-K6-ROOT-UNSAT"],
+      "current_transition_id": "T-K6-UNSAT-3-4"
+    },
+    {
+      "claim_id": "n11-k6-branch-search-scaffold",
+      "gate": 4,
+      "epistemic_class": "INFRASTRUCTURE",
+      "verification_state": "INDEPENDENTLY_REPRODUCED",
+      "lifecycle_state": "WORKING",
+      "source_ids": ["SRC-K6-BRANCH"],
+      "evidence_ids": ["E-K6-BRANCH-SCAFFOLD"],
+      "current_transition_id": "T-K6-BRANCH-3-4"
+    },
+    {
+      "claim_id": "n11-k6-four-base-reduction",
+      "gate": 4,
+      "epistemic_class": "HYBRID",
+      "verification_state": "INDEPENDENTLY_REPRODUCED",
+      "lifecycle_state": "WORKING",
+      "source_ids": ["SRC-K6-FOUR-BASE"],
+      "evidence_ids": ["E-K6-FOUR-BASE"],
+      "current_transition_id": "T-K6-FOUR-BASE-3-4"
+    },
+    {
+      "claim_id": "n11-k6-full",
+      "gate": 2,
+      "epistemic_class": "MATHEMATICAL",
+      "verification_state": "UNCHECKED",
+      "lifecycle_state": "OPEN",
+      "source_ids": ["SRC-K6-TARGET"],
+      "evidence_ids": [],
+      "current_transition_id": "T-K6-FULL-1-2"
+    }
+  ]
+}
