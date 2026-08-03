@@ -51,10 +51,12 @@ python build_inventory.py --output inventory.csv
 
 This orders all 58 types by deterministic CNF size and records graph density, incompatibility density, fixed-clique size, variable count, and clause count. It is a scheduling inventory, not an empirical hardness claim.
 
+Before encoding, a bounded deterministic clique search tries to find a full 12-clique for color-symmetry breaking. If that search exceeds its fixed node budget, the generator falls back to a verified deterministic clique. Across the current 58-type inventory, two types receive full 12-clique fixing; all other fixed cliques remain valid but smaller.
+
 Inventory SHA-256:
 
 ```text
-b2b4689bd1f344382c67a02a1a60b051a2ec532d0e018d05d1dee1412afff196
+860fc2d3762a6956afda8739e651aa0f03fe7b4fce6686267d038f113f43a9a5
 ```
 
 ## SAT lane
@@ -73,7 +75,7 @@ python verify_model.py q00 work/q00/solver.out \
   --output work/q00/q00_verified_coloring.json
 ```
 
-`verify_sat_lane.py` freezes a complete deterministic `q00` CNF and variable-map hash in a temporary directory and runs negative controls against the model verifier.
+`q00` contains a verified 12-clique, so all 12 color labels are fixed before search. `verify_sat_lane.py` freezes the resulting deterministic CNF and variable-map hashes in a temporary directory and runs negative controls against the model verifier.
 
 See [`SAT-WORKFLOW.md`](SAT-WORKFLOW.md) for the exact SAT, UNSAT, and artifact-recording contract.
 
@@ -89,6 +91,12 @@ SAT_CLOSED: 0
 UNSAT_REFINED: 0
 LEGAL_UNSAT: 0
 ```
+
+## Probe history
+
+`probe-history/` records bounded exploratory runs that did not produce certificate-backed results. These records cannot alter `case_status.json` or Cruthúnas evidence state.
+
+The first `q00` Kissat probe used the earlier 10-clique encoding and ended `UNKNOWN` after 180 seconds. The current 12-clique encoding has a different CNF hash, so the old run is retained only as operational history and is not directly comparable evidence.
 
 ## Status boundary
 
