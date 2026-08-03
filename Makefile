@@ -31,6 +31,8 @@ verify-fast: validate
 	cd borsuk_11_k6_branch_search && $(PYTHON) generate_root.py
 	cd borsuk_11_k6_branch_search && $(NODE) verify_root_independent.js
 	cd borsuk_11_k6_branch_search && $(PYTHON) verify_manifest.py
+	cd borsuk_11_k6_four_base_reduction && $(PYTHON) generate_cases.py
+	cd borsuk_11_k6_four_base_reduction && $(NODE) verify_independent.js
 
 verify-k6-certificate:
 	@set -eu; \
