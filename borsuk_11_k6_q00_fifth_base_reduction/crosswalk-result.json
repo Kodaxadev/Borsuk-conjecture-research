@@ -1,0 +1,451 @@
+{
+  "all_transformed_child_vertex_sets_equal": true,
+  "candidate_count": 432,
+  "class_count": 12,
+  "complete_bijection": true,
+  "coverage_assignments_equal_under_crosswalk": true,
+  "crosswalk": [
+    {
+      "affine_map": {
+        "coordinate_map_old_to_new": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "source_point_to_target_index": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "translation": 0
+      },
+      "canonical_signature": "0-0-0-2-1-1-1-0-1-1-1-0-0-1-1-1",
+      "draft_D": 732,
+      "draft_id": "f11",
+      "exact_distance_edges": 22502,
+      "governed_D": 732,
+      "governed_id": "q00r00",
+      "incompatible_pairs": 7129,
+      "orbit_size": 32,
+      "transformed_child_vertex_sets_equal": true,
+      "vertex_sha256": "6a92d450404759081fd4acd9d3324fa45af28d41d758342710e3dc296d0ae160",
+      "vertices": 334
+    },
+    {
+      "affine_map": {
+        "coordinate_map_old_to_new": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "source_point_to_target_index": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "translation": 0
+      },
+      "canonical_signature": "0-0-0-2-1-1-1-0-1-1-1-0-1-0-0-2",
+      "draft_D": 216,
+      "draft_id": "f09",
+      "exact_distance_edges": 25609,
+      "governed_D": 216,
+      "governed_id": "q00r01",
+      "incompatible_pairs": 7972,
+      "orbit_size": 48,
+      "transformed_child_vertex_sets_equal": true,
+      "vertex_sha256": "1c3c6885fb9ffe1904467452de3fb5e8e83e58a38720e9d9598f77fd0204bb60",
+      "vertices": 355
+    },
+    {
+      "affine_map": {
+        "coordinate_map_old_to_new": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "source_point_to_target_index": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "translation": 0
+      },
+      "canonical_signature": "0-0-0-2-1-1-1-0-2-0-0-1-1-0-0-2",
+      "draft_D": 80,
+      "draft_id": "f05",
+      "exact_distance_edges": 29607,
+      "governed_D": 80,
+      "governed_id": "q00r02",
+      "incompatible_pairs": 9180,
+      "orbit_size": 24,
+      "transformed_child_vertex_sets_equal": true,
+      "vertex_sha256": "a1692fa29dd6c502c56b3cb9edc4e3a96a06f93b1ed337b67b47ac743183572d",
+      "vertices": 380
+    },
+    {
+      "affine_map": {
+        "coordinate_map_old_to_new": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "source_point_to_target_index": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "translation": 0
+      },
+      "canonical_signature": "0-0-0-2-1-1-1-0-2-0-1-0-0-1-0-2",
+      "draft_D": 92,
+      "draft_id": "f07",
+      "exact_distance_edges": 28609,
+      "governed_D": 92,
+      "governed_id": "q00r03",
+      "incompatible_pairs": 8784,
+      "orbit_size": 24,
+      "transformed_child_vertex_sets_equal": true,
+      "vertex_sha256": "3c87f04afef7c20302d712648accc650025d6fb74ebf93e3ed2891ad3a40b256",
+      "vertices": 374
+    },
+    {
+      "affine_map": {
+        "coordinate_map_old_to_new": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "source_point_to_target_index": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "translation": 0
+      },
+      "canonical_signature": "0-0-0-2-2-0-0-1-2-0-1-0-0-1-0-2",
+      "draft_D": 12,
+      "draft_id": "f02",
+      "exact_distance_edges": 32994,
+      "governed_D": 12,
+      "governed_id": "q00r04",
+      "incompatible_pairs": 10348,
+      "orbit_size": 12,
+      "transformed_child_vertex_sets_equal": true,
+      "vertex_sha256": "d33472ea4568c72098042366bb48eefe9ebe08ec359f93dc84bf91bedde3e856",
+      "vertices": 400
+    },
+    {
+      "affine_map": {
+        "coordinate_map_old_to_new": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "source_point_to_target_index": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "translation": 0
+      },
+      "canonical_signature": "0-0-1-1-1-1-0-1-1-1-0-1-1-0-1-1",
+      "draft_D": 657,
+      "draft_id": "f10",
+      "exact_distance_edges": 25621,
+      "governed_D": 657,
+      "governed_id": "q00r05",
+      "incompatible_pairs": 7888,
+      "orbit_size": 64,
+      "transformed_child_vertex_sets_equal": true,
+      "vertex_sha256": "e90c789e7fa2aa9c111bcdc9747a6e970eb890ada5d1a56518dda929e94cd042",
+      "vertices": 355
+    },
+    {
+      "affine_map": {
+        "coordinate_map_old_to_new": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "source_point_to_target_index": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "translation": 0
+      },
+      "canonical_signature": "0-0-1-1-1-1-0-1-1-1-1-0-1-0-0-2",
+      "draft_D": 153,
+      "draft_id": "f08",
+      "exact_distance_edges": 28613,
+      "governed_D": 153,
+      "governed_id": "q00r06",
+      "incompatible_pairs": 8730,
+      "orbit_size": 96,
+      "transformed_child_vertex_sets_equal": true,
+      "vertex_sha256": "680ac6e22c351298a16b9286182f6259733ef3096f6ea32e0a0e9754c8dc39d4",
+      "vertices": 374
+    },
+    {
+      "affine_map": {
+        "coordinate_map_old_to_new": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "source_point_to_target_index": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "translation": 0
+      },
+      "canonical_signature": "0-0-1-1-1-1-0-1-2-0-0-1-1-0-0-2",
+      "draft_D": 17,
+      "draft_id": "f03",
+      "exact_distance_edges": 32973,
+      "governed_D": 17,
+      "governed_id": "q00r07",
+      "incompatible_pairs": 10222,
+      "orbit_size": 48,
+      "transformed_child_vertex_sets_equal": true,
+      "vertex_sha256": "0c9315bd339786477041409b805d413932850489a3e8b14e34f36b43f56ae362",
+      "vertices": 400
+    },
+    {
+      "affine_map": {
+        "coordinate_map_old_to_new": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "source_point_to_target_index": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "translation": 0
+      },
+      "canonical_signature": "0-0-1-1-1-1-1-0-2-0-0-1-0-1-0-2",
+      "draft_D": 85,
+      "draft_id": "f06",
+      "exact_distance_edges": 31432,
+      "governed_D": 85,
+      "governed_id": "q00r08",
+      "incompatible_pairs": 9607,
+      "orbit_size": 48,
+      "transformed_child_vertex_sets_equal": true,
+      "vertex_sha256": "8de6c396482d682115dffac644386bcbd2e6a10a12cce16a348e24a6f5752b1b",
+      "vertices": 391
+    },
+    {
+      "affine_map": {
+        "coordinate_map_old_to_new": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "source_point_to_target_index": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "translation": 0
+      },
+      "canonical_signature": "0-0-1-1-2-0-0-1-2-0-0-1-0-1-0-2",
+      "draft_D": 5,
+      "draft_id": "f01",
+      "exact_distance_edges": 35844,
+      "governed_D": 5,
+      "governed_id": "q00r09",
+      "incompatible_pairs": 11316,
+      "orbit_size": 24,
+      "transformed_child_vertex_sets_equal": true,
+      "vertex_sha256": "132572b5070a499faa498f88d5052b311a374d76e396da6c3be49d7d7f3a3b3a",
+      "vertices": 416
+    },
+    {
+      "affine_map": {
+        "coordinate_map_old_to_new": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "source_point_to_target_index": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "translation": 0
+      },
+      "canonical_signature": "0-0-1-1-2-0-1-0-2-0-1-0-0-1-0-2",
+      "draft_D": 77,
+      "draft_id": "f04",
+      "exact_distance_edges": 33684,
+      "governed_D": 77,
+      "governed_id": "q00r10",
+      "incompatible_pairs": 10260,
+      "orbit_size": 8,
+      "transformed_child_vertex_sets_equal": true,
+      "vertex_sha256": "77b04259ac17ee5c7c170240ab937d6cf5078f753761e30217502b41fc79f30a",
+      "vertices": 404
+    },
+    {
+      "affine_map": {
+        "coordinate_map_old_to_new": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "source_point_to_target_index": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "translation": 0
+      },
+      "canonical_signature": "0-0-2-0-2-0-0-1-2-0-0-1-1-0-0-2",
+      "draft_D": 3,
+      "draft_id": "f00",
+      "exact_distance_edges": 38076,
+      "governed_D": 3,
+      "governed_id": "q00r11",
+      "incompatible_pairs": 12288,
+      "orbit_size": 4,
+      "transformed_child_vertex_sets_equal": true,
+      "vertex_sha256": "f3104ed045fc4d75c724dbc2339118fa0c409db0a06b16e41cfad85e0e00a499",
+      "vertices": 428
+    }
+  ],
+  "draft_case_csv_sha256": "01b3ee2e629788037f1ccd6906140302abddd1ae1c077aa8cf7e8f619adb807a",
+  "draft_claim_id": "n11-k6-q00-fifth-base-reduction",
+  "draft_generator_sha256": "a9bd046824a9be2727184a1a27ed9785e755d4ae9f7067c561fe835e71ec43f9",
+  "governed_assignment_sha256": "6c94923a260290d59727bdcad68293b7f1962a7c5377885dd536fefa5962ffc7",
+  "governed_case_csv_sha256": "d5b0825cd8645af2c595b3de3c851360e0b283d8ce61383482f76168e1ae9855",
+  "governed_claim_id": "n11-k6-q00-five-base-reduction",
+  "governed_commit": "d358bbc0487f8ae211c5e62adf6aa3455e5f02ed",
+  "governed_generator_sha256": "9d79d38273f3c7722918d4b080dc8910b913c2e47ba301dece167168d1f33d19",
+  "schema": "borsuk-q00-five-base-crosswalk-v1",
+  "status": "PASS"
+}
