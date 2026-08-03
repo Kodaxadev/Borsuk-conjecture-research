@@ -1,0 +1,33 @@
+{
+  "canonical_csv_sha256": "01b3ee2e629788037f1ccd6906140302abddd1ae1c077aa8cf7e8f619adb807a",
+  "child_trim_size_range": [
+    334,
+    428
+  ],
+  "diameter": 6,
+  "fifth_base_orbits": 12,
+  "n": 11,
+  "nonbase_candidates": 432,
+  "orbit_size_distribution": {
+    "4": 1,
+    "8": 1,
+    "12": 1,
+    "24": 3,
+    "32": 1,
+    "48": 3,
+    "64": 1,
+    "96": 1
+  },
+  "parent_vertices": 436,
+  "q00_base": [
+    0,
+    63,
+    455,
+    1611
+  ],
+  "q00_case_status_changed": false,
+  "schema": "borsuk-q00-fifth-base-reduction-v1",
+  "stabilizer_order": 384,
+  "status": "all fifth-base children UNKNOWN",
+  "theorem_status_changed": false
+}

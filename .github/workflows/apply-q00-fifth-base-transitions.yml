@@ -1,0 +1,102 @@
+name: apply-q00-fifth-base-transitions
+
+on:
+  push:
+    branches:
+      - research/q00-fifth-base-reduction
+    paths:
+      - .github/workflows/apply-q00-fifth-base-transitions.yml
+      - scripts/register_q00_fifth_base_claim.py
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apply-q00-fifth-base-transitions-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  register-reduction:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout governed branch
+        uses: actions/checkout@v4
+        with:
+          ref: research/q00-fifth-base-reduction
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Configure commit identity
+        run: |
+          git config user.name 'openai-gpt-5.6-thinking'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+      - name: Verify package before registration
+        run: |
+          set -euo pipefail
+          python scripts/cruthunas.py check --all
+          python scripts/cruthunas.py adapters check
+          python scripts/validate_cruthunas_transactions.py
+          python scripts/validate_cruthunas_observations.py
+          cd borsuk_11_k6_q00_fifth_base_reduction
+          python generate_fifth_base_cases.py --output /tmp/canonical_12.csv --report /tmp/report.json
+          cmp canonical_12.csv /tmp/canonical_12.csv
+          cmp report.json /tmp/report.json
+          node verify_independent.js
+          python verify_status.py
+          sha256sum -c SHA256SUMS
+          python build_child_instance.py f11 --output-dir /tmp/f11 > /tmp/f11.json
+          echo '4341c1d9ba4b293f79e48b7a094e757d0c09aa46024d67e9a6f4556f3d3c2388  /tmp/f11/f11_12color.cnf' | sha256sum --check --strict
+          echo 'ff5b5f9df7c3364d79dcdf0942cc7ee58fb63a7d1911e7fa2ed4bb60da511f20  /tmp/f11/f11_variable_map.json' | sha256sum --check --strict
+      - name: Register scoped Gate 2 claim
+        run: |
+          set -euo pipefail
+          python scripts/register_q00_fifth_base_claim.py scoped
+          python scripts/cruthunas.py check --all
+          python scripts/validate_cruthunas_transactions.py
+          git add research/claims.json cruthunas
+          git commit -m 'Register q00 fifth-base reduction at Gate 2'
+          git push origin HEAD:research/q00-fifth-base-reduction
+      - name: Link evidence at Gate 3
+        run: |
+          set -euo pipefail
+          python scripts/register_q00_fifth_base_claim.py gate3
+          python scripts/cruthunas.py check --all
+          python scripts/validate_cruthunas_transactions.py
+          git add research/claims.json cruthunas
+          git commit -m 'Link q00 fifth-base reduction evidence at Gate 3'
+          git push origin HEAD:research/q00-fifth-base-reduction
+      - name: Register checked Gate 4 reduction
+        run: |
+          set -euo pipefail
+          python scripts/register_q00_fifth_base_claim.py gate4
+          python scripts/cruthunas.py check --all
+          python scripts/cruthunas.py adapters check
+          python scripts/validate_cruthunas_transactions.py
+          python scripts/validate_cruthunas_observations.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          ledger = json.loads(Path('cruthunas/ledger.json').read_text())
+          claim = next(item for item in ledger['entries'] if item['claim_id'] == 'n11-k6-q00-fifth-base-reduction')
+          if (claim['gate'], claim['verification_state'], claim['lifecycle_state']) != (4, 'INDEPENDENTLY_REPRODUCED', 'WORKING'):
+              raise SystemExit(f'unexpected fifth-base claim state: {claim}')
+          theorem = next(item for item in ledger['entries'] if item['claim_id'] == 'n11-k6-full')
+          if (theorem['gate'], theorem['verification_state'], theorem['lifecycle_state']) != (2, 'UNCHECKED', 'OPEN'):
+              raise SystemExit(f'unexpected theorem state: {theorem}')
+          parent = json.loads(Path('borsuk_11_k6_four_base_reduction/case_status.json').read_text())
+          children = json.loads(Path('borsuk_11_k6_q00_fifth_base_reduction/child_status.json').read_text())
+          if parent['overrides'] or children['overrides']:
+              raise SystemExit('case status changed during reduction registration')
+          print('PASS Gate 4 reduction registered with all cases still UNKNOWN')
+          PY
+          git add research/claims.json cruthunas
+          git commit -m 'Register q00 fifth-base reduction at Gate 4'
+          git push origin HEAD:research/q00-fifth-base-reduction
