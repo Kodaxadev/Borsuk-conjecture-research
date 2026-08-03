@@ -1,0 +1,87 @@
+{
+  "base_A": 63,
+  "branches": {
+    "3": {
+      "cnf": {
+        "clauses": 223071,
+        "cnf_sha256": "b3933e04d2f1657d2a95677695c562519b7e36a13207941eea538520b8b9b8c9",
+        "domain_size_distribution": {
+          "1": 12,
+          "6": 459,
+          "9": 84
+        },
+        "fixed_clique_vertices": 12,
+        "variables": 3522
+      },
+      "distance_6_edges": 65886,
+      "distance_A_B": 6,
+      "edge_sha256": "19ec780b918ed24ecf8dce6d1466fcdde8e2d50315bf9d6a45b833472c365773",
+      "hadamard_clique_vertices_present": 12,
+      "orbit_size": 200,
+      "overlap": 3,
+      "remaining_pairs_above_diameter": 22772,
+      "representative_B": 455,
+      "status": "colorability unresolved",
+      "vertices": 555
+    },
+    "4": {
+      "cnf": {
+        "clauses": 357552,
+        "cnf_sha256": "d0ad8414781de18168b1082a602db1336a19ec278268d118ce3081ae71484559",
+        "domain_size_distribution": {
+          "1": 10,
+          "6": 105,
+          "7": 254,
+          "8": 111,
+          "9": 56,
+          "10": 42,
+          "11": 4
+        },
+        "fixed_clique_vertices": 10,
+        "variables": 4274
+      },
+      "distance_6_edges": 72827,
+      "distance_A_B": 4,
+      "edge_sha256": "95d56552d5578b04f2c0d7732d32c4942c3d7415ba6d4ea805b797733a411e37",
+      "hadamard_clique_vertices_present": 10,
+      "orbit_size": 150,
+      "overlap": 4,
+      "remaining_pairs_above_diameter": 24854,
+      "representative_B": 207,
+      "status": "colorability unresolved",
+      "vertices": 582
+    },
+    "5": {
+      "cnf": {
+        "clauses": 407273,
+        "cnf_sha256": "ca546561d43d19ab54ac182eccf089807f9bdeb57f3b219f532be142cfce2a37",
+        "domain_size_distribution": {
+          "1": 10,
+          "6": 107,
+          "7": 272,
+          "8": 117,
+          "9": 62,
+          "10": 46,
+          "11": 4
+        },
+        "fixed_clique_vertices": 10,
+        "variables": 4554
+      },
+      "distance_6_edges": 82598,
+      "distance_A_B": 2,
+      "edge_sha256": "704681db24c6cd26e75df6aa29cc8603ad47bb6580489f6468a0be00441caeaf",
+      "hadamard_clique_vertices_present": 10,
+      "orbit_size": 30,
+      "overlap": 5,
+      "remaining_pairs_above_diameter": 28394,
+      "representative_B": 95,
+      "status": "colorability unresolved",
+      "vertices": 618
+    }
+  },
+  "colors": 12,
+  "diameter": 6,
+  "n": 11,
+  "reduction": "Every connected component with at least three vertices has, after swapping 0 and A if needed, a third vertex B adjacent to 0. Up to S_6 x S_5, B is determined by |A cap B| in {3,4,5}.",
+  "trim_vertices": 692
+}
