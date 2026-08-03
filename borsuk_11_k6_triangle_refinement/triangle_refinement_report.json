@@ -1,0 +1,22 @@
+{
+  "candidate_fourth_vertices": 307,
+  "diameter": 6,
+  "n": 11,
+  "orbit_count": 11,
+  "orbits": {
+    "a0_b3_c3_d0": {"cnf_clauses": 219595, "cnf_sha256": "9417bf106dfb6a75a570d4eb8d74c6e2a0bf46752aa31948b000cff2e26fa86e", "cnf_variables": 3339, "counts": [0,3,3,0], "distance_6_edges": 39642, "edge_sha256": "e82086a490ef406484c52167b14c590824e8c7ad66c13edfa83f294c1168b383", "orbit_size": 1, "remaining_pairs_above_diameter": 13284, "representative_C": 504, "vertices": 436},
+    "a1_b2_c2_d1": {"cnf_clauses": 190813, "cnf_sha256": "573da4a49831684323978f1f86a617a3bf21359d51ee982a3099d7f3d5ee719b", "cnf_variables": 3145, "counts": [1,2,2,1], "distance_6_edges": 39640, "edge_sha256": "5e05c4dc8a3ed5cd23ad40c56fd2b8d48aef1feec985a9044905c6c1467eb517", "orbit_size": 54, "remaining_pairs_above_diameter": 13188, "representative_C": 729, "vertices": 436},
+    "a1_b2_c3_d0": {"cnf_clauses": 213295, "cnf_sha256": "7daf0cf8fd87437df519f47aaebe2f9695c37b6a2800582df6a1e7dc69d66c9c", "cnf_variables": 3322, "counts": [1,2,3,0], "distance_6_edges": 44391, "edge_sha256": "4da92b4ac01818ee028bd7f693d39f405aceb3f05f0cd64d7762c329712a08b0", "orbit_size": 18, "remaining_pairs_above_diameter": 14676, "representative_C": 473, "vertices": 460},
+    "a2_b1_c1_d2": {"cnf_clauses": 191175, "cnf_sha256": "1c02051b15358d6584fd7401eb909785cc04dbd503e9eb884165e2c567490171", "cnf_variables": 3151, "counts": [2,1,1,2], "distance_6_edges": 39600, "edge_sha256": "f009ecf6dba467260f003ef860494dfb0985614e8a47c1066fcf9511f77c08aa", "orbit_size": 27, "remaining_pairs_above_diameter": 13104, "representative_C": 1611, "vertices": 436},
+    "a2_b1_c2_d1": {"cnf_clauses": 184823, "cnf_sha256": "7e48668d95bea36097448ccd28b2cd8cac74a5b03361f64a5028a8cb5da9b161", "cnf_variables": 3144, "counts": [2,1,2,1], "distance_6_edges": 44388, "edge_sha256": "9035ad6b4f6da62e13fdae30acc9ba147d968128fe0809c6a30b8401480c9156", "orbit_size": 108, "remaining_pairs_above_diameter": 14484, "representative_C": 715, "vertices": 460},
+    "a2_b1_c3_d0": {"cnf_clauses": 245516, "cnf_sha256": "3cabdb5317eacf11656811d1025ec90ca41d05aa32d31325cf12e07ec98fa2d2", "cnf_variables": 3559, "counts": [2,1,3,0], "distance_6_edges": 50739, "edge_sha256": "980f61465b191b91a0a886414f0d335c90f726e953ac74da8de3fcb87b95ef77", "orbit_size": 18, "remaining_pairs_above_diameter": 16740, "representative_C": 459, "vertices": 490},
+    "a2_b2_c2_d0": {"cnf_clauses": 234150, "cnf_sha256": "e5e2baba3c38b5b93b5ee61962ae8d8ffba8c1e7e07c4b2c468042775a82ee84", "cnf_variables": 3479, "counts": [2,2,2,0], "distance_6_edges": 48777, "edge_sha256": "f5b9030cb67800347d0dc91ccc2500be2c6c4a02dab803d8dedf07509a2bed86", "orbit_size": 27, "remaining_pairs_above_diameter": 15870, "representative_C": 219, "vertices": 481},
+    "a3_b0_c1_d2": {"cnf_clauses": 214654, "cnf_sha256": "b7d6c6602ff0e3ebdda639c54a1821dcc21c948785ffc164c18950cdfa0d2dc4", "cnf_variables": 3337, "counts": [3,0,1,2], "distance_6_edges": 44553, "edge_sha256": "f8d22900624d3e3a6746e9564ce0ea36a90e93c4fecb87ce7cba54f43dd7b021", "orbit_size": 6, "remaining_pairs_above_diameter": 14502, "representative_C": 1607, "vertices": 461},
+    "a3_b0_c2_d1": {"cnf_clauses": 246143, "cnf_sha256": "1603332aba070f0bc0e5d8662d1019470793d19f057a0e7eba4ead8ba94ad646", "cnf_variables": 3566, "counts": [3,0,2,1], "distance_6_edges": 50904, "edge_sha256": "080915128a5ff2d09fb01a8943a2312ce891dc37ce0783e7276b9d1ccdcfe3dc", "orbit_size": 12, "remaining_pairs_above_diameter": 16605, "representative_C": 711, "vertices": 491},
+    "a3_b1_c1_d1": {"cnf_clauses": 271527, "cnf_sha256": "75e2b14bfa151a99e7c4e5e5c2eaadbb173a0d1b66822b21b38153799ee4cf80", "cnf_variables": 3711, "counts": [3,1,1,1], "distance_6_edges": 48973, "edge_sha256": "52c8e57aa49375ff068ecb8979eb14d74161b5d093f2f0519c8802dd9e070f18", "orbit_size": 18, "remaining_pairs_above_diameter": 15816, "representative_C": 591, "vertices": 482},
+    "a3_b1_c2_d0": {"cnf_clauses": 268564, "cnf_sha256": "b8720b7d8c8981e6d23998fe14919bb05a84822e52c9a17478a37c3582ea1c7a", "cnf_variables": 3719, "counts": [3,1,2,0], "distance_6_edges": 55617, "edge_sha256": "76f268db2462491a6e302b0e5391184454080ebacd1748ccbc7b05d58b1031b9", "orbit_size": 18, "remaining_pairs_above_diameter": 18378, "representative_C": 207, "vertices": 512}
+  },
+  "status": "exact 11-orbit reduction; colorability unresolved",
+  "triangle": [0, 63, 455],
+  "triangle_branch_vertices": 555
+}
