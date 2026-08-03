@@ -1,18 +1,10 @@
 name: oneoff-q00-compact
 
 on:
-  push:
-    branches: [research-workspace-hardening]
-    paths:
-      - '.github/workflows/oneoff-q00-compact.yml'
   pull_request:
     branches: [main]
     paths:
       - '.github/workflows/oneoff-q00-compact.yml'
-
-concurrency:
-  group: oneoff-q00-compact
-  cancel-in-progress: true
 
 jobs:
   bounded-witness-probe:
