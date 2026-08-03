@@ -14,7 +14,7 @@ permissions:
 
 concurrency:
   group: check-q00-proof-artifact-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   check-preserved-proof:
@@ -64,7 +64,7 @@ jobs:
           test -s /tmp/q00-source/q00.drat
           echo "$EXPECTED_CNF_SHA256  /tmp/q00-source/q00_12color.cnf" | sha256sum --check --strict
           echo "$EXPECTED_MAP_SHA256  /tmp/q00-source/q00_variable_map.json" | sha256sum --check --strict
-          grep -Eq '^s UNSATISFIABLE' /tmp/q00-source/solver.out
+          grep -Eq '^s UNSATISFIABLE([[:space:]]|$)' /tmp/q00-source/solver.out
           final_record="$(tail -c 2 /tmp/q00-source/q00.drat | od -An -tx1 | tr -d '[:space:]')"
           echo "final binary DRAT record: $final_record"
           test "$final_record" = 6100
@@ -90,7 +90,11 @@ jobs:
           result="$GITHUB_WORKSPACE/q00-check-result"
           /usr/bin/time -v /tmp/drat-trim/drat-trim "$cnf" "$proof" -v \
             >"$result/checker.out" 2>"$result/checker.err"
-          grep -Eq 's VERIFIED|VERIFIED' "$result/checker.out" "$result/checker.err"
+          grep -Eq '^s VERIFIED([[:space:]]|$)' "$result/checker.out"
+          if grep -Eq '^s NOT VERIFIED([[:space:]]|$)' "$result/checker.out"; then
+            echo 'positive proof check reported NOT VERIFIED' >&2
+            exit 1
+          fi
 
       - name: Reject proof with every empty clause removed
         run: |
@@ -164,10 +168,11 @@ jobs:
           negative_status=$?
           set -e
           echo "$negative_status" >"$result/negative-control.exit-status"
-          if grep -Eq 's VERIFIED|VERIFIED' "$result/negative-control.out" "$result/negative-control.err"; then
+          if grep -Eq '^s VERIFIED([[:space:]]|$)' "$result/negative-control.out"; then
             echo 'binary proof with all empty-clause additions removed was unexpectedly accepted' >&2
             exit 1
           fi
+          grep -Eq '^s NOT VERIFIED([[:space:]]|$)' "$result/negative-control.out"
           rm -f "$bad"
 
       - name: Write certificate metadata
@@ -206,7 +211,7 @@ jobs:
               'checker_binary_sha256': (result / 'checker-binary.sha256').read_text().split()[0],
               'checker_output_sha256': sha256(result / 'checker.out'),
               'checker_stderr_sha256': sha256(result / 'checker.err'),
-              'negative_control': 'every binary addition of the empty clause was removed and the resulting proof was rejected',
+              'negative_control': 'every binary addition of the empty clause was removed and the resulting proof reported NOT VERIFIED',
               'empty_clause_additions_removed': mutation['empty_clause_additions_removed'],
               'negative_control_output_sha256': sha256(result / 'negative-control.out'),
               'negative_control_stderr_sha256': sha256(result / 'negative-control.err'),
