@@ -18,7 +18,11 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: verify-q00-five-base-crosswalk-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   crosswalk:
@@ -28,7 +32,9 @@ jobs:
       - name: Checkout draft verifier branch
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          ref: research/q00-fifth-base-reduction
           fetch-depth: 0
+          persist-credentials: true
 
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
@@ -72,3 +78,19 @@ jobs:
               raise SystemExit('draft IDs are not a bijection')
           print('PASS complete 12 x 12 q00 five-base crosswalk')
           PY
+
+      - name: Record the checked crosswalk
+        if: github.event_name == 'push'
+        run: |
+          set -euo pipefail
+          destination=borsuk_11_k6_q00_fifth_base_reduction/crosswalk-result.json
+          cp "$RUNNER_TEMP/q00-five-base-crosswalk.json" "$destination"
+          git config user.name 'q00-crosswalk-bot'
+          git config user.email 'q00-crosswalk-bot@users.noreply.github.com'
+          git add "$destination"
+          if git diff --cached --quiet; then
+            echo 'Crosswalk result already current.'
+            exit 0
+          fi
+          git commit -m 'Record checked q00 five-base crosswalk'
+          git push origin HEAD:research/q00-fifth-base-reduction
