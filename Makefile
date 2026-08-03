@@ -20,9 +20,11 @@ status: cruthunas-status
 
 cruthunas-check:
 	$(PYTHON) scripts/cruthunas.py check --all
+	$(PYTHON) scripts/validate_cruthunas_transactions.py
 
 cruthunas-changed:
 	$(PYTHON) scripts/cruthunas.py check --changed
+	$(PYTHON) scripts/validate_cruthunas_transactions.py
 
 cruthunas-status:
 	$(PYTHON) scripts/cruthunas.py status
