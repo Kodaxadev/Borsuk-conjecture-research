@@ -1,6 +1,6 @@
 # Project status ledger
 
-Updated: 2026-08-02
+Updated: 2026-08-03
 
 This file summarizes the human-readable state. [`research/claims.json`](../research/claims.json) is the mathematical claim registry. The [`cruthunas/`](../cruthunas/) records govern source boundaries, typed evidence, transitions, and status promotion.
 
@@ -76,7 +76,7 @@ The one-base normalization produces a canonical trim graph with:
 
 This is a universal cover for possible normalized components, not a legal diameter-6 set.
 
-### n=11, k=6 certified obstruction
+### n=11, k=6 certified root obstruction
 
 The canonical trim graph has a checked UNSAT certificate for 12-colorability. This proves that the one-base cover is too coarse. It does **not** disprove or settle the diameter-6 theorem target because the trim graph contains pairs farther than 6 apart.
 
@@ -109,11 +109,40 @@ intermediate 101: e60f5f81120e42c8c7eae2da299105e802266f6e92629cd6ac6ee24bcef9db
 canonical 58:    08913feaddbc0f930b6ef90a1677fbc4577cb23dcb6f4dac8987e37056d34742
 ```
 
-Cruthúnas links both the symmetry reduction and deterministic SAT-lane smoke tests to this Gate 4 infrastructure claim. `case_status.json` still records all 58 types as `UNKNOWN`.
+Cruthúnas links both the symmetry reduction and deterministic SAT-lane smoke tests to this Gate 4 infrastructure claim.
+
+### q00 compact-trim obstruction
+
+The deterministic compact list-coloring CNF for canonical trim type `q00` is now independently proof-checked UNSAT:
+
+- 436 trim vertices;
+- 2,724 compact list-color variables;
+- 130,840 clauses;
+- CNF SHA-256 `36da8f78ae376b370f119d1fa16a58f6504607d949ac8315648fdbda52450299`;
+- binary DRAT proof SHA-256 `59bf62a00d0c63b5ced7967c33421d953af5b96e423cc93dc862e595d08561b5`;
+- pinned `drat-trim` verdict `s VERIFIED`;
+- corrupted first binary proof record rejected by the same pinned checker.
+
+This material result was registered prospectively through separate Gate 2, Gate 3, and explicit Gate 4 transitions as claim `n11-k6-q00-trim-unsat`:
+
+```text
+Gate 4; COMPUTATIONAL; [CERTIFICATE_CHECKED]; WORKING
+```
+
+The scope boundary is essential. `q00` is still a universal trim and may contain pairs farther than Hamming distance 6. The certificate therefore proves a **scoped obstruction**, not resolution of the full q00 isometry type. `case_status.json` remains unchanged with all 58 cases `UNKNOWN`.
+
+The compressed proof bundle is currently a GitHub Actions artifact expiring on November 1, 2026. Its exact hashes and checker metadata are frozen in [`borsuk_11_k6_four_base_reduction/certificates/q00/`](../borsuk_11_k6_four_base_reduction/certificates/q00/); durable long-term archival remains required.
 
 ## Current research frontier
 
-Resolve the 58 canonical trim types:
+The immediate mathematical task is to refine `q00` exhaustively:
+
+- enumerate compatible fifth-base or exact incompatibility branches;
+- close each child with an independently verified SAT coloring or checked UNSAT proof;
+- preserve complete coverage of the q00 parent;
+- change q00 to `UNSAT_REFINED` only after every required child is certificate-resolved.
+
+The remaining q01–q57 trims may be searched in parallel:
 
 - a verified SAT coloring closes an entire isometry type and every descendant;
 - a proof-checked UNSAT trim must be refined by a fifth compatible base or an exact incompatibility branch;
