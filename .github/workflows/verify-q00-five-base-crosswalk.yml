@@ -1,0 +1,67 @@
+name: verify-q00-five-base-crosswalk
+
+on:
+  pull_request:
+    branches:
+      - research-workspace-hardening
+    paths:
+      - scripts/crosswalk_q00_five_base.py
+      - borsuk_11_k6_q00_fifth_base_reduction/**
+      - .github/workflows/verify-q00-five-base-crosswalk.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  crosswalk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout draft verifier branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.11'
+
+      - name: Materialize the pinned governed implementation
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin research-workspace-hardening
+          git cat-file -e d358bbc0487f8ae211c5e62adf6aa3455e5f02ed^{commit}
+          git worktree add --detach "$RUNNER_TEMP/governed" d358bbc0487f8ae211c5e62adf6aa3455e5f02ed
+
+      - name: Verify the complete affine-isometry crosswalk
+        run: |
+          set -euo pipefail
+          python scripts/crosswalk_q00_five_base.py \
+            --governed-root "$RUNNER_TEMP/governed" \
+            --draft-root "$GITHUB_WORKSPACE" \
+            --output "$RUNNER_TEMP/q00-five-base-crosswalk.json"
+          python - "$RUNNER_TEMP/q00-five-base-crosswalk.json" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          result = json.loads(Path(sys.argv[1]).read_text())
+          expected = {
+              'status': 'PASS',
+              'candidate_count': 432,
+              'class_count': 12,
+              'complete_bijection': True,
+              'coverage_assignments_equal_under_crosswalk': True,
+              'all_transformed_child_vertex_sets_equal': True,
+          }
+          actual = {key: result[key] for key in expected}
+          if actual != expected:
+              raise SystemExit(f'crosswalk boundary mismatch: {actual}')
+          if len({row['governed_id'] for row in result['crosswalk']}) != 12:
+              raise SystemExit('governed IDs are not a bijection')
+          if len({row['draft_id'] for row in result['crosswalk']}) != 12:
+              raise SystemExit('draft IDs are not a bijection')
+          print('PASS complete 12 x 12 q00 five-base crosswalk')
+          PY
