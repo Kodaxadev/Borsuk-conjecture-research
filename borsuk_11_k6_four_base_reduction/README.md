@@ -49,14 +49,16 @@ The CSV files are generated rather than checked in so both languages define and 
 python build_inventory.py --output inventory.csv
 ```
 
-This orders all 58 types by deterministic CNF size and records graph density, incompatibility density, fixed-clique size, variable count, and clause count. It is a scheduling inventory, not an empirical hardness claim.
+This orders all 58 types by deterministic compact-CNF size and records graph density, incompatibility density, fixed-clique size, variable count, and clause count. It is a scheduling inventory, not an empirical hardness claim.
 
-Before encoding, a bounded deterministic clique search tries to find a full 12-clique for color-symmetry breaking. If that search exceeds its fixed node budget, the generator falls back to a verified deterministic clique. Across the current 58-type inventory, two types receive full 12-clique fixing; all other fixed cliques remain valid but smaller.
+Before encoding, a bounded deterministic clique search tries to find a full 12-clique. The clique colors can be fixed without loss of generality. A vertex adjacent to a fixed clique vertex cannot use that vertex's color, so those variables are removed entirely and the graph-coloring problem becomes an equivalent compact list-coloring instance.
+
+If the clique search exceeds its fixed node budget, the generator falls back to a verified deterministic clique. Across the current 58-type inventory, two types receive full 12-clique fixing; all other fixed cliques remain valid but smaller.
 
 Inventory SHA-256:
 
 ```text
-860fc2d3762a6956afda8739e651aa0f03fe7b4fce6686267d038f113f43a9a5
+3212beac7ab2b301a7ca97801c91610344f27a29c03233041bd7392209c91ccf
 ```
 
 ## SAT lane
@@ -75,7 +77,9 @@ python verify_model.py q00 work/q00/solver.out \
   --output work/q00/q00_verified_coloring.json
 ```
 
-`q00` contains a verified 12-clique, so all 12 color labels are fixed before search. `verify_sat_lane.py` freezes the resulting deterministic CNF and variable-map hashes in a temporary directory and runs negative controls against the model verifier.
+`q00` contains a verified 12-clique. Fixing it and deleting forbidden color variables reduces the deterministic instance from the former direct encoding's 5,232 variables and 504,422 clauses to **2,724 variables and 130,840 clauses**.
+
+`verify_sat_lane.py` freezes the compact CNF and variable-map hashes in a temporary directory and runs negative controls against the independent model decoder.
 
 See [`SAT-WORKFLOW.md`](SAT-WORKFLOW.md) for the exact SAT, UNSAT, and artifact-recording contract.
 
@@ -96,7 +100,7 @@ LEGAL_UNSAT: 0
 
 `probe-history/` records bounded exploratory runs that did not produce certificate-backed results. These records cannot alter `case_status.json` or Cruthúnas evidence state.
 
-The first `q00` Kissat probe used the earlier 10-clique encoding and ended `UNKNOWN` after 180 seconds. The current 12-clique encoding has a different CNF hash, so the old run is retained only as operational history and is not directly comparable evidence.
+The first `q00` Kissat probe used the earlier direct 10-clique encoding and ended `UNKNOWN` after 180 seconds. The compact list-color encoding has a different CNF and variable map, so the old run is retained only as operational history and is not directly comparable evidence.
 
 ## Status boundary
 
