@@ -26,6 +26,7 @@
     "solver_exit_status": 20,
     "solver_report": "UNSATISFIABLE",
     "research_state": "UNKNOWN",
+    "state": "OBSERVED_UNSAT_UNVERIFIED",
     "workflow_run_id": 30787121061,
     "workflow_head_sha": "c7855b1d5a858c738fc34ddaf1060d13040122b8",
     "artifact_id": 8845671264,
@@ -43,6 +44,7 @@
     "repository_status_changed": false,
     "cruthunas_evidence_registered": false,
     "result_is_certificate": false,
+    "partial_proof_is_certificate": false,
     "result": "Kissat reported UNSAT on the compact encoding, but the witness-only run produced no proof trace. Under repository rules q00 remains UNKNOWN.",
     "next_action": "Repeat the exact compact instance with proof production enabled and accept UNSAT only if an independent checker verifies the trace."
   }
