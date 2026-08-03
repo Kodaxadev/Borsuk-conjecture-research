@@ -90,6 +90,15 @@
       "allowed_claim_ids": [
         "n11-k6-q00-five-base-reduction"
       ]
+    },
+    {
+      "id": "SRC-K6-Q00-FIFTH-BASE",
+      "kind": "repository-document",
+      "path": "borsuk_11_k6_q00_fifth_base_reduction/PROOF.md",
+      "revision_pin": "5e4fda36ff2092cd9824dc7a51fae13600e9cb32",
+      "allowed_claim_ids": [
+        "n11-k6-q00-fifth-base-reduction"
+      ]
     }
   ]
 }

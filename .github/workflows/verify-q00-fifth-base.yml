@@ -1,0 +1,73 @@
+name: verify-q00-fifth-base
+
+on:
+  pull_request:
+    branches:
+      - research-workspace-hardening
+    paths:
+      - borsuk_11_k6_q00_fifth_base_reduction/**
+      - .github/workflows/verify-q00-fifth-base.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-reduction:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validate Cruthúnas baseline
+        run: |
+          set -euo pipefail
+          python scripts/cruthunas.py check --all
+          python scripts/cruthunas.py adapters check
+          python scripts/validate_cruthunas_transactions.py
+          python scripts/validate_cruthunas_observations.py
+      - name: Reproduce fifth-base reduction
+        working-directory: borsuk_11_k6_q00_fifth_base_reduction
+        run: |
+          set -euo pipefail
+          python generate_fifth_base_cases.py --output /tmp/canonical_12.csv --report /tmp/report.json
+          cmp canonical_12.csv /tmp/canonical_12.csv
+          cmp report.json /tmp/report.json
+          node verify_independent.js
+          python verify_status.py
+          sha256sum -c SHA256SUMS
+      - name: Freeze f11 compact smoke test
+        working-directory: borsuk_11_k6_q00_fifth_base_reduction
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/f11
+          python build_child_instance.py f11 --output-dir /tmp/f11 > /tmp/f11.json
+          grep -q '"variables": 2049' /tmp/f11.json
+          grep -q '"clauses": 72430' /tmp/f11.json
+          echo '4341c1d9ba4b293f79e48b7a094e757d0c09aa46024d67e9a6f4556f3d3c2388  /tmp/f11/f11_12color.cnf' | sha256sum --check --strict
+          echo 'ff5b5f9df7c3364d79dcdf0942cc7ee58fb63a7d1911e7fa2ed4bb60da511f20  /tmp/f11/f11_variable_map.json' | sha256sum --check --strict
+      - name: Confirm unchanged research boundaries
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          theorem = next(item for item in json.loads(Path('cruthunas/ledger.json').read_text())['entries'] if item['claim_id'] == 'n11-k6-full')
+          if (theorem['gate'], theorem['verification_state'], theorem['lifecycle_state']) != (2, 'UNCHECKED', 'OPEN'):
+              raise SystemExit(f'unexpected theorem state: {theorem}')
+          status = json.loads(Path('borsuk_11_k6_four_base_reduction/case_status.json').read_text())
+          if status['overrides']:
+              raise SystemExit('parent case status unexpectedly changed')
+          children = json.loads(Path('borsuk_11_k6_q00_fifth_base_reduction/child_status.json').read_text())
+          if children['overrides']:
+              raise SystemExit('fifth-base child status unexpectedly changed')
+          print('PASS theorem and all child statuses unchanged')
+          PY

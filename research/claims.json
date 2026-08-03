@@ -201,6 +201,30 @@
         "This reduction does not promote the full n=11,k=6 theorem target."
       ],
       "public_claim_allowed": true
+    },
+    {
+      "id": "n11-k6-q00-fifth-base-reduction",
+      "title": "Exhaustive 12-type fifth-base refinement of q00",
+      "type": "symmetry-reduction",
+      "status": "attack-surface",
+      "package": "borsuk_11_k6_q00_fifth_base_reduction",
+      "claim": "Every q00-compatible diameter-6 family containing more than the four q00 base points is contained, up to an affine cube isometry stabilizing the unordered q00 base, in one of 12 canonical fifth-base child trims; the four-point base alone is trivially 12-colorable.",
+      "depends_on": [
+        "n11-k6-four-base-reduction",
+        "n11-k6-q00-trim-unsat"
+      ],
+      "evidence_commands": [
+        "cd borsuk_11_k6_q00_fifth_base_reduction && python generate_fifth_base_cases.py --output canonical_12.csv --report report.json",
+        "cd borsuk_11_k6_q00_fifth_base_reduction && node verify_independent.js",
+        "cd borsuk_11_k6_q00_fifth_base_reduction && python verify_status.py"
+      ],
+      "limitations": [
+        "All 12 fifth-base child trims remain UNKNOWN.",
+        "The child trims may contain pairs farther than Hamming distance 6 and are covers rather than legal theorem instances.",
+        "This reduction does not change q00 in case_status.json.",
+        "The full n=11,k=6 theorem target remains Gate 2, UNCHECKED, and OPEN."
+      ],
+      "public_claim_allowed": true
     }
   ]
 }
