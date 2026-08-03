@@ -1,0 +1,220 @@
+{
+  "schema_version": 1,
+  "evidence": [
+    {
+      "id": "E-N10-K4-REPRO",
+      "claim_id": "n10-k4-coloring-reproduction",
+      "type": "REPRODUCTION",
+      "epistemic_class": "COMPUTATIONAL",
+      "verification_state": "INDEPENDENTLY_REPRODUCED",
+      "paths": [
+        "borsuk_n10_k4_reproduction/README.md",
+        "borsuk_n10_k4_reproduction/reproduce_n10_k4.py"
+      ],
+      "commands": [
+        "cd borsuk_n10_k4_reproduction && python reproduce_n10_k4.py"
+      ],
+      "environment": {
+        "python": ">=3.11",
+        "external_dependencies": []
+      },
+      "source_revision": "research-workspace-hardening",
+      "clean_room_verifier": false,
+      "limitations": "Reproduces the coloring computation only; universal coverage is outside this evidence record."
+    },
+    {
+      "id": "E-N11-K4-CANDIDATE",
+      "claim_id": "n11-k4-candidate",
+      "type": "PROOF_PACKAGE",
+      "epistemic_class": "HYBRID",
+      "verification_state": "INTERNALLY_VERIFIED",
+      "paths": [
+        "borsuk_11_k4_candidate/PROOF.md",
+        "borsuk_11_k4_candidate/witness.json",
+        "borsuk_11_k4_candidate/verify.py",
+        "borsuk_11_k4_candidate/verify_independent.js"
+      ],
+      "commands": [
+        "cd borsuk_11_k4_candidate && python verify.py",
+        "cd borsuk_11_k4_candidate && node verify_independent.js"
+      ],
+      "environment": {
+        "python": ">=3.11",
+        "node": ">=22",
+        "external_dependencies": []
+      },
+      "source_revision": "research-workspace-hardening",
+      "clean_room_verifier": true,
+      "limitations": "Internal verification does not establish external review, novelty, priority, or publication readiness."
+    },
+    {
+      "id": "E-N11-K8-CANDIDATE",
+      "claim_id": "n11-k8-candidate",
+      "type": "PROOF_PACKAGE",
+      "epistemic_class": "HYBRID",
+      "verification_state": "INTERNALLY_VERIFIED",
+      "paths": [
+        "borsuk_11_k8_candidate/PROOF.md",
+        "borsuk_11_k8_candidate/witness.json",
+        "borsuk_11_k8_candidate/verify.py",
+        "borsuk_11_k8_candidate/verify_independent.js"
+      ],
+      "commands": [
+        "cd borsuk_11_k8_candidate && python verify.py",
+        "cd borsuk_11_k8_candidate && node verify_independent.js"
+      ],
+      "environment": {
+        "python": ">=3.11",
+        "node": ">=22",
+        "external_dependencies": []
+      },
+      "source_revision": "research-workspace-hardening",
+      "clean_room_verifier": true,
+      "artifact_hashes": [
+        {
+          "artifact": "exact-distance-8 graph",
+          "sha256": "32ed0ca436667ccbd7d026cc06d0990e31350684b2d0136cc93f7c3225294952"
+        }
+      ],
+      "limitations": "The certificate proves an upper bound only and has not completed external specialist review."
+    },
+    {
+      "id": "E-K6-ROOT-ATTACK",
+      "claim_id": "n11-k6-trim-attack-surface",
+      "type": "REDUCTION",
+      "epistemic_class": "COMPUTATIONAL",
+      "verification_state": "INDEPENDENTLY_REPRODUCED",
+      "paths": [
+        "borsuk_11_k6_attack_surface/ATTACK_SURFACE.md",
+        "borsuk_11_k6_attack_surface/verify_structure.py",
+        "borsuk_11_k6_attack_surface/verify_independent.js",
+        "borsuk_11_k6_attack_surface/SHA256SUMS"
+      ],
+      "commands": [
+        "cd borsuk_11_k6_attack_surface && python verify_structure.py",
+        "cd borsuk_11_k6_attack_surface && node verify_independent.js",
+        "cd borsuk_11_k6_attack_surface && sha256sum -c SHA256SUMS"
+      ],
+      "environment": {
+        "python": ">=3.11",
+        "node": ">=22",
+        "external_dependencies": []
+      },
+      "source_revision": "research-workspace-hardening",
+      "clean_room_verifier": true,
+      "artifact_hashes": [
+        {
+          "artifact": "trim graph",
+          "sha256": "a0c7fb01f50083df21ef1e74e478dda4a372455585e1e780763847a4a758fb55"
+        },
+        {
+          "artifact": "12-color CNF",
+          "sha256": "6adb2e0eeb83ed029b4330ff6a1e87e7692694c9d5860be58ac3c5818c8dce4d"
+        }
+      ],
+      "limitations": "The trim is a universal cover containing illegal distance-greater-than-6 pairs."
+    },
+    {
+      "id": "E-K6-ROOT-UNSAT",
+      "claim_id": "n11-k6-trim-unsat",
+      "type": "UNSAT_CERTIFICATE",
+      "epistemic_class": "COMPUTATIONAL",
+      "verification_state": "CERTIFICATE_CHECKED",
+      "paths": [
+        "borsuk_11_k6_trim_unsat_certificate/k6_trim_12color.cnf",
+        "borsuk_11_k6_trim_unsat_certificate/k6_trim_12color.drat.gz",
+        "borsuk_11_k6_trim_unsat_certificate/drup_check.cpp",
+        "borsuk_11_k6_trim_unsat_certificate/k6_drup_check.out"
+      ],
+      "commands": [
+        "make verify-k6-certificate"
+      ],
+      "environment": {
+        "compiler": "g++ with C++17 support",
+        "compression": "gzip",
+        "external_dependencies": []
+      },
+      "source_revision": "research-workspace-hardening",
+      "clean_room_verifier": true,
+      "limitations": "The certificate rejects only the coarse trim cover and does not settle the legal diameter-6 theorem target."
+    },
+    {
+      "id": "E-K6-BRANCH-SCAFFOLD",
+      "claim_id": "n11-k6-branch-search-scaffold",
+      "type": "SEARCH_INFRASTRUCTURE",
+      "epistemic_class": "INFRASTRUCTURE",
+      "verification_state": "INDEPENDENTLY_REPRODUCED",
+      "paths": [
+        "borsuk_11_k6_branch_search/README.md",
+        "borsuk_11_k6_branch_search/generate_root.py",
+        "borsuk_11_k6_branch_search/verify_root_independent.js",
+        "borsuk_11_k6_branch_search/manifest.json",
+        "borsuk_11_k6_branch_search/verify_manifest.py"
+      ],
+      "commands": [
+        "cd borsuk_11_k6_branch_search && python generate_root.py",
+        "cd borsuk_11_k6_branch_search && node verify_root_independent.js",
+        "cd borsuk_11_k6_branch_search && python verify_manifest.py"
+      ],
+      "environment": {
+        "python": ">=3.11",
+        "node": ">=22",
+        "external_dependencies": []
+      },
+      "source_revision": "research-workspace-hardening",
+      "clean_room_verifier": true,
+      "artifact_hashes": [
+        {
+          "artifact": "root vertex set",
+          "sha256": "ece78553536e8cbac3404fb77db0096352024b1dbf15ea4f129d782a1755590d"
+        },
+        {
+          "artifact": "root exact-distance-6 graph",
+          "sha256": "28aeb05060799feae42e3af33d51a66f852f0e6308cb737f0326bcda0af17c3f"
+        },
+        {
+          "artifact": "root incompatibility graph",
+          "sha256": "cc2059f512d2210f1c654c0ae7cbc1f00db22e29cc7fa6d1279e6b77a2f68828"
+        }
+      ],
+      "limitations": "The scaffold contains unresolved UNKNOWN leaves and is not a completed proof."
+    },
+    {
+      "id": "E-K6-FOUR-BASE",
+      "claim_id": "n11-k6-four-base-reduction",
+      "type": "SYMMETRY_REDUCTION",
+      "epistemic_class": "HYBRID",
+      "verification_state": "INDEPENDENTLY_REPRODUCED",
+      "paths": [
+        "borsuk_11_k6_four_base_reduction/PROOF.md",
+        "borsuk_11_k6_four_base_reduction/generate_cases.py",
+        "borsuk_11_k6_four_base_reduction/verify_independent.js",
+        "borsuk_11_k6_four_base_reduction/case_status.json",
+        "borsuk_11_k6_four_base_reduction/verify_status.py"
+      ],
+      "commands": [
+        "cd borsuk_11_k6_four_base_reduction && python generate_cases.py",
+        "cd borsuk_11_k6_four_base_reduction && node verify_independent.js",
+        "cd borsuk_11_k6_four_base_reduction && python verify_status.py"
+      ],
+      "environment": {
+        "python": ">=3.11",
+        "node": ">=22",
+        "external_dependencies": []
+      },
+      "source_revision": "research-workspace-hardening",
+      "clean_room_verifier": true,
+      "artifact_hashes": [
+        {
+          "artifact": "101 intermediate cases",
+          "sha256": "e60f5f81120e42c8c7eae2da299105e802266f6e92629cd6ac6ee24bcef9db19"
+        },
+        {
+          "artifact": "58 canonical trim types",
+          "sha256": "08913feaddbc0f930b6ef90a1677fbc4577cb23dcb6f4dac8987e37056d34742"
+        }
+      ],
+      "limitations": "The reduction is exhaustive, but all 58 solver-frontier types remain UNKNOWN at certificate level."
+    }
+  ]
+}
