@@ -14,8 +14,7 @@
   "observation_schema": "cruthunas/schemas/observation.schema.json",
   "transaction_schema": "cruthunas/schemas/transaction.schema.json",
   "transaction_plans": [
-    "cruthunas/transactions/n11-k6-gate-2-to-3.blocked.json",
-    "cruthunas/transactions/n11-k6-q00-fifth-base-gate-3-to-4.ready.json"
+    "cruthunas/transactions/n11-k6-gate-2-to-3.blocked.json"
   ],
   "canonical_skill": "cruthunas/skills/cruthunas-govern/SKILL.md",
   "adapters": [

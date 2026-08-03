@@ -142,7 +142,7 @@
     },
     {
       "claim_id": "n11-k6-q00-fifth-base-reduction",
-      "gate": 3,
+      "gate": 4,
       "epistemic_class": "HYBRID",
       "verification_state": "INDEPENDENTLY_REPRODUCED",
       "lifecycle_state": "WORKING",
@@ -152,7 +152,7 @@
       "evidence_ids": [
         "E-K6-Q00-FIFTH-BASE"
       ],
-      "current_transition_id": "T-K6-Q00-FIFTH-2-3"
+      "current_transition_id": "T-K6-Q00-FIFTH-3-4"
     }
   ]
 }
