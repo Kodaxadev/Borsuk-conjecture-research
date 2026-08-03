@@ -1,0 +1,263 @@
+name: check-q00-proof-acceptance-boundary
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/check-q00-proof-acceptance-boundary.yml
+      - scripts/drat_empty_clause_control.py
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: check-q00-proof-acceptance-boundary-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  locate-acceptance-boundary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      SOURCE_RUN_ID: 30822622138
+      SOURCE_ARTIFACT_ID: 8859778824
+      SOURCE_ARTIFACT_DIGEST: e75f4a6571a22bef7f686ec6f91037f17598fecf19872d1c085113f706be2351
+      EXPECTED_CNF_SHA256: 36da8f78ae376b370f119d1fa16a58f6504607d949ac8315648fdbda52450299
+      EXPECTED_MAP_SHA256: 5f94c619b6a5996c54f269a88de5bfaff042e4c855ea8543869b84009c7dae45
+      EXPECTED_PROOF_SHA256: 59bf62a00d0c63b5ced7967c33421d953af5b96e423cc93dc862e595d08561b5
+      EXPECTED_CHECKER_SHA256: 92f0aa9575ed519d66a99b8b1b3dde6ece4618ae4c202a3a4b200265dda0aa7a
+      DRAT_TRIM_REVISION: 2e3b2dc0ecf938addbd779d42877b6ed69d9a985
+      CRUTHUNAS_CLAIM_ID: n11-k6-four-base-reduction
+
+    steps:
+      - name: Checkout governed branch
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate Cruthúnas governance
+        run: |
+          set -euo pipefail
+          python scripts/cruthunas.py check --all
+          python scripts/cruthunas.py adapters check
+          python scripts/validate_cruthunas_transactions.py
+          python scripts/validate_cruthunas_observations.py
+
+      - name: Download preserved q00 proof artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: q00-certificate-attempt
+          path: /tmp/q00-source
+          repository: Kodaxadev/Borsuk-conjecture-research
+          run-id: ${{ env.SOURCE_RUN_ID }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate frozen inputs
+        run: |
+          set -euo pipefail
+          result="$GITHUB_WORKSPACE/q00-boundary-result"
+          mkdir -p "$result"
+          echo "$EXPECTED_CNF_SHA256  /tmp/q00-source/q00_12color.cnf" | sha256sum --check --strict
+          echo "$EXPECTED_MAP_SHA256  /tmp/q00-source/q00_variable_map.json" | sha256sum --check --strict
+          echo "$EXPECTED_PROOF_SHA256  /tmp/q00-source/q00.drat" | sha256sum --check --strict
+          grep -Eq '^s UNSATISFIABLE([[:space:]]|$)' /tmp/q00-source/solver.out
+          printf '%s\n' "$SOURCE_ARTIFACT_DIGEST" >"$result/source-artifact-digest.txt"
+
+      - name: Build identical pinned checker
+        run: |
+          set -euo pipefail
+          result="$GITHUB_WORKSPACE/q00-boundary-result"
+          rm -rf /tmp/drat-trim
+          git clone --filter=blob:none https://github.com/marijnheule/drat-trim.git /tmp/drat-trim
+          cd /tmp/drat-trim
+          git checkout --detach "$DRAT_TRIM_REVISION"
+          make -j2
+          test -x drat-trim
+          test "$(sha256sum drat-trim | awk '{print $1}')" = "$EXPECTED_CHECKER_SHA256"
+          git rev-parse HEAD | tee "$result/checker-revision.txt"
+          sha256sum drat-trim | tee "$result/checker-binary.sha256"
+
+      - name: Recheck original proof
+        run: |
+          set -euo pipefail
+          result="$GITHUB_WORKSPACE/q00-boundary-result"
+          cnf=/tmp/q00-source/q00_12color.cnf
+          proof=/tmp/q00-source/q00.drat
+          printf '/tmp/drat-trim/drat-trim %s %s -v\n' "$cnf" "$proof" >"$result/original-command.txt"
+          date -u +%Y-%m-%dT%H:%M:%SZ >"$result/original-started-utc.txt"
+          set +e
+          /usr/bin/time -v -o "$result/original-time.txt" \
+            /tmp/drat-trim/drat-trim "$cnf" "$proof" -v \
+            >"$result/original.stdout" 2>"$result/original.stderr"
+          status=$?
+          set -e
+          date -u +%Y-%m-%dT%H:%M:%SZ >"$result/original-finished-utc.txt"
+          echo "$status" >"$result/original-exit-status.txt"
+          cat "$result/original.stdout" "$result/original.stderr" | tr -d '\r' \
+            >"$result/original.normalized.txt"
+          grep -Eq '^[[:space:]]*s VERIFIED[[:space:]]*$' "$result/original.normalized.txt"
+          if grep -Eq '^[[:space:]]*s NOT VERIFIED[[:space:]]*$' "$result/original.normalized.txt"; then
+            echo 'original proof produced NOT VERIFIED' >&2
+            exit 1
+          fi
+
+      - name: Locate a rejecting record-aligned prefix
+        run: |
+          set -euo pipefail
+          result="$GITHUB_WORKSPACE/q00-boundary-result"
+          cnf=/tmp/q00-source/q00_12color.cnf
+          proof=/tmp/q00-source/q00.drat
+          : >"$result/attempt-order.txt"
+
+          for predecessors in 0 1 2 4 8 16 32 64 128 256; do
+            bad="/tmp/q00-prefix-${predecessors}.drat"
+            meta="$result/control-${predecessors}.json"
+            echo "$predecessors" >>"$result/attempt-order.txt"
+            python scripts/drat_empty_clause_control.py \
+              "$proof" "$bad" "$meta" \
+              --preceding-records "$predecessors" \
+              >"$result/control-${predecessors}.generation.out"
+            printf '/tmp/drat-trim/drat-trim %s %s -v\n' "$cnf" "$bad" \
+              >"$result/control-${predecessors}.command.txt"
+            date -u +%Y-%m-%dT%H:%M:%SZ >"$result/control-${predecessors}.started-utc.txt"
+            set +e
+            /usr/bin/time -v -o "$result/control-${predecessors}.time.txt" \
+              /tmp/drat-trim/drat-trim "$cnf" "$bad" -v \
+              >"$result/control-${predecessors}.stdout" \
+              2>"$result/control-${predecessors}.stderr"
+            status=$?
+            set -e
+            date -u +%Y-%m-%dT%H:%M:%SZ >"$result/control-${predecessors}.finished-utc.txt"
+            echo "$status" >"$result/control-${predecessors}.exit-status.txt"
+            cat "$result/control-${predecessors}.stdout" \
+                "$result/control-${predecessors}.stderr" | tr -d '\r' \
+              >"$result/control-${predecessors}.normalized.txt"
+
+            if grep -Eq '^[[:space:]]*s VERIFIED[[:space:]]*$' \
+                "$result/control-${predecessors}.normalized.txt"; then
+              echo VERIFIED >"$result/control-${predecessors}.verdict.txt"
+              rm -f "$bad"
+              continue
+            fi
+
+            grep -Eq '^[[:space:]]*s NOT VERIFIED[[:space:]]*$' \
+              "$result/control-${predecessors}.normalized.txt"
+            echo 'NOT VERIFIED' >"$result/control-${predecessors}.verdict.txt"
+            echo "$predecessors" >"$result/selected-predecessor-count.txt"
+            rm -f "$bad"
+            break
+          done
+
+          test -s "$result/selected-predecessor-count.txt"
+
+      - name: Write bounded result metadata
+        run: |
+          set -euo pipefail
+          result="$GITHUB_WORKSPACE/q00-boundary-result"
+          python - "$result/certificate-result.json" <<'PY'
+          import hashlib
+          import json
+          import os
+          import sys
+          from pathlib import Path
+
+          def sha256(path: Path) -> str:
+              digest = hashlib.sha256()
+              with path.open('rb') as handle:
+                  for chunk in iter(lambda: handle.read(1024 * 1024), b''):
+                      digest.update(chunk)
+              return digest.hexdigest()
+
+          result = Path(sys.argv[1]).parent
+          selected = int((result / 'selected-predecessor-count.txt').read_text())
+          selected_meta = json.loads((result / f'control-{selected}.json').read_text())
+          attempts = []
+          for text in (result / 'attempt-order.txt').read_text().splitlines():
+              count = int(text)
+              verdict_path = result / f'control-{count}.verdict.txt'
+              if not verdict_path.exists():
+                  continue
+              meta = json.loads((result / f'control-{count}.json').read_text())
+              attempts.append({
+                  'preceding_records_removed': count,
+                  'removed_record_count_at_boundary': meta['removed_record_count_at_boundary'],
+                  'negative_proof_sha256': meta['negative_proof_sha256'],
+                  'negative_proof_bytes': meta['negative_proof_bytes'],
+                  'truncation_offset': meta['truncation_offset'],
+                  'verdict': verdict_path.read_text().strip(),
+                  'exit_status': int((result / f'control-{count}.exit-status.txt').read_text()),
+                  'stdout_sha256': sha256(result / f'control-{count}.stdout'),
+                  'stderr_sha256': sha256(result / f'control-{count}.stderr'),
+                  'time_sha256': sha256(result / f'control-{count}.time.txt'),
+              })
+
+          payload = {
+              'schema': 'borsuk-q00-proof-acceptance-boundary-v1',
+              'case_id': 'q00',
+              'claim_id': os.environ['CRUTHUNAS_CLAIM_ID'],
+              'source_workflow_run_id': int(os.environ['SOURCE_RUN_ID']),
+              'source_artifact_id': int(os.environ['SOURCE_ARTIFACT_ID']),
+              'source_artifact_digest': 'sha256:' + os.environ['SOURCE_ARTIFACT_DIGEST'],
+              'cnf_sha256': os.environ['EXPECTED_CNF_SHA256'],
+              'variable_map_sha256': os.environ['EXPECTED_MAP_SHA256'],
+              'proof_sha256': os.environ['EXPECTED_PROOF_SHA256'],
+              'proof_format': selected_meta['proof_format'],
+              'record_count': selected_meta['record_count'],
+              'empty_clause_addition_count': selected_meta['empty_clause_addition_count'],
+              'empty_clause_addition_offsets': selected_meta['empty_clause_addition_offsets'],
+              'checker': 'drat-trim',
+              'checker_revision': os.environ['DRAT_TRIM_REVISION'],
+              'checker_binary_sha256': os.environ['EXPECTED_CHECKER_SHA256'],
+              'original_verdict': 's VERIFIED',
+              'original_exit_status': int((result / 'original-exit-status.txt').read_text()),
+              'original_stdout_sha256': sha256(result / 'original.stdout'),
+              'original_stderr_sha256': sha256(result / 'original.stderr'),
+              'original_time_sha256': sha256(result / 'original-time.txt'),
+              'control_attempts': attempts,
+              'selected_preceding_record_count': selected,
+              'selected_negative_proof_sha256': selected_meta['negative_proof_sha256'],
+              'selected_negative_proof_bytes': selected_meta['negative_proof_bytes'],
+              'selected_negative_verdict': 's NOT VERIFIED',
+              'certificate_state': 'PROOF_CHECKED_UNSAT',
+              'repository_status_changed': False,
+              'cruthunas_evidence_registered': False,
+              'case_status_changed': False,
+              'bounded_claim': (
+                  'The exact frozen q00 CNF has a pinned drat-trim verdict of '
+                  's VERIFIED, while a deterministic record-aligned proof prefix '
+                  'before the checker acceptance boundary has verdict s NOT VERIFIED.'
+              ),
+              'limitation': (
+                  'This establishes UNSAT only for the exact frozen CNF. It does '
+                  'not validate the encoding-to-Borsuk correspondence, resolve the '
+                  'legal q00 diameter-6 case, or change the n=11,k=6 theorem gate.'
+              ),
+          }
+          Path(sys.argv[1]).write_text(
+              json.dumps(payload, indent=2, sort_keys=True) + '\n',
+              encoding='utf-8',
+          )
+          PY
+          sha256sum "$result"/* >"$result/result-sha256.txt"
+
+      - name: Upload boundary metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: q00-proof-acceptance-boundary
+          path: q00-boundary-result/
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Report scoped status
+        run: |
+          echo 'Original q00 proof: s VERIFIED'
+          echo "Selected predecessor count: $(cat q00-boundary-result/selected-predecessor-count.txt)"
+          echo 'Selected record-aligned prefix: s NOT VERIFIED'
+          echo 'q00 remains UNKNOWN as a legal Borsuk case.'
+          echo 'n11-k6-full remains Gate 2; MATHEMATICAL; [UNCHECKED]; OPEN.'
