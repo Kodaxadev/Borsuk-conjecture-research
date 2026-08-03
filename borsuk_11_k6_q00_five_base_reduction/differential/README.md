@@ -1,0 +1,50 @@
+# Differential verifier for the q00 five-base reduction
+
+This directory preserves the independently written stabilizer-orbit implementation that originated on the closed, unmerged draft PR #8.
+
+It is not a separate mathematical package, Cruthúnas claim, status ledger, canonical classification, or solver authority. The governed object remains:
+
+- claim: `n11-k6-q00-five-base-reduction`;
+- package: `borsuk_11_k6_q00_five_base_reduction/`;
+- canonical child IDs: `q00r00` through `q00r11`;
+- governed case-list SHA-256: `d5b0825cd8645af2c595b3de3c851360e0b283d8ce61383482f76168e1ae9855`;
+- governed assignment SHA-256: `6c94923a260290d59727bdcad68293b7f1962a7c5377885dd536fefa5962ffc7`.
+
+The historical `f00` through `f11` labels are retained only to identify the independently generated orbit ordering. They do not create new children. `scripts/verify_q00_five_base_crosswalk.py` requires a complete bijection between those labels and the governed IDs and checks:
+
+- canonical unordered five-point affine-isometry signatures;
+- fifth-point orbit sizes;
+- child-trim vertex counts;
+- exact-distance-6 edge counts;
+- incompatible-pair counts;
+- explicit recovered affine maps;
+- exact equality of every transformed child vertex set;
+- identical coverage assignments for all 432 candidate fifth vertices.
+
+The required bijection is:
+
+```text
+q00r00 <-> f11
+q00r01 <-> f09
+q00r02 <-> f05
+q00r03 <-> f07
+q00r04 <-> f02
+q00r05 <-> f10
+q00r06 <-> f08
+q00r07 <-> f03
+q00r08 <-> f06
+q00r09 <-> f01
+q00r10 <-> f04
+q00r11 <-> f00
+```
+
+Reproduce:
+
+```bash
+python differential/generate_stabilizer_orbits.py
+node differential/verify_stabilizer_orbits.js
+python ../scripts/verify_q00_five_base_crosswalk.py \
+  --output differential/crosswalk-result.json
+```
+
+A passing crosswalk corroborates the existing reduction. It does not alter its Gate 4 state, resolve any of the 12 children, change parent q00 from `UNKNOWN`, or promote `n11-k6-full` beyond Gate 2.
