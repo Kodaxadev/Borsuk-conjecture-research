@@ -1,0 +1,113 @@
+name: k6-triangle-refinement
+
+on:
+  push:
+    branches:
+      - research/k6-second-base-orbits
+    paths:
+      - 'borsuk_11_k6_triangle_refinement/**'
+      - '.github/workflows/k6-triangle-refinement.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'borsuk_11_k6_triangle_refinement/**'
+      - '.github/workflows/k6-triangle-refinement.yml'
+  workflow_dispatch:
+
+jobs:
+  verify-reduction:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Reconstruct all 11 orbits and CNFs
+        run: |
+          python borsuk_11_k6_triangle_refinement/enumerate_triangle_refinement.py \
+            --out generated_triangle_refinement \
+            --emit-cnf \
+            > generated_triangle_refinement/run_report.json
+          test -s generated_triangle_refinement/triangle_refinement_report.json
+          test "$(find generated_triangle_refinement -name 'triangle_refinement_*.cnf' | wc -l)" = "11"
+
+  solve-orbits:
+    if: github.event_name == 'workflow_dispatch'
+    needs: verify-reduction
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        orbit:
+          - a0_b3_c3_d0
+          - a1_b2_c2_d1
+          - a1_b2_c3_d0
+          - a2_b1_c1_d2
+          - a2_b1_c2_d1
+          - a2_b1_c3_d0
+          - a2_b2_c2_d0
+          - a3_b0_c1_d2
+          - a3_b0_c2_d1
+          - a3_b1_c1_d1
+          - a3_b1_c2_d0
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Generate exact orbit CNFs
+        run: |
+          python borsuk_11_k6_triangle_refinement/enumerate_triangle_refinement.py \
+            --out generated_triangle_refinement \
+            --emit-cnf \
+            > generated_triangle_refinement/run_report.json
+
+      - name: Install CaDiCaL
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cadical
+
+      - name: Solve and verify SAT models
+        shell: bash
+        run: |
+          set +e
+          timeout 600s cadical \
+            generated_triangle_refinement/triangle_refinement_${{ matrix.orbit }}.cnf \
+            > solver_${{ matrix.orbit }}.out \
+            2> solver_${{ matrix.orbit }}.log
+          code=$?
+          set -e
+          echo "solver_exit_code=$code" | tee status_${{ matrix.orbit }}.txt
+          if [[ "$code" == "10" ]]; then
+            python borsuk_11_k6_triangle_refinement/verify_triangle_model.py \
+              ${{ matrix.orbit }} \
+              solver_${{ matrix.orbit }}.out \
+              --witness witness_${{ matrix.orbit }}.json
+          elif [[ "$code" != "20" && "$code" != "124" ]]; then
+            exit "$code"
+          fi
+
+      - name: Upload orbit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-triangle-${{ matrix.orbit }}
+          retention-days: 14
+          if-no-files-found: ignore
+          path: |
+            status_${{ matrix.orbit }}.txt
+            solver_${{ matrix.orbit }}.out
+            solver_${{ matrix.orbit }}.log
+            witness_${{ matrix.orbit }}.json
+            generated_triangle_refinement/triangle_refinement_report.json
