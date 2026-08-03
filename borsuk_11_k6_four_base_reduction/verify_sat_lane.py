@@ -22,10 +22,10 @@ EXPECTED = {
     "vertices": 436,
     "edges": 39600,
     "variables": 5232,
-    "clauses": 504422,
-    "fixed_clique": [0, 63, 455, 748, 858, 1241, 1450, 1635, 1686, 1805],
-    "cnf_sha256": "b07c254b71ae0964851afb8dd9f7fa8a728433e27ae76a327e5c10a6e6e7df55",
-    "variable_map_sha256": "742bf72f1ae30dc207e22a0c7efe1033ee6e4a5361987ed9e2f8ed3e2b85ed7d",
+    "clauses": 504424,
+    "fixed_clique": [0, 63, 455, 1611, 732, 1388, 881, 938, 1266, 1433, 1701, 1814],
+    "cnf_sha256": "b6f5c8e37c63f1149ebabb48ff54764eb6405f239ba31538ee4d711811781434",
+    "variable_map_sha256": "4802b73b31fabb5c180476e31fa14f9d4a40f8bfe13d8f96872d90286f9dc31b",
 }
 
 
@@ -53,7 +53,7 @@ def main() -> int:
             raise SystemExit(f"q00 variable-map hash mismatch: {map_hash}")
 
     self_test()
-    print("PASS: deterministic q00 SAT lane")
+    print("PASS: deterministic q00 SAT lane with full 12-clique symmetry break")
     return 0
 
 
