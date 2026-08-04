@@ -1,0 +1,392 @@
+name: screen-q00r00-seventh-base-pilot
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - research/q00r00-seventh-base-colorability-pilot
+    paths:
+      - 'borsuk_11_k6_q00r00_seventh_base_colorability_pilot/**'
+      - '.github/workflows/screen-q00r00-seventh-base-pilot.yml'
+      - 'borsuk_11_k6_q00r00_seventh_base_classification/evidence/run-30875846299/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: q00r00-seventh-base-pilot-${{ github.sha }}
+  cancel-in-progress: false
+
+env:
+  PACKAGE: borsuk_11_k6_q00r00_seventh_base_colorability_pilot
+  SOURCE_ARCHIVE: borsuk_11_k6_q00r00_seventh_base_classification/evidence/run-30875846299/artifacts/q00r00-seventh-base-classification-run-30875846299.zip
+  SOURCE_ARCHIVE_SHA256: dece0e924900b2bd751a62e82edca7e59f55e0c58a5bf92c5b9b196755646352
+  SOURCE_BINDING: borsuk_11_k6_q00r00_seventh_base_classification/evidence/run-30875846299/GOVERNANCE_BINDING.json
+  SOURCE_BINDING_GIT_BLOB: 71f6492a489e307b9d72ef743652b5418b3febfa
+  SOURCE_GOVERNANCE_COMMIT: f9e44bf830096d967546f8f5e9f7d634c2ea718b
+  SOURCE_GOVERNED_HEAD: 865f6e99567ffe48d040e9de9693026a129a76ef
+  SOURCE_CLASSIFICATION_STREAM_SHA256: 932c4ed2ffc689ce5b5fe5cea07eec9876734159186df70b598b6f3ec316f6de
+  KISSAT_ARCHIVE_MD5: 89801fadc6d7a2ee1519a9cccf0c9029
+  DRAT_TRIM_REVISION: 2e3b2dc0ecf938addbd779d42877b6ed69d9a985
+  SOLVER_LIMIT_SECONDS: '1800'
+  CHECKER_LIMIT_SECONDS: '1800'
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact pilot revision with governed history
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Verify repository-governed classification source
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          git cat-file -e "$SOURCE_GOVERNANCE_COMMIT^{commit}"
+          git cat-file -e "$SOURCE_GOVERNED_HEAD^{commit}"
+          git merge-base --is-ancestor "$SOURCE_GOVERNED_HEAD" HEAD
+          test "$(git hash-object "$SOURCE_BINDING")" = "$SOURCE_BINDING_GIT_BLOB"
+          echo "$SOURCE_ARCHIVE_SHA256  $SOURCE_ARCHIVE" | sha256sum --check --strict
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          binding=json.loads(Path(os.environ['SOURCE_BINDING']).read_text())
+          assert binding['schema']=='borsuk-q00r00-seventh-base-classification-governance-binding-v1'
+          assert binding['execution_evidence_commit']=='adf72959247e0f74338106246745c3833b627dff'
+          assert binding['classified_source_sha']=='bdcd88d18a01e383aa30aac401c083d8775e2ca2'
+          assert binding['workflow_revision']=='eb3f921983946b2ab8fa930fbec4f08c0133d3ac'
+          assert binding['artifact_id']==8879504727
+          assert binding['artifact_sha256']==os.environ['SOURCE_ARCHIVE_SHA256']
+          assert binding['classification']['canonical_grandchildren']==4476
+          assert binding['classification']['pilot_cases']==15
+          assert binding['classification']['classification_stream_sha256']==os.environ['SOURCE_CLASSIFICATION_STREAM_SHA256']
+          assert binding['mathematical_status']['all_4476_grandchildren']=='UNKNOWN'
+          assert binding['next_governed_work_unit']['claim_id']=='n11-k6-q00r00-seventh-base-colorability-pilot'
+          assert len(binding['next_governed_work_unit']['pilot_cases'])==15
+          PY
+          rm -rf "$PACKAGE/work"
+          mkdir -p "$PACKAGE/work/input/classification" "$PACKAGE/work/input/toolchain"
+          cp "$SOURCE_ARCHIVE" "$PACKAGE/work/input/source-classification.zip"
+          unzip -q "$SOURCE_ARCHIVE" -d "$PACKAGE/work/input/classification"
+          unzip -t "$SOURCE_ARCHIVE"
+          test "$(find "$PACKAGE/work/input/classification" -type f | wc -l)" -eq 41
+          (cd "$PACKAGE/work/input/classification" && sha256sum --check --strict SHA256SUMS)
+
+      - name: Generate exactly 15 canonical pilot instances
+        run: |
+          set -euo pipefail
+          python "$PACKAGE/build_instances.py" \
+            --classification-root "$PACKAGE/work/input/classification" \
+            --output "$PACKAGE/work/input/instances" \
+            | tee "$PACKAGE/work/input/build-instances.out"
+          python "$PACKAGE/verify_package.py" \
+            --instances "$PACKAGE/work/input/instances" \
+            --expected "$PACKAGE/EXPECTED_OUTPUT.json" \
+            | tee "$PACKAGE/work/input/package-verification.json"
+
+      - name: Independently reproduce every trim and CNF
+        run: |
+          set -euo pipefail
+          node "$PACKAGE/verify_instances.js" \
+            --classification-root "$PACKAGE/work/input/classification" \
+            --instances "$PACKAGE/work/input/instances" \
+            | tee "$PACKAGE/work/input/independent-instance-verification.json"
+          python "$PACKAGE/verify_coloring.py" --self-test \
+            | tee "$PACKAGE/work/input/coloring-verifier-self-test.txt"
+
+      - name: Build pinned Kissat 4.0.0
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 \
+            'https://zenodo.org/records/13081405/files/arminbiere/kissat-rel-4.0.0.zip?download=1' \
+            --output /tmp/kissat.zip
+          echo "$KISSAT_ARCHIVE_MD5  /tmp/kissat.zip" | md5sum --check --strict
+          rm -rf /tmp/kissat-source
+          mkdir /tmp/kissat-source
+          unzip -q /tmp/kissat.zip -d /tmp/kissat-source
+          configure_path="$(find /tmp/kissat-source -type f -name configure | head -n 1)"
+          test -n "$configure_path"
+          source_dir="$(dirname "$configure_path")"
+          cd "$source_dir"
+          ./configure
+          make -j2
+          test -x build/kissat
+          cp build/kissat "$GITHUB_WORKSPACE/$PACKAGE/work/input/toolchain/kissat"
+          build/kissat --version \
+            | tee "$GITHUB_WORKSPACE/$PACKAGE/work/input/toolchain/kissat-version.txt"
+          sha256sum build/kissat \
+            | tee "$GITHUB_WORKSPACE/$PACKAGE/work/input/toolchain/kissat-binary.sha256"
+
+      - name: Build pinned independent DRAT checker
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/drat-trim
+          git clone --filter=blob:none https://github.com/marijnheule/drat-trim.git /tmp/drat-trim
+          cd /tmp/drat-trim
+          git checkout --detach "$DRAT_TRIM_REVISION"
+          make -j2
+          test -x drat-trim
+          cp drat-trim "$GITHUB_WORKSPACE/$PACKAGE/work/input/toolchain/drat-trim"
+          git rev-parse HEAD \
+            | tee "$GITHUB_WORKSPACE/$PACKAGE/work/input/toolchain/drat-trim-revision.txt"
+          sha256sum drat-trim \
+            | tee "$GITHUB_WORKSPACE/$PACKAGE/work/input/toolchain/drat-trim-binary.sha256"
+
+      - name: Upload frozen pilot instances and pinned toolchain
+        uses: actions/upload-artifact@v4
+        with:
+          name: q00r00-seventh-base-pilot-inputs-${{ github.sha }}
+          path: ${{ env.PACKAGE }}/work/input/
+          if-no-files-found: error
+          compression-level: 6
+          retention-days: 90
+
+  screen:
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        case_id:
+          - q00r00-s026-t066
+          - q00r00-s028-t116
+          - q00r00-s028-t144
+          - q00r00-s028-t148
+          - q00r00-s028-t154
+          - q00r00-s030-t084
+          - q00r00-s030-t086
+          - q00r00-s031-t041
+          - q00r00-s033-t084
+          - q00r00-s034-t025
+          - q00r00-s034-t028
+          - q00r00-s034-t033
+          - q00r00-s034-t034
+          - q00r00-s034-t035
+          - q00r00-s035-t008
+    env:
+      CASE_ID: ${{ matrix.case_id }}
+    steps:
+      - name: Checkout exact pilot verifier revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Download frozen pilot instances and toolchain
+        uses: actions/download-artifact@v4
+        with:
+          name: q00r00-seventh-base-pilot-inputs-${{ github.sha }}
+          path: ${{ env.PACKAGE }}/work/input
+
+      - name: Restore exact classification source and tools
+        run: |
+          set -euo pipefail
+          echo "$SOURCE_ARCHIVE_SHA256  $PACKAGE/work/input/source-classification.zip" | sha256sum --check --strict
+          chmod +x "$PACKAGE/work/input/toolchain/kissat" "$PACKAGE/work/input/toolchain/drat-trim"
+          python "$PACKAGE/verify_package.py" \
+            --instances "$PACKAGE/work/input/instances" \
+            --expected "$PACKAGE/EXPECTED_OUTPUT.json"
+
+      - name: Solve exact grandchild CNF
+        id: solve
+        shell: bash
+        run: |
+          set -u
+          result_dir="$PACKAGE/work/results/$CASE_ID"
+          instance_dir="$PACKAGE/work/input/instances/cases/$CASE_ID"
+          cnf="$instance_dir/${CASE_ID}_12color.cnf"
+          proof="$result_dir/${CASE_ID}.drat"
+          mkdir -p "$result_dir"
+          cp "$cnf" "$result_dir/"
+          cp "$instance_dir/${CASE_ID}_variable_map.json" "$result_dir/"
+          cp "$instance_dir/${CASE_ID}_metadata.json" "$result_dir/"
+          cp "$instance_dir/${CASE_ID}_vertices.txt" "$result_dir/"
+          cp "$instance_dir/${CASE_ID}_distance6_edges.csv" "$result_dir/"
+          cp "$PACKAGE/work/input/toolchain/"*.txt "$result_dir/"
+          cp "$PACKAGE/work/input/toolchain/"*.sha256 "$result_dir/"
+          started="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          set +e
+          /usr/bin/time -v -o "$result_dir/solver-time.txt" \
+            timeout --signal=TERM --kill-after=30s "$SOLVER_LIMIT_SECONDS" \
+            "$PACKAGE/work/input/toolchain/kissat" "$cnf" "$proof" \
+            >"$result_dir/solver.out" 2>"$result_dir/solver.err"
+          status=$?
+          set -e
+          finished="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          if [ "$status" -eq 10 ]; then
+            rm -f "$proof"
+            raw_state=SAT_WITNESS_UNCHECKED
+          elif [ "$status" -eq 20 ] && [ -s "$proof" ]; then
+            raw_state=UNSAT_PROOF_UNCHECKED
+          else
+            rm -f "$proof"
+            raw_state=UNKNOWN
+          fi
+          printf '%s\n' "$started" > "$result_dir/started-utc.txt"
+          printf '%s\n' "$finished" > "$result_dir/finished-utc.txt"
+          printf '%s\n' "$status" > "$result_dir/solver-exit-status.txt"
+          printf '%s\n' "$raw_state" > "$result_dir/raw-result-state.txt"
+          echo "raw_state=$raw_state" >> "$GITHUB_OUTPUT"
+          echo "solver_status=$status" >> "$GITHUB_OUTPUT"
+          echo "started=$started" >> "$GITHUB_OUTPUT"
+          echo "finished=$finished" >> "$GITHUB_OUTPUT"
+
+      - name: Independently check SAT coloring
+        id: sat_check
+        if: steps.solve.outputs.raw_state == 'SAT_WITNESS_UNCHECKED'
+        run: |
+          set -euo pipefail
+          result_dir="$PACKAGE/work/results/$CASE_ID"
+          python "$PACKAGE/verify_coloring.py" "$CASE_ID" "$result_dir/solver.out" \
+            --instances "$PACKAGE/work/input/instances" \
+            --output "$result_dir/checked-coloring.json" \
+            | tee "$result_dir/coloring-check.out"
+
+      - name: Independently check UNSAT proof
+        id: unsat_check
+        if: steps.solve.outputs.raw_state == 'UNSAT_PROOF_UNCHECKED'
+        run: |
+          set -euo pipefail
+          result_dir="$PACKAGE/work/results/$CASE_ID"
+          cnf="$PACKAGE/work/input/instances/cases/$CASE_ID/${CASE_ID}_12color.cnf"
+          proof="$result_dir/${CASE_ID}.drat"
+          /usr/bin/time -v -o "$result_dir/checker-time.txt" \
+            timeout --signal=TERM --kill-after=30s "$CHECKER_LIMIT_SECONDS" \
+            "$PACKAGE/work/input/toolchain/drat-trim" "$cnf" "$proof" \
+            >"$result_dir/checker.out" 2>"$result_dir/checker.err"
+          cat "$result_dir/checker.out" "$result_dir/checker.err" | tr -d '\r' \
+            >"$result_dir/checker.normalized.txt"
+          grep -Eq '^[[:space:]]*s VERIFIED[[:space:]]*$' "$result_dir/checker.normalized.txt"
+          if grep -Eq '^[[:space:]]*s NOT VERIFIED[[:space:]]*$' "$result_dir/checker.normalized.txt"; then
+            echo 'contradictory checker verdicts' >&2
+            exit 1
+          fi
+          sha256sum "$proof" > "$result_dir/proof.sha256"
+          : > "$result_dir/empty-proof.drat"
+          set +e
+          "$PACKAGE/work/input/toolchain/drat-trim" "$cnf" "$result_dir/empty-proof.drat" \
+            >"$result_dir/negative-control.out" 2>"$result_dir/negative-control.err"
+          negative_status=$?
+          set -e
+          printf '%s\n' "$negative_status" > "$result_dir/negative-control.exit-status.txt"
+          cat "$result_dir/negative-control.out" "$result_dir/negative-control.err" | tr -d '\r' \
+            >"$result_dir/negative-control.normalized.txt"
+          if grep -Eq '^[[:space:]]*s VERIFIED[[:space:]]*$' "$result_dir/negative-control.normalized.txt"; then
+            echo 'empty proof negative control was accepted' >&2
+            exit 1
+          fi
+          rm -f "$result_dir/empty-proof.drat"
+          gzip -1 "$proof"
+
+      - name: Write bounded pilot result
+        if: always()
+        env:
+          RAW_STATE: ${{ steps.solve.outputs.raw_state }}
+          SOLVER_STATUS: ${{ steps.solve.outputs.solver_status }}
+          STARTED: ${{ steps.solve.outputs.started }}
+          FINISHED: ${{ steps.solve.outputs.finished }}
+          SAT_OUTCOME: ${{ steps.sat_check.outcome }}
+          UNSAT_OUTCOME: ${{ steps.unsat_check.outcome }}
+        run: |
+          set -euo pipefail
+          result_dir="$PACKAGE/work/results/$CASE_ID"
+          mkdir -p "$result_dir"
+          state=UNKNOWN
+          if ls "$result_dir"/*.drat >/dev/null 2>&1; then
+            gzip -1 "$result_dir"/*.drat
+          fi
+          if [ "${RAW_STATE:-}" = SAT_WITNESS_UNCHECKED ] && [ "${SAT_OUTCOME:-}" = success ]; then
+            state=SAT_CHECKED_COLORING
+          elif [ "${RAW_STATE:-}" = UNSAT_PROOF_UNCHECKED ] && [ "${UNSAT_OUTCOME:-}" = success ]; then
+            state=PROOF_CHECKED_UNSAT
+          fi
+          python "$PACKAGE/finalize_case.py" "$CASE_ID" "$state" \
+            --case-dir "$result_dir" \
+            --instance-dir "$PACKAGE/work/input/instances" \
+            --solver-exit-status "${SOLVER_STATUS:-255}" \
+            --started "${STARTED:-UNKNOWN}" \
+            --finished "${FINISHED:-UNKNOWN}" \
+            --solver-limit-seconds "$SOLVER_LIMIT_SECONDS" \
+            --checker-limit-seconds "$CHECKER_LIMIT_SECONDS" \
+            --workflow-run-id "${{ github.run_id }}" \
+            --workflow-run-attempt "${{ github.run_attempt }}" \
+            --workflow-sha "${{ github.sha }}" \
+            --workflow-ref "${{ github.ref }}" \
+            | tee "$result_dir/finalize.out"
+
+      - name: Upload isolated pilot case artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.case_id }}-seventh-base-pilot
+          path: ${{ env.PACKAGE }}/work/results/${{ matrix.case_id }}/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+
+  summarize:
+    if: always()
+    needs: screen
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact pilot aggregator revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Download all isolated pilot artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: q00r00-*-t*-seventh-base-pilot
+          path: ${{ env.PACKAGE }}/work/aggregate/cases
+
+      - name: Independently aggregate all 15 case records
+        run: |
+          set -euo pipefail
+          python "$PACKAGE/aggregate_results.py" \
+            --results-root "$PACKAGE/work/aggregate/cases" \
+            --output "$PACKAGE/work/aggregate/summary" \
+            --workflow-run-id "${{ github.run_id }}" \
+            --workflow-run-attempt "${{ github.run_attempt }}" \
+            --workflow-sha "${{ github.sha }}" \
+            --workflow-ref "${{ github.ref }}" \
+            | tee "$PACKAGE/work/aggregate/aggregate.out"
+          (cd "$PACKAGE/work/aggregate/summary" && sha256sum --check --strict SHA256SUMS)
+
+      - name: Upload complete pilot summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: q00r00-seventh-base-colorability-pilot-summary
+          path: ${{ env.PACKAGE }}/work/aggregate/summary/
+          if-no-files-found: error
+          compression-level: 6
+          retention-days: 90
