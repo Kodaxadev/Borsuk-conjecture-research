@@ -1,0 +1,120 @@
+name: verify-q00r00-seventh-base-classification
+
+on:
+  push:
+    branches:
+      - research/q00r00-seventh-base-classification
+    paths:
+      - 'borsuk_11_k6_q00r00_seventh_base_classification/**'
+      - '.github/workflows/verify-q00r00-seventh-base-classification.yml'
+      - 'borsuk_11_k6_q00r00_sixth_base_child_trims/evidence/artifacts/q00r00-sixth-base-child-trims-run-30851783510.zip'
+      - 'borsuk_11_k6_q00r00_sixth_base_colorability_screen/evidence/run-30856667310/GOVERNANCE_BINDING.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-q00r00-seventh-base-classification-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PACKAGE: borsuk_11_k6_q00r00_seventh_base_classification
+  SOURCE_ARCHIVE: borsuk_11_k6_q00r00_sixth_base_child_trims/evidence/artifacts/q00r00-sixth-base-child-trims-run-30851783510.zip
+  SOURCE_ARCHIVE_SHA256: a1862053e19a4341b941e62181c180805fb59a7969241d473705635dd04d0505
+  GOVERNANCE_BINDING: borsuk_11_k6_q00r00_sixth_base_colorability_screen/evidence/run-30856667310/GOVERNANCE_BINDING.json
+  GOVERNANCE_BINDING_GIT_BLOB: 8ce5241f999bc673664741a8c5cb56d97b55bceb
+
+jobs:
+  classify-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact source revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Verify governed input boundary
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor 2c7727666966fc1e0ad9657b3424e0616cab25e8 HEAD
+          git merge-base --is-ancestor 3b502090b0a0c246645b408c561c6a258ca46dbe HEAD
+          test "$(git hash-object "$GOVERNANCE_BINDING")" = "$GOVERNANCE_BINDING_GIT_BLOB"
+          grep -Fq '"incomplete_screen_cases": 36' "$GOVERNANCE_BINDING"
+          grep -Fq '"certified_seventh_base_frontier": 0' "$GOVERNANCE_BINDING"
+          grep -Fq '"refinement_reason": "incomplete_screen_not_certified_obstruction"' "$GOVERNANCE_BINDING"
+          echo "$SOURCE_ARCHIVE_SHA256  $SOURCE_ARCHIVE" | sha256sum --check --strict
+
+      - name: Extract execution-bound child trims
+        run: |
+          set -euo pipefail
+          rm -rf "$PACKAGE/work"
+          mkdir -p "$PACKAGE/work/trim-input" "$PACKAGE/work/generated"
+          unzip -q "$SOURCE_ARCHIVE" -d "$PACKAGE/work/trim-input"
+          unzip -t "$SOURCE_ARCHIVE"
+
+      - name: Generate canonical seventh-base classification
+        run: |
+          set -euo pipefail
+          python "$PACKAGE/classify.py" \
+            --trim-root "$PACKAGE/work/trim-input" \
+            --output "$PACKAGE/work/generated" \
+            | tee "$PACKAGE/work/classify.out"
+
+      - name: Independently reproduce classification
+        run: |
+          set -euo pipefail
+          node "$PACKAGE/verify_independent.js" \
+            --trim-root "$PACKAGE/work/trim-input" \
+            --generated "$PACKAGE/work/generated" \
+            --output "$PACKAGE/work/generated/independent-verification.json" \
+            | tee "$PACKAGE/work/independent.out"
+
+      - name: Verify frozen package and negative control
+        run: |
+          set -euo pipefail
+          python "$PACKAGE/verify_package.py" \
+            --output "$PACKAGE/work/generated" \
+            --package-root "$PACKAGE" \
+            --expected "$PACKAGE/EXPECTED_OUTPUT.json" \
+            | tee "$PACKAGE/work/package-check.out"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path('borsuk_11_k6_q00r00_seventh_base_classification/work/generated')
+          summary = json.loads((root / 'summary.json').read_text())
+          assert summary['grandchild_count'] == 4476
+          assert summary['pointwise_orbit_count_negative_control_total'] == 8483
+          assert summary['pointwise_orbit_count_negative_control_total'] > summary['grandchild_count']
+          assert summary['status_boundary']['all_grandchildren'] == 'UNKNOWN'
+          assert summary['status_boundary']['q00r00'] == 'UNKNOWN'
+          assert summary['complexity_tier_counts'] == {
+              'PILOT': 15,
+              'SMALL': 816,
+              'MEDIUM': 2573,
+              'LARGE': 1072,
+          }
+          PY
+          cd "$PACKAGE/work/generated"
+          sha256sum --check --strict SHA256SUMS
+          test "$(find . -type f | wc -l)" -eq 41
+
+      - name: Upload complete classification certificate
+        uses: actions/upload-artifact@v4
+        with:
+          name: q00r00-seventh-base-classification
+          path: ${{ env.PACKAGE }}/work/generated/
+          if-no-files-found: error
+          compression-level: 6
+          retention-days: 90
