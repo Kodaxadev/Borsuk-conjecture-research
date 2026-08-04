@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "transaction_id": "TX-N11-K6-FULL-2-3",
+  "dry_run": true,
+  "claim_id": "n11-k6-full",
+  "expected_current_transition_id": "T-K6-FULL-1-2",
+  "from_gate": 2,
+  "to_gate": 3,
+  "actor": "unassigned",
+  "reason": "Link complete diameter-compatible evidence to the full n=11, k=6 theorem target.",
+  "source_revision": "unassigned",
+  "evidence_ids": [],
+  "operations": [
+    {"operation": "create", "path": "cruthunas/evidence.json"},
+    {"operation": "update", "path": "cruthunas/transitions.json"},
+    {"operation": "update", "path": "cruthunas/ledger.json"}
+  ],
+  "status": "BLOCKED",
+  "blocking_conditions": [
+    "All 58 canonical four-base trim types remain UNKNOWN at certificate level.",
+    "No complete diameter-compatible branch or refinement coverage manifest exists.",
+    "No independent verifier has checked a theorem-complete coverage artifact.",
+    "No typed evidence record supports promotion of n11-k6-full beyond Gate 2."
+  ]
+}

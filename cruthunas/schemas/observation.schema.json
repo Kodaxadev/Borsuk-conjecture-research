@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cruthunas://schemas/observation.schema.json",
+  "title": "Cruthúnas non-evidentiary observation",
+  "type": "object",
+  "required": [
+    "id",
+    "claim_id",
+    "type",
+    "result_state",
+    "epistemic_effect",
+    "artifact_path",
+    "source_revision",
+    "repository_status_changed",
+    "evidence_registered",
+    "certificate_present",
+    "interpretation"
+  ],
+  "properties": {
+    "id": {"type": "string", "pattern": "^O-[A-Z0-9-]+$"},
+    "claim_id": {"type": "string", "minLength": 1},
+    "type": {"enum": ["BOUNDED_SOLVER_PROBE", "HEURISTIC_SEARCH", "NEGATIVE_CONTROL", "BENCHMARK"]},
+    "result_state": {"enum": ["UNKNOWN", "OBSERVED_SAT_UNREGISTERED", "OBSERVED_UNSAT_UNVERIFIED"]},
+    "epistemic_effect": {"const": "NONE"},
+    "artifact_path": {"type": "string", "minLength": 1},
+    "source_revision": {"type": "string", "minLength": 1},
+    "workflow_run_id": {"type": "integer", "minimum": 1},
+    "case_id": {"type": "string", "minLength": 1},
+    "solver": {"type": "string", "minLength": 1},
+    "limit_seconds": {"type": "integer", "minimum": 1},
+    "repository_status_changed": {"const": false},
+    "evidence_registered": {"const": false},
+    "certificate_present": {"const": false},
+    "interpretation": {"type": "string", "minLength": 1},
+    "repeat_guidance": {"type": "string", "minLength": 1}
+  },
+  "additionalProperties": false
+}

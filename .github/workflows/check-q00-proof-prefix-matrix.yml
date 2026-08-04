@@ -1,0 +1,118 @@
+name: check-q00-proof-prefix-matrix
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/check-q00-proof-prefix-matrix.yml
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: check-q00-proof-prefix-matrix-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  check-prefix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        predecessors: [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
+    env:
+      SOURCE_RUN_ID: 30822622138
+      EXPECTED_CNF_SHA256: 36da8f78ae376b370f119d1fa16a58f6504607d949ac8315648fdbda52450299
+      EXPECTED_PROOF_SHA256: 59bf62a00d0c63b5ced7967c33421d953af5b96e423cc93dc862e595d08561b5
+      EXPECTED_CHECKER_SHA256: 92f0aa9575ed519d66a99b8b1b3dde6ece4618ae4c202a3a4b200265dda0aa7a
+      DRAT_TRIM_REVISION: 2e3b2dc0ecf938addbd779d42877b6ed69d9a985
+
+    steps:
+      - name: Checkout governed branch
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate Cruthúnas governance
+        run: |
+          set -euo pipefail
+          python scripts/cruthunas.py check --all
+          python scripts/cruthunas.py adapters check
+
+      - name: Download preserved proof
+        uses: actions/download-artifact@v4
+        with:
+          name: q00-certificate-attempt
+          path: /tmp/q00-source
+          repository: Kodaxadev/Borsuk-conjecture-research
+          run-id: ${{ env.SOURCE_RUN_ID }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate frozen artifacts
+        run: |
+          set -euo pipefail
+          echo "$EXPECTED_CNF_SHA256  /tmp/q00-source/q00_12color.cnf" | sha256sum --check --strict
+          echo "$EXPECTED_PROOF_SHA256  /tmp/q00-source/q00.drat" | sha256sum --check --strict
+
+      - name: Build identical pinned checker
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/drat-trim
+          git clone --filter=blob:none https://github.com/marijnheule/drat-trim.git /tmp/drat-trim
+          cd /tmp/drat-trim
+          git checkout --detach "$DRAT_TRIM_REVISION"
+          make -j2
+          test "$(sha256sum drat-trim | awk '{print $1}')" = "$EXPECTED_CHECKER_SHA256"
+
+      - name: Build and check record-aligned prefix
+        run: |
+          set -euo pipefail
+          count='${{ matrix.predecessors }}'
+          result="$GITHUB_WORKSPACE/q00-prefix-$count"
+          mkdir -p "$result"
+          bad="/tmp/q00-prefix-$count.drat"
+          python scripts/drat_empty_clause_control.py \
+            /tmp/q00-source/q00.drat \
+            "$bad" \
+            "$result/control.json" \
+            --preceding-records "$count" \
+            >"$result/generation.out"
+          printf '/tmp/drat-trim/drat-trim %s %s -v\n' \
+            /tmp/q00-source/q00_12color.cnf "$bad" \
+            >"$result/command.txt"
+          date -u +%Y-%m-%dT%H:%M:%SZ >"$result/started-utc.txt"
+          set +e
+          /usr/bin/time -v -o "$result/time.txt" \
+            /tmp/drat-trim/drat-trim \
+              /tmp/q00-source/q00_12color.cnf "$bad" -v \
+            >"$result/checker.stdout" 2>"$result/checker.stderr"
+          status=$?
+          set -e
+          date -u +%Y-%m-%dT%H:%M:%SZ >"$result/finished-utc.txt"
+          echo "$status" >"$result/exit-status.txt"
+          cat "$result/checker.stdout" "$result/checker.stderr" | tr -d '\r' \
+            >"$result/checker.normalized.txt"
+          if grep -Eq '^[[:space:]]*s VERIFIED[[:space:]]*$' "$result/checker.normalized.txt"; then
+            echo VERIFIED >"$result/verdict.txt"
+          elif grep -Eq '^[[:space:]]*s NOT VERIFIED[[:space:]]*$' "$result/checker.normalized.txt"; then
+            echo 'NOT VERIFIED' >"$result/verdict.txt"
+          else
+            echo 'NO STANDARD VERDICT' >"$result/verdict.txt"
+          fi
+          sha256sum "$result"/* >"$result/result-sha256.txt"
+          rm -f "$bad"
+
+      - name: Upload prefix result
+        uses: actions/upload-artifact@v4
+        with:
+          name: q00-prefix-${{ matrix.predecessors }}
+          path: q00-prefix-${{ matrix.predecessors }}/
+          if-no-files-found: error
+          retention-days: 30

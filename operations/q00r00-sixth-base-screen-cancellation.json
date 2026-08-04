@@ -1,0 +1,53 @@
+{
+  "authoritative_sha": "cca43b17354619afd473c835d63f363a16cae5bf",
+  "branch": "research/q00r00-sixth-base-colorability-screen",
+  "cancel_requests": [
+    {
+      "cancel_request_accepted": true,
+      "curl_exit_status": 0,
+      "http_status": 202,
+      "run_id": 30856603889
+    },
+    {
+      "cancel_request_accepted": true,
+      "curl_exit_status": 0,
+      "http_status": 202,
+      "run_id": 30856581781
+    },
+    {
+      "cancel_request_accepted": true,
+      "curl_exit_status": 0,
+      "http_status": 202,
+      "run_id": 30856414834
+    }
+  ],
+  "observed_runs": [
+    {
+      "conclusion": null,
+      "head_sha": "cca43b17354619afd473c835d63f363a16cae5bf",
+      "run_id": 30856667310,
+      "status": "queued"
+    },
+    {
+      "conclusion": null,
+      "head_sha": "4513bd092c56476a1b3922b19eb93e5226dbd945",
+      "run_id": 30856603889,
+      "status": "queued"
+    },
+    {
+      "conclusion": null,
+      "head_sha": "89823199f544b6c440a7d324da00f9ee690e9861",
+      "run_id": 30856581781,
+      "status": "queued"
+    },
+    {
+      "conclusion": null,
+      "head_sha": "ee769bfb4378040cf4a83f320e8006d751bc165a",
+      "run_id": 30856414834,
+      "status": "queued"
+    }
+  ],
+  "recorded_utc": "2026-08-03T22:23:16Z",
+  "schema": "borsuk-q00r00-screen-superseded-run-cancellation-v1",
+  "workflow": "screen-q00r00-sixth-base-colorability.yml"
+}

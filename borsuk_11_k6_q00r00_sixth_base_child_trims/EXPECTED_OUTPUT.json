@@ -1,0 +1,26 @@
+{
+  "classification_child_manifest_sha256": "180e8398807c95478ac7cb62262758314a9c49270a487de0370f384dff39efb5",
+  "classification_execution_binding_sha256": "ecfc585478677ec77a9211a8b1fdb3f6b8879c5b7eee5fa5da2b2302d1f3f80a",
+  "generated_file_count_before_comparison": 183,
+  "manifest_sha256": "559f83e4eb245902b9ec1808812248694c7931a535213c45b50d7a89a461e5fa",
+  "schema": "borsuk-q00r00-sixth-base-child-trims-expected-v1",
+  "sha256sums_sha256": "45e96e2b460d6f968ed664b06ec59adc6091040273acf9cfbc022d3a1586654c",
+  "summary": {
+    "child_count": 36,
+    "distance6_edge_count_range": [
+      11859,
+      21642
+    ],
+    "incompatible_pair_count_range": [
+      3552,
+      6649
+    ],
+    "total_distance6_edges_across_children": 611145,
+    "total_incompatible_pairs_across_children": 178886,
+    "total_vertices_across_children": 10513,
+    "vertex_count_range": [
+      248,
+      328
+    ]
+  }
+}

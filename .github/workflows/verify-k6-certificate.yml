@@ -1,0 +1,15 @@
+name: verify-k6-certificate
+
+on:
+  workflow_dispatch:
+
+jobs:
+  verify-stored-unsat-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Recheck stored DRUP certificate
+        run: make verify-k6-certificate
