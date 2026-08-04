@@ -20,6 +20,7 @@ concurrency:
 
 env:
   PACKAGE: borsuk_11_k6_q00r00_seventh_base_classification
+  CLASSIFICATION_SOURCE_SHA: bdcd88d18a01e383aa30aac401c083d8775e2ca2
   SOURCE_ARCHIVE: borsuk_11_k6_q00r00_sixth_base_child_trims/evidence/artifacts/q00r00-sixth-base-child-trims-run-30851783510.zip
   SOURCE_ARCHIVE_SHA256: a1862053e19a4341b941e62181c180805fb59a7969241d473705635dd04d0505
   GOVERNANCE_BINDING: borsuk_11_k6_q00r00_sixth_base_colorability_screen/evidence/run-30856667310/GOVERNANCE_BINDING.json
@@ -30,9 +31,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: Checkout exact source revision
+      - name: Checkout frozen classification source
         uses: actions/checkout@v4
         with:
+          ref: ${{ env.CLASSIFICATION_SOURCE_SHA }}
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Set up Python
@@ -48,6 +51,9 @@ jobs:
       - name: Verify governed input boundary
         run: |
           set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$CLASSIFICATION_SOURCE_SHA"
+          git cat-file -e 2c7727666966fc1e0ad9657b3424e0616cab25e8^{commit}
+          git cat-file -e 3b502090b0a0c246645b408c561c6a258ca46dbe^{commit}
           git merge-base --is-ancestor 2c7727666966fc1e0ad9657b3424e0616cab25e8 HEAD
           git merge-base --is-ancestor 3b502090b0a0c246645b408c561c6a258ca46dbe HEAD
           test "$(git hash-object "$GOVERNANCE_BINDING")" = "$GOVERNANCE_BINDING_GIT_BLOB"
