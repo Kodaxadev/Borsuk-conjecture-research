@@ -10,9 +10,9 @@
   "package_verifier_source_sha256": "1454cd00bcacfbb08842c4c4a0bec171c069485544763dea86aa25f83247fa44",
   "pilot_case_count": 15,
   "pointwise_orbit_count_negative_control_total": 8483,
-  "primary_source_bundle_sha256": "f728583e6567462e3e1ae497534cbf12c3ea5ede1ec1cf4771f1ef6eba850476",
+  "primary_source_bundle_sha256": "5bbd89f5a339cd604fa2ae8c23c6336e0c42610bb9cb84a96ae4ac292219f58e",
   "schema": "borsuk-q00r00-seventh-base-classification-expected-v1",
-  "sha256sums_sha256": "f35dab523f3425198d35cb86a929c5b2339803db5f6113b85fa414f477ab7091",
+  "sha256sums_sha256": "78936099c5024ba0e01f275746be84e36ce24740edfb0c5e2874d7ee0cd9964e",
   "summary_sha256": "c0ac1d4464223aa09d2a4f4f8c9fb82d00eb7aa837cef8c297b8bfc8003417b8",
-  "verification_sha256": "bc24f95d58fffc0e78bef2b1949c796642ce23b7b09ce7624431522738442fc4"
+  "verification_sha256": "8300cd357a23e76a96b0a42a4fb05c49d4a7988e56506ce747fba86984063705"
 }
