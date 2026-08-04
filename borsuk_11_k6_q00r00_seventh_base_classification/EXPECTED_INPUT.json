@@ -1,0 +1,14 @@
+{
+  "schema": "borsuk-q00r00-seventh-base-classification-input-v1",
+  "source_child_trim_archive_path": "borsuk_11_k6_q00r00_sixth_base_child_trims/evidence/artifacts/q00r00-sixth-base-child-trims-run-30851783510.zip",
+  "source_child_trim_archive_sha256": "a1862053e19a4341b941e62181c180805fb59a7969241d473705635dd04d0505",
+  "source_child_trim_manifest_sha256": "559f83e4eb245902b9ec1808812248694c7931a535213c45b50d7a89a461e5fa",
+  "source_child_trim_governed_head": "64f916a3b15024dade67d61fad742dd76c7d40de",
+  "sixth_base_screen_governance_binding_path": "borsuk_11_k6_q00r00_sixth_base_colorability_screen/evidence/run-30856667310/GOVERNANCE_BINDING.json",
+  "sixth_base_screen_governance_binding_git_blob": "8ce5241f999bc673664741a8c5cb56d97b55bceb",
+  "sixth_base_screen_governance_commit": "2c7727666966fc1e0ad9657b3424e0616cab25e8",
+  "sixth_base_screen_status_sync_commit": "3b502090b0a0c246645b408c561c6a258ca46dbe",
+  "refinement_inputs": "q00r00-s000 through q00r00-s035",
+  "refinement_reason": "incomplete_screen_not_certified_obstruction",
+  "certified_obstruction_frontier_count": 0
+}
