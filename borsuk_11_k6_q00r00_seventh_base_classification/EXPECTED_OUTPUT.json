@@ -1,0 +1,18 @@
+{
+  "candidate_count_total": 10297,
+  "child_count": 36,
+  "classification_stream_sha256": "932c4ed2ffc689ce5b5fe5cea07eec9876734159186df70b598b6f3ec316f6de",
+  "classify_source_sha256": "962e603de2e1293e030ef2e7a15cc14dc22bad831cde99d82f03afdb771180bf",
+  "final_file_count": 41,
+  "grandchild_count": 4476,
+  "grandchildren_csv_sha256": "87114d943baf132abc74502de2bac9655882d00b4c27fe13358566e930284b27",
+  "independent_source_sha256": "e16b4867c02565d575964629e1b223a09274bcd1ac4e0849fcaffe3e1594bac8",
+  "independent_verification_sha256": "be463122580fbb9b8e9e5520e64a772a0a36aa8792e87ed297eafbbfc874062f",
+  "package_verifier_source_sha256": "a8ec2787fc81011891b19bcbe1f6fae23347271f920ab5c1cd93f75d87b35764",
+  "pilot_case_count": 15,
+  "pointwise_orbit_count_negative_control_total": 8483,
+  "schema": "borsuk-q00r00-seventh-base-classification-expected-v1",
+  "sha256sums_sha256": "f1e446704ba931a6cd9f0bed344621a90dca266b950cd76c6e5731f7d68b2601",
+  "summary_sha256": "c0ac1d4464223aa09d2a4f4f8c9fb82d00eb7aa837cef8c297b8bfc8003417b8",
+  "verification_sha256": "9613d7d2696884d67f342327c45426403ede74b9d2115f93a6bf02edef458a62"
+}
