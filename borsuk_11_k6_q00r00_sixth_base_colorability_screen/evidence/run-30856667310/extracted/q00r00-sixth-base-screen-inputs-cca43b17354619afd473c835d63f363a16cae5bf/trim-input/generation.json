@@ -1,0 +1,26 @@
+{
+  "claim_id": "n11-k6-q00r00-sixth-base-child-trims",
+  "generated_file_count": 182,
+  "manifest_sha256": "559f83e4eb245902b9ec1808812248694c7931a535213c45b50d7a89a461e5fa",
+  "schema": "borsuk-q00r00-sixth-base-child-trims-generation-v1",
+  "sha256sums_sha256": "45e96e2b460d6f968ed664b06ec59adc6091040273acf9cfbc022d3a1586654c",
+  "status": "PASS",
+  "summary": {
+    "child_count": 36,
+    "distance6_edge_count_range": [
+      11859,
+      21642
+    ],
+    "incompatible_pair_count_range": [
+      3552,
+      6649
+    ],
+    "total_distance6_edges_across_children": 611145,
+    "total_incompatible_pairs_across_children": 178886,
+    "total_vertices_across_children": 10513,
+    "vertex_count_range": [
+      248,
+      328
+    ]
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "aggregate": {
+    "child_count": 36,
+    "total_distance6_edges_across_children": 611145,
+    "total_incompatible_pairs_across_children": 178886,
+    "total_vertices_across_children": 10513
+  },
+  "all_bytes_identical": true,
+  "child_count": 36,
+  "claim_id": "n11-k6-q00r00-sixth-base-child-trims",
+  "independent_implementation": {
+    "language": "JavaScript",
+    "source_sha256": "4efa0d900524f86d88186a9a4bff5fae6ca02cad323e57ee431f4cc5abf55d3a"
+  },
+  "manifest_sha256": "559f83e4eb245902b9ec1808812248694c7931a535213c45b50d7a89a461e5fa",
+  "parent_classification": {
+    "artifact_archive_sha256": "0f45e952cda60a47f01fb0a415de07438cc9bc32f3d4811c8d17ce1cb2982a7d",
+    "artifact_id": 8867349456,
+    "child_manifest_sha256": "180e8398807c95478ac7cb62262758314a9c49270a487de0370f384dff39efb5",
+    "source_commit": "1cee54611bf414f7961cbdd43f5fc2b867b3230d",
+    "workflow_job_id": 91782782478,
+    "workflow_run_id": 30842512224
+  },
+  "primary_implementation": {
+    "language": "Python",
+    "source_sha256": "020b37dd73e399d0c19bae3cf05bafd1e08e3578bd631288efcabe098b425890"
+  },
+  "schema": "borsuk-q00r00-sixth-base-child-trims-comparison-v1",
+  "sha256sums_sha256": "45e96e2b460d6f968ed664b06ec59adc6091040273acf9cfbc022d3a1586654c",
+  "status": "PASS",
+  "status_boundary": {
+    "children": "UNKNOWN",
+    "n11-k6-full": "Gate 2 / OPEN",
+    "q00": "UNKNOWN",
+    "q00r00": "UNKNOWN"
+  }
+}

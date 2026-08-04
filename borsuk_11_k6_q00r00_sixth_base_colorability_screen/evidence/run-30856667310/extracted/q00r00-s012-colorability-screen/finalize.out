@@ -1,0 +1,7 @@
+{
+  "branch_action": "SCREEN_INCOMPLETE",
+  "case_id": "q00r00-s012",
+  "certificate_state": "UNKNOWN",
+  "child_status": "UNKNOWN",
+  "statement": "No checked SAT coloring or checked UNSAT proof was obtained."
+}

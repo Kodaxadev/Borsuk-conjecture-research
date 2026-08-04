@@ -1,0 +1,35 @@
+{
+  "base": [
+    0,
+    63,
+    455,
+    1611,
+    732,
+    231
+  ],
+  "base_hex": [
+    "000",
+    "03f",
+    "1c7",
+    "64b",
+    "2dc",
+    "0e7"
+  ],
+  "child_id": "q00r00-s022",
+  "claim_id": "n11-k6-q00r00-s022-universal-trim",
+  "diameter": 6,
+  "dimension": 11,
+  "parent_classification": {
+    "artifact_archive_sha256": "0f45e952cda60a47f01fb0a415de07438cc9bc32f3d4811c8d17ce1cb2982a7d",
+    "artifact_id": 8867349456,
+    "child_manifest_sha256": "180e8398807c95478ac7cb62262758314a9c49270a487de0370f384dff39efb5",
+    "classification_json_sha256": "ba6e09a0ae0125323dab047c1b2cd6dc98359e366141d36e3afbac3c1c2b2bbb",
+    "orbits_json_sha256": "40b23c5c7c726a0526c501aa8b783c5b086d71fd2ffd7c7a3041b235293db1de",
+    "source_commit": "1cee54611bf414f7961cbdd43f5fc2b867b3230d",
+    "workflow_run_id": 30842512224
+  },
+  "predicate": "wt(v) even and d_H(v,b) <= 6 for every b in the six-point base",
+  "representative": 231,
+  "representative_hex": "0e7",
+  "status": "UNKNOWN"
+}

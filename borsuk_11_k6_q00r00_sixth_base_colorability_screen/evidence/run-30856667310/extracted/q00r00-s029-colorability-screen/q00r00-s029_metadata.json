@@ -1,0 +1,43 @@
+{
+  "base": [
+    0,
+    63,
+    455,
+    1611,
+    732,
+    657
+  ],
+  "case_id": "q00r00-s029",
+  "claim_id": "n11-k6-q00r00-sixth-base-colorability-screen",
+  "clauses": 61394,
+  "cnf_sha256": "9008a89eb56930e88c158f0b3b1f27c4a83a1c0de4b13ef5d3f3e757bec01844",
+  "colors": 12,
+  "edges": 15587,
+  "fixed_clique": [
+    63,
+    455,
+    1611,
+    0,
+    732,
+    882,
+    1434,
+    1702,
+    937,
+    1265,
+    1813
+  ],
+  "fixed_clique_size": 11,
+  "incompatible_pairs": 4507,
+  "interpretation": {
+    "checked_sat": "proves the complete universal trim 12-colorable and closes this child branch",
+    "checked_unsat": "proves only the universal trim non-12-colorable; child remains UNKNOWN and requires compatible seventh-base refinement"
+  },
+  "representative": 657,
+  "result_state": "UNKNOWN",
+  "schema": "borsuk-q00r00-sixth-base-color-instance-v1",
+  "source_edges_sha256": "2f380d8c7f3dfe4fa713d81c6fa7a4c9b589eda3efae57ab9e4402b84b129bdb",
+  "source_vertices_sha256": "15ab1d83f9c0bab8eb1068cccc0b8e7e192e17e50baa2532d1b6a54a88f0f505",
+  "variable_map_sha256": "0d9fa5b6c4ddbfdef1759601373057399b68fc304a6109b57de5dd317c2770c3",
+  "variables": 1847,
+  "vertices": 281
+}

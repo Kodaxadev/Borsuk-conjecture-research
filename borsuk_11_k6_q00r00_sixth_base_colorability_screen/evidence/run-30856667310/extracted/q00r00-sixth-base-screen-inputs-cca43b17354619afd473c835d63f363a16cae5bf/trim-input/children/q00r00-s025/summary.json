@@ -1,0 +1,31 @@
+{
+  "base": {
+    "path": "children/q00r00-s025/base.json",
+    "sha256": "8d20600955ca0dc30fbdba80c0d14873274637b9eb090b20fbe0c67b87cb440d",
+    "size_bytes": 990
+  },
+  "child_id": "q00r00-s025",
+  "counts": {
+    "distance6_edges": 15800,
+    "incompatible_pairs": 4591,
+    "vertices": 283
+  },
+  "distance6_edges": {
+    "path": "children/q00r00-s025/distance6_edges.csv",
+    "sha256": "08d74273fcb0ffc5ab6ba695179f39a1aeb264871be0a7c0de335fe9a0c51285",
+    "size_bytes": 126411
+  },
+  "incompatible_pairs": {
+    "path": "children/q00r00-s025/incompatible_pairs.csv",
+    "sha256": "d0c36d355433b8d0673e4fa2d8dc5a46fa5fb9a5269b7e434f04ca09e00e04f6",
+    "size_bytes": 36739
+  },
+  "representative": 243,
+  "representative_hex": "0f3",
+  "status": "UNKNOWN",
+  "vertices": {
+    "path": "children/q00r00-s025/vertices.txt",
+    "sha256": "0189075ad71001c7a26c0d7add4c6639efcfb6d8ac8b1a986f4919df94c29ab5",
+    "size_bytes": 1132
+  }
+}

@@ -1,0 +1,103 @@
+{
+  "case_id": "q00r00-s032",
+  "certificate_state": "UNKNOWN",
+  "claim_id": "n11-k6-q00r00-sixth-base-colorability-screen",
+  "execution": {
+    "artifact_id": "PENDING_POST_UPLOAD_BINDING",
+    "workflow_ref": "refs/heads/research/q00r00-sixth-base-colorability-screen",
+    "workflow_run_attempt": 1,
+    "workflow_run_id": 30856667310,
+    "workflow_sha": "cca43b17354619afd473c835d63f363a16cae5bf"
+  },
+  "files": {
+    "drat-trim-binary.sha256": {
+      "sha256": "2ab49d8f1fc5afb4c3f447e0a08ebd0e91951e4075d90486034f1d5bc48a7df4",
+      "size_bytes": 76
+    },
+    "drat-trim-revision.txt": {
+      "sha256": "f07dc9c72b2cd95961e4c41b5aaf707cadfb030b28040a55a0665615c618f50e",
+      "size_bytes": 41
+    },
+    "finished-utc.txt": {
+      "sha256": "5f492c81b27e37f2282b356e794309a79f6c48e6f33857e37f6736c01d6ed74b",
+      "size_bytes": 21
+    },
+    "kissat-binary.sha256": {
+      "sha256": "802e34dd814febf4192fe86c55dea35707136a886bc1eca7a3950b65dd1262c8",
+      "size_bytes": 79
+    },
+    "kissat-version.txt": {
+      "sha256": "e1d49c569ae09b2ede16e2d83820a3809b35eb6c44c13ba9b5330598d6b8f43c",
+      "size_bytes": 6
+    },
+    "q00r00-s032_12color.cnf": {
+      "sha256": "36fbb0f619155ba5549b347860277fc0be813f4e78be133712504110ad4c8a96",
+      "size_bytes": 1093496
+    },
+    "q00r00-s032_metadata.json": {
+      "sha256": "e6852cd740b41818068793097dafc667c2f2077c3e50e8429276f36afa5cbec5",
+      "size_bytes": 1162
+    },
+    "q00r00-s032_variable_map.json": {
+      "sha256": "f8dccab9f8b2e7946fd706356dce54f30532cbb9f2a189b6b399d838772c14f5",
+      "size_bytes": 184384
+    },
+    "raw-result-state.txt": {
+      "sha256": "8d65a4b9eb195d5e86030347c80f76cf5f23d651a73643a82581979d2548c6bb",
+      "size_bytes": 8
+    },
+    "solver-exit-status.txt": {
+      "sha256": "ca2ebdf97d7469496b1f4b78958f9dc8447efdcb623953fee7b6996b762f6fff",
+      "size_bytes": 4
+    },
+    "solver-time.txt": {
+      "sha256": "f4f587298f23772546a18b6a425d23fe758f9a7bb2d18deba44f195af6a50e58",
+      "size_bytes": 1104
+    },
+    "solver.err": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    "solver.out": {
+      "sha256": "00a03a2c866438ca809dae681863f89160f104382183e88a6f9729202f18af9b",
+      "size_bytes": 156968
+    },
+    "started-utc.txt": {
+      "sha256": "fe44bad01ae5c8187ff64379507f159a7b119d0bfabdea0eb6e5ac3a09c4a707",
+      "size_bytes": 21
+    }
+  },
+  "instance": {
+    "clauses": 83582,
+    "cnf_sha256": "36fbb0f619155ba5549b347860277fc0be813f4e78be133712504110ad4c8a96",
+    "edges": 15781,
+    "incompatible_pairs": 4487,
+    "variable_map_sha256": "f8dccab9f8b2e7946fd706356dce54f30532cbb9f2a189b6b399d838772c14f5",
+    "variables": 2094,
+    "vertices": 283
+  },
+  "mathematical_effect": {
+    "branch_action": "SCREEN_INCOMPLETE",
+    "child_status": "UNKNOWN",
+    "statement": "No checked SAT coloring or checked UNSAT proof was obtained."
+  },
+  "parent_status_changed": false,
+  "repository_status_changed": false,
+  "schema": "borsuk-q00r00-sixth-base-colorability-result-v1",
+  "solver": {
+    "exit_status": 124,
+    "finished_utc": "2026-08-04T01:24:37Z",
+    "limit_seconds": 1800,
+    "name": "Kissat",
+    "started_utc": "2026-08-04T00:54:37Z",
+    "version": "4.0.0"
+  },
+  "source_child_trim_archive_sha256": "a1862053e19a4341b941e62181c180805fb59a7969241d473705635dd04d0505",
+  "source_child_trim_commit": "aad27339d6e689afdb50dbb8c280a76230b915fc",
+  "toolchain": {
+    "drat_trim_binary_sha256": "92f0aa9575ed519d66a99b8b1b3dde6ece4618ae4c202a3a4b200265dda0aa7a",
+    "drat_trim_revision": "2e3b2dc0ecf938addbd779d42877b6ed69d9a985",
+    "kissat_binary_sha256": "584284667e14620989d75252950bdd100375aa56020448ae1bd479ea118528bd",
+    "kissat_version": "4.0.0"
+  }
+}
