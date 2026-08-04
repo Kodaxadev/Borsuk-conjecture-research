@@ -1,0 +1,68 @@
+{
+  "artifact": {
+    "all_internal_checksums_verified": true,
+    "created_at": "2026-08-04T03:50:22Z",
+    "downloaded_archive_sha256": "dece0e924900b2bd751a62e82edca7e59f55e0c58a5bf92c5b9b196755646352",
+    "downloaded_archive_verified": true,
+    "expires_at": "2026-11-02T03:49:43Z",
+    "file_count": 41,
+    "github_digest": "sha256:dece0e924900b2bd751a62e82edca7e59f55e0c58a5bf92c5b9b196755646352",
+    "id": 8879504727,
+    "name": "q00r00-seventh-base-classification",
+    "repository_archive_path": "borsuk_11_k6_q00r00_seventh_base_classification/evidence/run-30875846299/artifacts/q00r00-seventh-base-classification-run-30875846299.zip",
+    "size_bytes": 583069,
+    "uncompressed_bytes": 5096221
+  },
+  "claim_id": "n11-k6-q00r00-seventh-base-classification",
+  "frozen_outputs": {
+    "candidate_count_total": 10297,
+    "child_count": 36,
+    "classification_stream_sha256": "932c4ed2ffc689ce5b5fe5cea07eec9876734159186df70b598b6f3ec316f6de",
+    "grandchild_count": 4476,
+    "grandchildren_csv_sha256": "87114d943baf132abc74502de2bac9655882d00b4c27fe13358566e930284b27",
+    "independent_verification_sha256": "be463122580fbb9b8e9e5520e64a772a0a36aa8792e87ed297eafbbfc874062f",
+    "pilot_case_count": 15,
+    "pointwise_negative_control_count": 8483,
+    "sha256sums_sha256": "78936099c5024ba0e01f275746be84e36ce24740edfb0c5e2874d7ee0cd9964e",
+    "summary_sha256": "c0ac1d4464223aa09d2a4f4f8c9fb82d00eb7aa837cef8c297b8bfc8003417b8",
+    "verification_sha256": "8300cd357a23e76a96b0a42a4fb05c49d4a7988e56506ce747fba86984063705"
+  },
+  "job": {
+    "conclusion": "success",
+    "id": 91887027074,
+    "name": "classify-and-verify",
+    "required_steps": {
+      "Checkout frozen classification source": "success",
+      "Extract execution-bound child trims": "success",
+      "Generate canonical seventh-base classification": "success",
+      "Independently reproduce classification": "success",
+      "Upload complete classification certificate": "success",
+      "Verify frozen package and negative control": "success",
+      "Verify governed input boundary": "success"
+    }
+  },
+  "mathematical_status": {
+    "all_4476_grandchildren": "UNKNOWN",
+    "n11-k6-full": "Gate 2 / OPEN",
+    "q00": "UNKNOWN",
+    "q00r00": "UNKNOWN",
+    "q00r00_s000_through_s035": "UNKNOWN"
+  },
+  "recorded_at": "2026-08-04T03:57:55Z",
+  "refinement_boundary": {
+    "certified_obstruction_frontier_count": 0,
+    "cross_child_merging_performed": false,
+    "reason": "incomplete_screen_not_certified_obstruction",
+    "recanonicalization_across_children_performed": false
+  },
+  "schema": "borsuk-q00r00-seventh-base-classification-execution-binding-v1",
+  "workflow": {
+    "branch": "research/q00r00-seventh-base-classification",
+    "classified_source_sha": "bdcd88d18a01e383aa30aac401c083d8775e2ca2",
+    "name": "verify-q00r00-seventh-base-classification",
+    "path": ".github/workflows/verify-q00r00-seventh-base-classification.yml",
+    "run_attempt": 1,
+    "run_id": 30875846299,
+    "workflow_revision": "eb3f921983946b2ab8fa930fbec4f08c0133d3ac"
+  }
+}
