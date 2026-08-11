@@ -1,0 +1,257 @@
+{
+ "affected_but_unresolved_sixth_base_parents": [
+  "q00r00-s026",
+  "q00r00-s028",
+  "q00r00-s030",
+  "q00r00-s031",
+  "q00r00-s033",
+  "q00r00-s034",
+  "q00r00-s035"
+ ],
+ "binding_type": "REPOSITORY_GOVERNANCE_BINDING",
+ "certified_eighth_base_refinement_frontier": {
+  "count": 0,
+  "entries": [],
+  "state": "EMPTY"
+ },
+ "claim_id": "n11-k6-q00r00-seventh-base-colorability-pilot",
+ "closed_grandchild_count": 15,
+ "closed_grandchildren": [
+  "q00r00-s026-t066",
+  "q00r00-s028-t116",
+  "q00r00-s028-t144",
+  "q00r00-s028-t148",
+  "q00r00-s028-t154",
+  "q00r00-s030-t084",
+  "q00r00-s030-t086",
+  "q00r00-s031-t041",
+  "q00r00-s033-t084",
+  "q00r00-s034-t025",
+  "q00r00-s034-t028",
+  "q00r00-s034-t033",
+  "q00r00-s034-t034",
+  "q00r00-s034-t035",
+  "q00r00-s035-t008"
+ ],
+ "eighth_base_work_authorized": false,
+ "evidence_state": [
+  "COMPUTATIONAL",
+  "DUAL_IMPLEMENTATION_REPRODUCED",
+  "CI_EXECUTION_COMPLETE",
+  "ARTIFACT_ARCHIVES_VERIFIED",
+  "EXECUTION_BOUND",
+  "REPOSITORY_GOVERNED",
+  "WORKING"
+ ],
+ "execution_evidence": {
+  "archive_manifest_path": "borsuk_11_k6_q00r00_seventh_base_colorability_pilot/evidence/run-30880666065/artifacts/SHA256SUMS",
+  "archive_manifest_sha256": "dccd84c7a32e848004546c313ef11c54ae698ab7fd52cc3112efc53b74cbb33a",
+  "archived_artifacts": 17,
+  "authoritative_implementation_sha": "8ef3163bb508d37f1adba5d246b1b0dd636b0778",
+  "branch": "research/q00r00-seventh-base-colorability-pilot",
+  "commit": "7af760c34adf19c412e31258462c7b89cebee7bf",
+  "execution_binding_path": "borsuk_11_k6_q00r00_seventh_base_colorability_pilot/evidence/run-30880666065/EXECUTION_BINDING.json",
+  "execution_binding_schema": "borsuk-q00r00-seventh-base-colorability-pilot-execution-binding-v1",
+  "execution_binding_sha256": "5c7c5538a59ff8a3a4b9cae25c06460589a56149cdb062c45393574972f635a0",
+  "workflow_id": 326703705,
+  "workflow_name": "screen-q00r00-seventh-base-pilot",
+  "workflow_run_attempt": 1,
+  "workflow_run_id": 30880666065
+ },
+ "higher_status": {
+  "changed_by_this_binding": false,
+  "n11-k6-full": "Gate 2 / OPEN",
+  "q00": "UNKNOWN",
+  "q00r00": "UNKNOWN"
+ },
+ "known_defects": [
+  {
+   "id": "windows-newline-conversion",
+   "impact": "None on archive bytes, recorded digests, or any mathematical conclusion; all checksum text files were written and committed as LF blobs.",
+   "severity": "LOW",
+   "status": "DEFERRED",
+   "summary": "The binding host is Windows with git core.autocrlf=true, which applies platform-default CRLF conversion to text files on checkout."
+  }
+ ],
+ "next_governed_decision": {
+  "decision": "Select a bounded seventh-base colorability expansion from the remaining 4,461 UNKNOWN grandchildren.",
+  "reason": "The pilot produced no PROOF_CHECKED_UNSAT case and therefore created no certified eighth-base refinement frontier."
+ },
+ "parent_closure_count": 0,
+ "parent_closure_not_implied": true,
+ "parents_closed": [],
+ "remaining_nonpilot_grandchildren": {
+  "count": 4461,
+  "status": "UNKNOWN"
+ },
+ "result_partition": {
+  "PROOF_CHECKED_UNSAT": 0,
+  "SAT_CHECKED_COLORING": 15,
+  "UNKNOWN": 0,
+  "total": 15
+ },
+ "schema": "borsuk-q00r00-seventh-base-colorability-pilot-governance-binding-v1",
+ "sixth_base_parent_status": "UNKNOWN",
+ "transitions": {
+  "count": 15,
+  "records": [
+   {
+    "branch_action": "CLOSE_GRANDCHILD_ONLY",
+    "certificate_class": "CLOSED_GRANDCHILD",
+    "evidence_class": "SAT_CHECKED_COLORING",
+    "from_status": "UNKNOWN",
+    "grandchild_id": "q00r00-s026-t066",
+    "parent_id": "q00r00-s026",
+    "parent_status_changed": false,
+    "to_status": "12_COLORABLE"
+   },
+   {
+    "branch_action": "CLOSE_GRANDCHILD_ONLY",
+    "certificate_class": "CLOSED_GRANDCHILD",
+    "evidence_class": "SAT_CHECKED_COLORING",
+    "from_status": "UNKNOWN",
+    "grandchild_id": "q00r00-s028-t116",
+    "parent_id": "q00r00-s028",
+    "parent_status_changed": false,
+    "to_status": "12_COLORABLE"
+   },
+   {
+    "branch_action": "CLOSE_GRANDCHILD_ONLY",
+    "certificate_class": "CLOSED_GRANDCHILD",
+    "evidence_class": "SAT_CHECKED_COLORING",
+    "from_status": "UNKNOWN",
+    "grandchild_id": "q00r00-s028-t144",
+    "parent_id": "q00r00-s028",
+    "parent_status_changed": false,
+    "to_status": "12_COLORABLE"
+   },
+   {
+    "branch_action": "CLOSE_GRANDCHILD_ONLY",
+    "certificate_class": "CLOSED_GRANDCHILD",
+    "evidence_class": "SAT_CHECKED_COLORING",
+    "from_status": "UNKNOWN",
+    "grandchild_id": "q00r00-s028-t148",
+    "parent_id": "q00r00-s028",
+    "parent_status_changed": false,
+    "to_status": "12_COLORABLE"
+   },
+   {
+    "branch_action": "CLOSE_GRANDCHILD_ONLY",
+    "certificate_class": "CLOSED_GRANDCHILD",
+    "evidence_class": "SAT_CHECKED_COLORING",
+    "from_status": "UNKNOWN",
+    "grandchild_id": "q00r00-s028-t154",
+    "parent_id": "q00r00-s028",
+    "parent_status_changed": false,
+    "to_status": "12_COLORABLE"
+   },
+   {
+    "branch_action": "CLOSE_GRANDCHILD_ONLY",
+    "certificate_class": "CLOSED_GRANDCHILD",
+    "evidence_class": "SAT_CHECKED_COLORING",
+    "from_status": "UNKNOWN",
+    "grandchild_id": "q00r00-s030-t084",
+    "parent_id": "q00r00-s030",
+    "parent_status_changed": false,
+    "to_status": "12_COLORABLE"
+   },
+   {
+    "branch_action": "CLOSE_GRANDCHILD_ONLY",
+    "certificate_class": "CLOSED_GRANDCHILD",
+    "evidence_class": "SAT_CHECKED_COLORING",
+    "from_status": "UNKNOWN",
+    "grandchild_id": "q00r00-s030-t086",
+    "parent_id": "q00r00-s030",
+    "parent_status_changed": false,
+    "to_status": "12_COLORABLE"
+   },
+   {
+    "branch_action": "CLOSE_GRANDCHILD_ONLY",
+    "certificate_class": "CLOSED_GRANDCHILD",
+    "evidence_class": "SAT_CHECKED_COLORING",
+    "from_status": "UNKNOWN",
+    "grandchild_id": "q00r00-s031-t041",
+    "parent_id": "q00r00-s031",
+    "parent_status_changed": false,
+    "to_status": "12_COLORABLE"
+   },
+   {
+    "branch_action": "CLOSE_GRANDCHILD_ONLY",
+    "certificate_class": "CLOSED_GRANDCHILD",
+    "evidence_class": "SAT_CHECKED_COLORING",
+    "from_status": "UNKNOWN",
+    "grandchild_id": "q00r00-s033-t084",
+    "parent_id": "q00r00-s033",
+    "parent_status_changed": false,
+    "to_status": "12_COLORABLE"
+   },
+   {
+    "branch_action": "CLOSE_GRANDCHILD_ONLY",
+    "certificate_class": "CLOSED_GRANDCHILD",
+    "evidence_class": "SAT_CHECKED_COLORING",
+    "from_status": "UNKNOWN",
+    "grandchild_id": "q00r00-s034-t025",
+    "parent_id": "q00r00-s034",
+    "parent_status_changed": false,
+    "to_status": "12_COLORABLE"
+   },
+   {
+    "branch_action": "CLOSE_GRANDCHILD_ONLY",
+    "certificate_class": "CLOSED_GRANDCHILD",
+    "evidence_class": "SAT_CHECKED_COLORING",
+    "from_status": "UNKNOWN",
+    "grandchild_id": "q00r00-s034-t028",
+    "parent_id": "q00r00-s034",
+    "parent_status_changed": false,
+    "to_status": "12_COLORABLE"
+   },
+   {
+    "branch_action": "CLOSE_GRANDCHILD_ONLY",
+    "certificate_class": "CLOSED_GRANDCHILD",
+    "evidence_class": "SAT_CHECKED_COLORING",
+    "from_status": "UNKNOWN",
+    "grandchild_id": "q00r00-s034-t033",
+    "parent_id": "q00r00-s034",
+    "parent_status_changed": false,
+    "to_status": "12_COLORABLE"
+   },
+   {
+    "branch_action": "CLOSE_GRANDCHILD_ONLY",
+    "certificate_class": "CLOSED_GRANDCHILD",
+    "evidence_class": "SAT_CHECKED_COLORING",
+    "from_status": "UNKNOWN",
+    "grandchild_id": "q00r00-s034-t034",
+    "parent_id": "q00r00-s034",
+    "parent_status_changed": false,
+    "to_status": "12_COLORABLE"
+   },
+   {
+    "branch_action": "CLOSE_GRANDCHILD_ONLY",
+    "certificate_class": "CLOSED_GRANDCHILD",
+    "evidence_class": "SAT_CHECKED_COLORING",
+    "from_status": "UNKNOWN",
+    "grandchild_id": "q00r00-s034-t035",
+    "parent_id": "q00r00-s034",
+    "parent_status_changed": false,
+    "to_status": "12_COLORABLE"
+   },
+   {
+    "branch_action": "CLOSE_GRANDCHILD_ONLY",
+    "certificate_class": "CLOSED_GRANDCHILD",
+    "evidence_class": "SAT_CHECKED_COLORING",
+    "from_status": "UNKNOWN",
+    "grandchild_id": "q00r00-s035-t008",
+    "parent_id": "q00r00-s035",
+    "parent_status_changed": false,
+    "to_status": "12_COLORABLE"
+   }
+  ],
+  "uniform_transition": {
+   "certificate_class": "CLOSED_GRANDCHILD",
+   "evidence_class": "SAT_CHECKED_COLORING",
+   "from_status": "UNKNOWN",
+   "parent_status_changed": false,
+   "to_status": "12_COLORABLE"
+  }
+ }
+}
